@@ -1,0 +1,13 @@
+# Riptide example system configuration file. Documentation: https://... # todo
+riptide:
+  proxy:
+    url: local
+    ports:
+      http: 80
+      https: 443
+    autostart: true
+    autoexit: 15
+
+  repos: []
+
+  engine: docker

@@ -63,8 +63,9 @@ class Service(YamlConfigDocument):
 
         if "db" in self["roles"]:
             self._db_driver = db_driver_for_service.get(self)
-            # Collect additional ports for the db driver
-            self["additional_ports"] += self._db_driver.collect_additional_ports()
+            if self._db_driver:
+                # Collect additional ports for the db driver
+                self["additional_ports"] += self._db_driver.collect_additional_ports()
 
     def validate(self) -> bool:
         if not super().validate():

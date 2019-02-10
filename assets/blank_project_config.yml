@@ -1,0 +1,7 @@
+# Riptide example project file. Documentation: https://... # todo
+project:
+  name: empty-project
+  app:
+    # Insert an actual useful app here. More information in the riptide documentation.
+    # The entry below loads a dummy hello world application.
+    $ref: /app/hello-world

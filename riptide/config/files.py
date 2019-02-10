@@ -33,8 +33,6 @@ def discover_project_file():
 
 
 def riptide_assets_dir():
-    # TODO TEMPORARY WINDOWS TESTS
-    #return "C:\\Users\\marco\\Desktop\\riptide_assets"
     this_folder = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(this_folder, '..', '..', 'assets')
 
