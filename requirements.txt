@@ -1,0 +1,8 @@
+schema==0.6
+pyyaml==3.13
+configcrunch==0.1
+appdirs==1.4.3
+janus==0.4.0
+psutil==5.4.8
+GitPython==2.1.11
+pywinpty==0.5.5; sys_platform == 'win32'
