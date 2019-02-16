@@ -38,16 +38,11 @@ class Command(YamlConfigDocument):
             })
         )
 
-    def process_vars(self) -> 'YamlConfigDocument':
-        # todo needs to happen after variables have been processed, but we need a cleaner callback for this
-        super().process_vars()
-
+    def _initialize_data_after_variables(self):
         # Normalize all host-paths to only use the system-type directory separator
         if "additional_volumes" in self:
             for obj in self.doc["additional_volumes"]:
                 obj["host"] = cppath.normalize(obj["host"])
-
-        return self
 
     def get_project(self):
         try:

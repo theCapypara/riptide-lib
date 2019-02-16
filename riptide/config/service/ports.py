@@ -22,6 +22,7 @@ TODO: Command to remove port bindings again
 
 """
 import asyncio
+import errno
 import json
 import os
 import psutil
@@ -45,7 +46,8 @@ def _is_open(current_port, list_reserved_ports):
         # This might fail on some OSes. In this case, try to connect to it.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
-        return sock.connect_ex(('127.0.0.1', current_port)) == 0
+        # Open ports may refuse connection on Mac. Let's just hope this works :(
+        return sock.connect_ex(('127.0.0.1', current_port)) in [0, errno.ECONNREFUSED]
 
 
 def find_open_port_starting_at(start_port):

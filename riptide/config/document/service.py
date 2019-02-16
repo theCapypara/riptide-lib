@@ -29,7 +29,7 @@ class Service(YamlConfigDocument):
         self._loaded_port_mappings = None
         super().__init__(document, path, parent, already_loaded_docs)
 
-    def _initialize_data(self):
+    def _initialize_data_before_merge(self):
         """ Load the absolute path of the config documents specified in config[]["from"]"""
         if self.path:
             folder_of_self = os.path.dirname(self.path)
@@ -43,6 +43,7 @@ class Service(YamlConfigDocument):
                     raise ValueError("Config 'from' items in services may not start with . or %s." % os.sep)
                 config["$source"] = os.path.join(folder_of_self, config["from"])
 
+    def _initialize_data_after_merge(self):
         if "run_as_root" not in self:
             self.doc["run_as_root"] = False
 
@@ -67,6 +68,15 @@ class Service(YamlConfigDocument):
                 # Collect additional ports for the db driver
                 self["additional_ports"] += self._db_driver.collect_additional_ports()
 
+    def _initialize_data_after_variables(self):
+        # Normalize all host-paths to only use the system-type directory separator
+        if "additional_volumes" in self:
+            for obj in self.doc["additional_volumes"]:
+                obj["host"] = cppath.normalize(obj["host"])
+        if "config" in self:
+            for obj in self.doc["config"]:
+                obj["$source"] = cppath.normalize(obj["$source"])
+
     def validate(self) -> bool:
         if not super().validate():
             return False
@@ -77,20 +87,6 @@ class Service(YamlConfigDocument):
                 raise ValueError("Service %s validation: If a service has the role 'db' it has to have a valid "
                                  "'driver' entry with a driver that is available." % self["$name"])
             self._db_driver.validate_service()
-
-    def process_vars(self) -> 'YamlConfigDocument':
-        # todo needs to happen after variables have been processed, but we need a cleaner callback for this
-        super().process_vars()
-
-        # Normalize all host-paths to only use the system-type directory separator
-        if "additional_volumes" in self:
-            for obj in self.doc["additional_volumes"]:
-                obj["host"] = cppath.normalize(obj["host"])
-        if "config" in self:
-            for obj in self.doc["config"]:
-                obj["$source"] = cppath.normalize(obj["$source"])
-
-        return self
 
     def before_start(self):
         """Load data required for service start, called by riptide_project_start_ctx()"""
@@ -308,4 +304,10 @@ class Service(YamlConfigDocument):
     @variable_helper
     def config(self, from_path):
         """ TODO DOC """
-        return get_config_file_path(from_path, self)
+        config_path = get_config_file_path(from_path, self)
+        # Make sure the config file at least exists even if it wasn't actually created yet
+        # so engines like Docker don't put a directory there.
+        if not os.path.exists(config_path):
+            os.makedirs(os.path.dirname(config_path), exist_ok=True)
+            open(config_path, 'a').close()
+        return config_path

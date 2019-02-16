@@ -1,7 +1,7 @@
 from schema import Optional, Schema
 from typing import List
 
-from configcrunch import YamlConfigDocument, DocReference
+from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError
 from configcrunch import load_subdocument
 from configcrunch.abstract import variable_helper
 from riptide.config.document.command import Command
@@ -43,11 +43,17 @@ class App(YamlConfigDocument):
         if "services" in self:
             for key, servicedoc in self["services"].items():
                 self["services"][key] = load_subdocument(servicedoc, self, Service, lookup_paths)
+                if not isinstance(self["services"][key].doc, dict):
+                    raise ConfigcrunchError("Error loading Service for App: "
+                                            "The service with the name %s needs to be an object in the source document." % key)
                 self["services"][key]["$name"] = key
 
         if "commands" in self:
             for key, commanddoc in self["commands"].items():
                 self["commands"][key] = load_subdocument(commanddoc, self, Command, lookup_paths)
+                if not isinstance(self["commands"][key].doc, dict):
+                    raise ConfigcrunchError("Error loading Command for App: "
+                                            "The command with the name %s needs to be an object in the source document." % key)
                 self["commands"][key]["$name"] = key
 
         return self
