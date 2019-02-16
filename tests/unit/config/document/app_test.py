@@ -131,4 +131,36 @@ class AppTestCase(unittest.TestCase):
                 app.resolve_and_merge_references(paths)
 
     def test_get_service_by_role(self):
-        """TODO"""
+
+        SEARCHED_ROLE = 'needle'
+
+        service_no_roles = {
+            '$name': 'service1'
+        }
+
+        service_not_searched_role = {
+            '$name': 'service1',
+            'roles': [
+                'role1', 'role2', 'role3'
+            ]
+        }
+
+        service_searched_role = {
+            '$name': 'service1',
+            'roles': [
+                'role1', SEARCHED_ROLE, 'role2', 'role3'
+            ]
+        }
+
+        doc = {
+            'name': 'test',
+            'services': {
+                'service_no_roles': service_no_roles,
+                'service_not_searched_role': service_not_searched_role,
+                'service_searched_role': service_searched_role
+            }
+        }
+
+        app = module.App(doc)
+
+        self.assertEquals(service_searched_role,    app.get_service_by_role(SEARCHED_ROLE))

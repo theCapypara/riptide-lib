@@ -63,7 +63,9 @@ class App(YamlConfigDocument):
 
     @variable_helper
     def get_service_by_role(self, role_name):
-        """ TODO """
+        """
+        Returns any service with the given role name (first found in an unordered dict).
+        """
         for service in self["services"].values():
             if "roles" in service and role_name in service["roles"]:
                 return service
