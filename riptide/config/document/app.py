@@ -8,11 +8,14 @@ from riptide.config.document.command import Command
 from riptide.config.document.service import Service
 
 
+HEADER = 'app'
+
+
 class App(YamlConfigDocument):
 
     @classmethod
     def header(cls) -> str:
-        return "app"
+        return HEADER
 
     def schema(self) -> Schema:
         return Schema(
@@ -29,7 +32,7 @@ class App(YamlConfigDocument):
                         'name': str
                     }
                 },
-                'services': {
+                Optional('services'): {
                     str: DocReference(Service)
                 },
                 Optional('commands'): {
