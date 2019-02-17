@@ -1,6 +1,9 @@
 from unittest import mock
 
+from unittest.mock import Mock
+
 from configcrunch.test_utils import YamlConfigDocumentStub
+from riptide.db.driver.abstract import AbstractDbDriver
 
 
 class _WithYcdMock:
@@ -12,6 +15,18 @@ class _WithYcdMock:
 
     def __exit__(self, type, value, traceback):
         self.mock.__exit__(type, value, traceback)
+
+
+class _DbDriverMock:
+    def __init__(self, db_driver_get_path):
+        self.mocked_driver = Mock(AbstractDbDriver)
+        self.mocked_get = mock.patch(db_driver_get_path, return_value=self.mocked_driver)
+
+    def __enter__(self):
+        return self.mocked_get.__enter__(), self.mocked_driver
+
+    def __exit__(self, type, value, traceback):
+        self.mocked_get.__exit__(type, value, traceback)
 
 
 def _ycd_set_doc(self, document, **kwargs):
@@ -35,3 +50,12 @@ def side_effect_for_load_subdocument():
     def func(value, *args, **kwargs):
         return YamlConfigDocumentStub(value)
     return func
+
+
+def patch_mock_db_driver(db_driver_get_path):
+    """
+    Patches a mock object for db_driver_for_service and returns a mock db driver
+    that is returned by it, as well as the patched db_driver_for_service:
+    :return: (db_driver_for_service_mock, db_driver_mock)
+    """
+    return _DbDriverMock(db_driver_get_path)

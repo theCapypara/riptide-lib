@@ -5,12 +5,14 @@ from schema import Schema, Optional
 from configcrunch import YamlConfigDocument, DocReference
 from riptide.config.document.project import Project
 
+HEADER = 'ritpide'
+
 
 class Config(YamlConfigDocument):
 
     @classmethod
     def header(cls) -> str:
-        return "riptide"
+        return HEADER
 
     def schema(self) -> Schema:
         return Schema(

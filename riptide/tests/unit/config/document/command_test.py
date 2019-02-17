@@ -7,7 +7,7 @@ from unittest.mock import Mock, MagicMock
 import riptide.config.document.command as module
 from configcrunch.test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH
-from tests.stubs import ProjectStub
+from riptide.tests.stubs import ProjectStub
 
 
 class CommandTestCase(unittest.TestCase):
@@ -46,7 +46,8 @@ class CommandTestCase(unittest.TestCase):
         cmd = module.Command({})
         self.assertEqual(module.HEADER, cmd.header())
 
-    def test_schema(self):
+    @unittest.skip("not done yet")
+    def test_validate(self):
         """TODO"""
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')

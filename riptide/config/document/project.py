@@ -4,16 +4,18 @@ from typing import List
 
 from schema import Schema, Optional
 
-from configcrunch import YamlConfigDocument, DocReference
+from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError
 from configcrunch import load_subdocument
 from riptide.config.document.app import App
+
+HEADER = 'project'
 
 
 class Project(YamlConfigDocument):
 
     @classmethod
     def header(cls) -> str:
-        return "project"
+        return HEADER
 
     def schema(self) -> Schema:
         return Schema(
@@ -30,6 +32,9 @@ class Project(YamlConfigDocument):
         super().resolve_and_merge_references(lookup_paths)
         if "app" in self:
             self["app"] = load_subdocument(self["app"], self, App, lookup_paths)
+            if not isinstance(self["app"].doc, dict):
+                raise ConfigcrunchError("Error loading App for Project: "
+                                        "The app needs to be an object in the source document.")
         return self
 
     def folder(self):
@@ -40,4 +45,6 @@ class Project(YamlConfigDocument):
 
     def src_folder(self):
         """Returns the absolute path to the folder specified by self['src']"""
+        if "$path" not in self:
+            return None
         return os.path.join(self.folder(), self["src"])

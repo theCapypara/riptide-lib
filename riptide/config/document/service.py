@@ -2,7 +2,7 @@ from typing import List
 
 from schema import Schema, Optional
 
-from configcrunch import YamlConfigDocument
+from configcrunch import YamlConfigDocument, ConfigcrunchError
 from configcrunch.abstract import variable_helper
 from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.config.service.config_files import *
@@ -15,6 +15,8 @@ from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.lib.cross_platform import cppath
 from riptide.lib.cross_platform.cpuser import getuid, getgid
 
+HEADER = 'service'
+
 
 class Service(YamlConfigDocument):
 
@@ -23,11 +25,12 @@ class Service(YamlConfigDocument):
             document: dict,
             path: str = None,
             parent: 'YamlConfigDocument' = None,
-            already_loaded_docs: List[str] = None
+            already_loaded_docs: List[str] = None,
+            dont_call_init_data= False
     ):
         self._db_driver = None
         self._loaded_port_mappings = None
-        super().__init__(document, path, parent, already_loaded_docs)
+        super().__init__(document, path, parent, already_loaded_docs, dont_call_init_data)
 
     def _initialize_data_before_merge(self):
         """ Load the absolute path of the config documents specified in config[]["from"]"""
@@ -40,7 +43,7 @@ class Service(YamlConfigDocument):
             for config in self["config"]:
                 # TODO: Currently doesn't allow . or os.sep at the beginning for security reasons.
                 if config["from"].startswith(".") or config["from"].startswith(os.sep):
-                    raise ValueError("Config 'from' items in services may not start with . or %s." % os.sep)
+                    raise ConfigcrunchError("Config 'from' items in services may not start with . or %s." % os.sep)
                 config["$source"] = os.path.join(folder_of_self, config["from"])
 
     def _initialize_data_after_merge(self):
@@ -84,8 +87,8 @@ class Service(YamlConfigDocument):
         # Db Driver constraints. If role db is set, a "driver" has to be set and code has to exist for it.
         if "db" in self["roles"]:
             if "driver" not in self or self._db_driver is None:
-                raise ValueError("Service %s validation: If a service has the role 'db' it has to have a valid "
-                                 "'driver' entry with a driver that is available." % self["$name"])
+                raise ConfigcrunchError("Service %s validation: If a service has the role 'db' it has to have a valid "
+                                        "'driver' entry with a driver that is available." % self["$name"])
             self._db_driver.validate_service()
 
     def before_start(self):
@@ -99,7 +102,7 @@ class Service(YamlConfigDocument):
 
     @classmethod
     def header(cls) -> str:
-        return "service"
+        return HEADER
 
     def schema(self) -> Schema:
         return Schema(

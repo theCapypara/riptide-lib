@@ -4,8 +4,8 @@ from unittest.mock import call
 
 import riptide.config.document.app as module
 from configcrunch import ConfigcrunchError
-from tests.helpers import side_effect_for_load_subdocument
 from configcrunch.test_utils import YamlConfigDocumentStub
+from riptide.tests.helpers import side_effect_for_load_subdocument
 
 
 class AppTestCase(unittest.TestCase):
@@ -14,7 +14,8 @@ class AppTestCase(unittest.TestCase):
         app = module.App({})
         self.assertEqual(module.HEADER, app.header())
 
-    def test_schema(self):
+    @unittest.skip("not done yet")
+    def test_validate(self):
         """TODO"""
 
     @mock.patch("riptide.config.document.app.YamlConfigDocument.resolve_and_merge_references")
