@@ -1,8 +1,10 @@
+import os
+
 from unittest import mock
 
 from unittest.mock import Mock
 
-from configcrunch.test_utils import YamlConfigDocumentStub
+from configcrunch.tests.test_utils import YamlConfigDocumentStub
 from riptide.db.driver.abstract import AbstractDbDriver
 
 
@@ -59,3 +61,16 @@ def patch_mock_db_driver(db_driver_get_path):
     :return: (db_driver_for_service_mock, db_driver_mock)
     """
     return _DbDriverMock(db_driver_get_path)
+
+
+def get_fixture_path(name):
+    """
+    Load a yaml fixture file, name relative to fixtures dir.
+    """
+    return os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            'fixtures',
+            name
+        )
+    )

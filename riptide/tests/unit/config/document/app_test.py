@@ -1,11 +1,16 @@
+import os
 import unittest
 from unittest import mock
 from unittest.mock import call
 
+from schema import SchemaError
+
 import riptide.config.document.app as module
 from configcrunch import ConfigcrunchError
-from configcrunch.test_utils import YamlConfigDocumentStub
-from riptide.tests.helpers import side_effect_for_load_subdocument
+from configcrunch.tests.test_utils import YamlConfigDocumentStub
+from riptide.tests.helpers import side_effect_for_load_subdocument, get_fixture_path
+
+FIXTURE_BASE_PATH = 'app' + os.sep
 
 
 class AppTestCase(unittest.TestCase):
@@ -14,9 +19,24 @@ class AppTestCase(unittest.TestCase):
         app = module.App({})
         self.assertEqual(module.HEADER, app.header())
 
-    @unittest.skip("not done yet")
-    def test_validate(self):
-        """TODO"""
+    def test_validate_valid(self):
+        app = module.App.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid.yml'
+        ))
+        self.assertTrue(app.validate())
+
+    def test_validate_valid_with_some_optionals(self):
+        app = module.App.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_with_some_optionals.yml'
+        ))
+        self.assertTrue(app.validate())
+
+    def test_validate_invalid_no_name(self):
+        app = module.App.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_no_name.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys: 'name'"):
+            app.validate()
 
     @mock.patch("riptide.config.document.app.YamlConfigDocument.resolve_and_merge_references")
     def test_resolve_and_merge_references_no_subdocs(self, super_mock):

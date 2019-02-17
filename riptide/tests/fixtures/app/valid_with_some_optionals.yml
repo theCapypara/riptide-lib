@@ -1,0 +1,8 @@
+app:
+  name: app-test
+  notices:
+    usage: "no"
+  import:
+    test:
+      target: tegrat
+      name: eman

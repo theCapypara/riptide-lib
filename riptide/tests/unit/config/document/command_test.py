@@ -4,10 +4,15 @@ import unittest
 from unittest import mock
 from unittest.mock import Mock, MagicMock
 
+from schema import SchemaError
+
 import riptide.config.document.command as module
-from configcrunch.test_utils import YamlConfigDocumentStub
+from configcrunch.tests.test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH
+from riptide.tests.helpers import get_fixture_path
 from riptide.tests.stubs import ProjectStub
+
+FIXTURE_BASE_PATH = 'command' + os.sep
 
 
 class CommandTestCase(unittest.TestCase):
@@ -46,9 +51,36 @@ class CommandTestCase(unittest.TestCase):
         cmd = module.Command({})
         self.assertEqual(module.HEADER, cmd.header())
 
-    @unittest.skip("not done yet")
-    def test_validate(self):
-        """TODO"""
+    def test_validate_valids(self):
+        valid_names = ['valid_regular.yml', 'valid_alias.yml',
+                       'valid_regular_with_some_optionals.yml']
+        for name in valid_names:
+            with self.subTest(name=name):
+                command = module.Command.from_yaml(get_fixture_path(
+                    FIXTURE_BASE_PATH + name
+                ))
+                self.assertTrue(command.validate())
+
+    def test_validate_invalid_alias_no_aliases(self):
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_alias_no_aliases.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys:"):
+            command.validate()
+
+    def test_validate_invalid_regular_no_image(self):
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_regular_no_image.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys:"):
+            command.validate()
+
+    def test_validate_invalid_weird_mixup(self):
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_weird_mixup.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Wrong keys"):
+            command.validate()
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):

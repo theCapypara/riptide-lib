@@ -1,0 +1,6 @@
+service:
+  image: hello/world:blubbel
+  config:
+    - from: somewhere
+    - from: here
+      to: there

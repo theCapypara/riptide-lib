@@ -1,0 +1,5 @@
+service:
+  image: hello/world:blubbel
+  logging:
+    stdout: true
+    stderr: tralse

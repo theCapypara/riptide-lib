@@ -1,4 +1,4 @@
-from configcrunch.test_utils import YamlConfigDocumentStub
+from configcrunch.tests.test_utils import YamlConfigDocumentStub
 
 
 class ProjectStub(YamlConfigDocumentStub):

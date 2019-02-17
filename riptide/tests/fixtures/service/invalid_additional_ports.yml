@@ -1,0 +1,6 @@
+service:
+  image: hello/world:blubbel
+  additional_ports:
+    - title: hi
+      container: 314
+      host_start: Pi

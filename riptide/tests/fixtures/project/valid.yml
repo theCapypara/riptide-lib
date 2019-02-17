@@ -1,0 +1,5 @@
+project:
+  name: test-project
+  src: test-src
+  app:
+    $ref: subdoc not validated cause $ref still here.

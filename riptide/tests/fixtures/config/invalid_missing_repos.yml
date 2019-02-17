@@ -1,0 +1,9 @@
+riptide:
+  proxy:
+    url: test.localhost
+    ports:
+      http: 8558
+      https: 8448
+    autostart: true
+    autoexit: 15
+  engine: dummy

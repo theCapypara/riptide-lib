@@ -1,0 +1,6 @@
+service:
+  $name: this is used for debug display
+  image: hello/world:blubbel
+  roles:
+    - a
+    - db

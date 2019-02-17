@@ -1,0 +1,6 @@
+command:
+  image: xyztest/helloworld
+  command: echo hello
+  additional_volumes:
+    - host: host
+      container: container

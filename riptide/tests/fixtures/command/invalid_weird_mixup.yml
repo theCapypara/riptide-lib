@@ -1,0 +1,3 @@
+command:
+  aliases: othercommand
+  image: both is not allowed and makes no sense

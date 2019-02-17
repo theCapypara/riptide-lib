@@ -1,6 +1,6 @@
 from typing import List
 
-from schema import Schema, Optional
+from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument, ConfigcrunchError
 from configcrunch.abstract import variable_helper
@@ -37,7 +37,11 @@ class Service(YamlConfigDocument):
         if self.path:
             folder_of_self = os.path.dirname(self.path)
         else:
-            folder_of_self = self.get_project().folder()
+            try:
+                folder_of_self = self.get_project().folder()
+            except IndexError:
+                # Fallback: Assume pwd
+                folder_of_self = os.getcwd()
 
         if "config" in self:
             for config in self["config"]:
@@ -85,11 +89,12 @@ class Service(YamlConfigDocument):
             return False
 
         # Db Driver constraints. If role db is set, a "driver" has to be set and code has to exist for it.
-        if "db" in self["roles"]:
+        if "roles" in self and "db" in self["roles"]:
             if "driver" not in self or self._db_driver is None:
                 raise ConfigcrunchError("Service %s validation: If a service has the role 'db' it has to have a valid "
                                         "'driver' entry with a driver that is available." % self["$name"])
             self._db_driver.validate_service()
+        return True
 
     def before_start(self):
         """Load data required for service start, called by riptide_project_start_ctx()"""
@@ -145,7 +150,7 @@ class Service(YamlConfigDocument):
                     {
                         'host': str,
                         'container': str,
-                        Optional('mode'): str  # default: rw - can be rw/ro.
+                        Optional('mode'): Or('rw', 'ro')  # default: rw - can be rw/ro.
                     }
                 ],
                 # db only

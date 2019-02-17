@@ -24,7 +24,7 @@ class Command(YamlConfigDocument):
                 Optional('$ref'): str,  # reference to other Service documents
                 Optional('$name'): str,  # Added by system during processing parent app.
 
-                Optional('image'): str,
+                'image': str,
                 Optional('command'): str,
                 Optional('additional_volumes'): [
                     {
@@ -37,7 +37,7 @@ class Command(YamlConfigDocument):
                 Optional('$ref'): str,  # reference to other Service documents
                 Optional('$name'): str,  # Added by system during processing parent app.
 
-                Optional('aliases'): str
+                'aliases': str
             })
         )
 

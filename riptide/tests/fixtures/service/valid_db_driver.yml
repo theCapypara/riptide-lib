@@ -1,0 +1,11 @@
+service:
+  $name: for error display
+  image: hello/world:blubbel
+  roles:
+    - a
+    - db
+  driver:
+    name: hello
+    config:
+      dude:
+        whatever: []

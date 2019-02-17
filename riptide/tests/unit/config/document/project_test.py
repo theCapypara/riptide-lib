@@ -4,10 +4,14 @@ from unittest import mock
 
 from unittest.mock import call, Mock
 
+from schema import SchemaError
+
 import riptide.config.document.project as module
 from configcrunch import ConfigcrunchError
-from configcrunch.test_utils import YamlConfigDocumentStub
-from riptide.tests.helpers import side_effect_for_load_subdocument
+from configcrunch.tests.test_utils import YamlConfigDocumentStub
+from riptide.tests.helpers import side_effect_for_load_subdocument, get_fixture_path
+
+FIXTURE_BASE_PATH = 'project' + os.sep
 
 
 class ProjectTestCase(unittest.TestCase):
@@ -16,9 +20,32 @@ class ProjectTestCase(unittest.TestCase):
         cmd = module.Project({})
         self.assertEqual(module.HEADER, cmd.header())
 
-    @unittest.skip("not done yet")
-    def test_validate(self):
-        """TODO"""
+    def test_validate_valid(self):
+        project = module.Project.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid.yml'
+        ))
+        self.assertTrue(project.validate())
+
+    def test_validate_invalid_no_app(self):
+        project = module.Project.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_no_app.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys: 'app'"):
+            project.validate()
+
+    def test_validate_invalid_no_name(self):
+        project = module.Project.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_no_name.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys: 'name'"):
+            project.validate()
+
+    def test_validate_invalid_no_src(self):
+        project = module.Project.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_no_src.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys: 'src'"):
+            project.validate()
 
     @mock.patch("riptide.config.document.project.YamlConfigDocument.resolve_and_merge_references")
     def test_resolve_and_merge_references_no_subdocs(self, super_mock):

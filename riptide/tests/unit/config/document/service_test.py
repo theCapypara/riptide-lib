@@ -4,14 +4,18 @@ from unittest import mock
 
 from unittest.mock import Mock, MagicMock, call
 
+from schema import SchemaError
+
 import riptide.config.document.service as module
 from configcrunch import ConfigcrunchError
-from configcrunch.test_utils import YamlConfigDocumentStub
+from configcrunch.tests.test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
-from riptide.tests.helpers import patch_mock_db_driver
+from riptide.tests.helpers import patch_mock_db_driver, get_fixture_path
 from riptide.tests.stubs import ProjectStub
 
+
+FIXTURE_BASE_PATH = 'service' + os.sep
 
 class ServiceTestCase(unittest.TestCase):
 
@@ -19,28 +23,89 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service({}, dont_call_init_data=True)
         self.assertEqual(module.HEADER, service.header())
 
-    @unittest.skip("not done yet")
-    def test_validate(self):
-        """TODO"""
+    def test_validate_valids(self):
+        valid_names = ['valid_minimum.yml', 'valid_everything.yml']
+        for name in valid_names:
+            with self.subTest(name=name):
+                service = module.Service.from_yaml(get_fixture_path(
+                    FIXTURE_BASE_PATH + name
+                ))
+                self.assertTrue(service.validate())
 
-    @unittest.skip("not done yet")
-    def test_validate_extra_db_but_no_db_driver(self):
-        # TODO: Needs valid test_validate fixture
-        service = module.Service({"roles": ["db"]}, dont_call_init_data=True)
-        with self.assertRaisesRegex(ConfigcrunchError, "'driver' entry with a driver that is available"):
+    def test_validate_invalid_roles(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_roles.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "should be instance of 'list'"):
             service.validate()
-        """TODO"""
 
-    @unittest.skip("not done yet")
+    def test_validate_invalid_no_image(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_no_image.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys: 'image'"):
+            service.validate()
+
+    def test_validate_invalid_logging(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_logging.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "should be instance of 'bool'"):
+            service.validate()
+
+    def test_validate_invalid_config(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_config.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing keys: 'to'"):
+            service.validate()
+
+    def test_validate_invalid_additional_volumes(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_additional_volumes.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Or\('rw', 'ro'\) did not validate"):
+            service.validate()
+
+    def test_validate_invalid_ports(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_additional_ports.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "should be instance of 'int'"):
+            service.validate()
+
+    def test_validate_extra_db_but_no_db_driver(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_db_but_no_db_driver.yml'
+        ))
+        with self.assertRaisesRegex(ConfigcrunchError,
+                                    "If a service has the role 'db' it has to have "
+                                    "a valid 'driver' entry with a driver that "
+                                    "is available."):
+            service.validate()
+
     def test_validate_extra_db_driver(self):
-        # TODO: Needs valid test_validate fixture
-        service = module.Service({"roles": ["db"], "driver": {"name": "test"}}, dont_call_init_data=True)
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_db_driver.yml'
+        ))
+
         with patch_mock_db_driver(
                 'riptide.config.document.service.db_driver_for_service.get'
         ) as (_, driver):
             service._db_driver = driver
             service.validate()
             driver.validate_service.assert_called_once()
+
+    def test_validate_extra_db_driver_not_found(self):
+        service = module.Service.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_db_driver.yml'
+        ))
+        # not setting _db_driver.
+        with self.assertRaisesRegex(ConfigcrunchError,
+                                    "If a service has the role 'db' it has to have "
+                                    "a valid 'driver' entry with a driver that "
+                                    "is available."):
+            service.validate()
 
     @mock.patch("os.path.dirname", return_value='DIRNAME')
     def test_initialize_data_before_merge_has_path(self, dirname_mock: Mock):
@@ -73,7 +138,7 @@ class ServiceTestCase(unittest.TestCase):
 
         dirname_mock.assert_called_once_with('PATH')
 
-    def test_initialize_data_before_merge_has_no_path(self):
+    def test_initialize_data_before_merge_has_project(self):
         service = module.Service({
             "config": [
                 {
@@ -97,6 +162,34 @@ class ServiceTestCase(unittest.TestCase):
                 "from": "config2/path2/blub",
                 "to": "doesnt matter2",
                 "$source": os.path.join(ProjectStub.FOLDER, "config2/path2/blub")
+            }
+        ], service['config'])
+
+    def test_initialize_data_before_merge_has_no_path_no_project(self):
+        service = module.Service({
+            "config": [
+                {
+                    "from": "config1/path",
+                    "to": "doesnt matter"
+                },
+                {
+                    "from": "config2/path2/blub",
+                    "to": "doesnt matter2"
+                }
+            ]
+        })
+
+        # Fallback is os.getcwd()
+        self.assertEqual([
+            {
+                "from": "config1/path",
+                "to": "doesnt matter",
+                "$source": os.path.join(os.getcwd(), "config1/path")
+            },
+            {
+                "from": "config2/path2/blub",
+                "to": "doesnt matter2",
+                "$source": os.path.join(os.getcwd(), "config2/path2/blub")
             }
         ], service['config'])
 

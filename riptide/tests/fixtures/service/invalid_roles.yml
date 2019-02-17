@@ -1,0 +1,4 @@
+service:
+  image: hello/world:blubbel
+  roles:
+    what: this is no list!!
