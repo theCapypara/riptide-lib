@@ -11,8 +11,8 @@ from configcrunch.test_utils import YamlConfigDocumentStub
 class AppTestCase(unittest.TestCase):
 
     def test_header(self):
-        app = module.App({'name': 'test'})
-        self.assertEquals(module.HEADER, app.header())
+        app = module.App({})
+        self.assertEqual(module.HEADER, app.header())
 
     def test_schema(self):
         """TODO"""
@@ -163,4 +163,4 @@ class AppTestCase(unittest.TestCase):
 
         app = module.App(doc)
 
-        self.assertEquals(service_searched_role,    app.get_service_by_role(SEARCHED_ROLE))
+        self.assertEqual(service_searched_role,    app.get_service_by_role(SEARCHED_ROLE))

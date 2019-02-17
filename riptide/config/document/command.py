@@ -9,11 +9,14 @@ from riptide.config.service.config_files import get_config_file_path
 from riptide.lib.cross_platform import cppath
 
 
+HEADER = 'command'
+
+
 class Command(YamlConfigDocument):
 
     @classmethod
     def header(cls) -> str:
-        return "command"
+        return HEADER
 
     def schema(self) -> Schema:
         return Schema(
