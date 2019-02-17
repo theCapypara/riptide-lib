@@ -5,7 +5,7 @@ from schema import Schema, Optional
 from configcrunch import YamlConfigDocument, DocReference
 from riptide.config.document.project import Project
 
-HEADER = 'ritpide'
+HEADER = 'riptide'
 
 
 class Config(YamlConfigDocument):
