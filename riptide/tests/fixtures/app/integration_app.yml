@@ -7,5 +7,11 @@ app:
   services:
     simple:
       $ref: service/integration_simple
+    simple_with_src:
+      $ref: service/integration_simple_with_src
+    custom_command:
+      $ref: service/integration_custom_command
+    env:
+      $ref: service/integration_env
   #commands:
     # todo

@@ -1,3 +1,5 @@
+import os
+
 import requests
 import unittest
 
@@ -27,6 +29,9 @@ class EngineStartStopTest(EngineTest):
                 project = loaded.config["project"]
                 services = project["app"]["services"].keys() if "services" in project["app"] else []
 
+                # Create src folder
+                os.makedirs(os.path.join(loaded.temp_dir, loaded.src), exist_ok=True)
+
                 # START
                 self.run_start_test(loaded.engine, project, services, loaded.engine_tester)
 
@@ -51,11 +56,7 @@ class EngineStartStopTest(EngineTest):
                 self.run_start_test(loaded.engine, project, services, loaded.engine_tester)
 
                 # Check response
-                (ip, port) = loaded.engine.address_for(project, "simple")
-                response = requests.get('http://' + ip + ':' + port)
-
-                self.assertEqual(200, response.status_code)
-                self.assertEqual(b'hello riptide\n', response.content)
+                self.assert_response(b'hello riptide\n', loaded.engine, project, "simple")
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, services, loaded.engine_tester)

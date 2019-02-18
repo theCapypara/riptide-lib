@@ -1,0 +1,5 @@
+service:
+  image: riptide_integration_test
+  port: 8080
+  environment:
+    TEST_ENV_KEY: TEST_ENV_VALUE

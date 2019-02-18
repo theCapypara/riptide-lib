@@ -1,6 +1,9 @@
 import asyncio
 
 import unittest
+
+import requests
+from typing import re, Union, AnyStr, Pattern
 from urllib import request
 
 
@@ -33,7 +36,8 @@ class EngineTest(unittest.TestCase):
                                          % (service['$name'], http_address)) from err
 
         # 4. Let engine tester check details
-        engine_tester.assert_running(project, services)
+        service_objects = [project["app"]["services"][name] for name in services]
+        engine_tester.assert_running(engine, project, service_objects)
 
     def assert_not_running(self, engine, project, services, engine_tester):
         for service in services:
@@ -43,7 +47,22 @@ class EngineTest(unittest.TestCase):
                               'After stopping a service it must not be resolvable to an ip address + port.')
 
         # 3. Let engine tester check details
-        engine_tester.assert_not_running(project, services)
+        service_objects = [project["app"]["services"][name] for name in services]
+        engine_tester.assert_not_running(engine, project, service_objects)
+
+    def assert_response(self, rsp_message: bytes, engine, project, service_name):
+        (ip, port) = engine.address_for(project, service_name)
+        response = requests.get('http://' + ip + ':' + port)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(rsp_message, response.content)
+
+    def assert_response_matches_regex(self, regex: Union[AnyStr, Pattern[AnyStr]], engine, project, service_name):
+        (ip, port) = engine.address_for(project, service_name)
+        response = requests.get('http://' + ip + ':' + port)
+
+        self.assertEqual(200, response.status_code)
+        self.assertRegexpMatches(response.content.decode('utf-8'), regex)
 
     async def _start_async_test(self, engine, project, services, engine_tester):
         """Start a project with the given services and run all assertions on it"""

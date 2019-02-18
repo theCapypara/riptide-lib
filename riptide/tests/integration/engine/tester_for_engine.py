@@ -11,6 +11,7 @@ Example:
         docker=riptide_engine_docker.tests.integration.tester:DockerEngineTester
 """
 import abc
+from typing import Tuple, Union
 
 
 class AbstractEngineTester(abc.ABC):
@@ -25,10 +26,26 @@ class AbstractEngineTester(abc.ABC):
             Equivalent to Docker cleanup
         """
 
-    def assert_running(self, project, services):
-        """TODO. Add description and make abstractmethod."""
+    @abc.abstractmethod
+    def assert_running(self, engine_obj, project, services):
+        """Check that the services are actually running"""
         pass
 
-    def assert_not_running(self, project, services):
-        """TODO. Add description and make abstractmethod."""
-        pass
+    @abc.abstractmethod
+    def assert_not_running(self, engine_obj, project, services):
+        """Check that the services are actually non present"""
+
+    @abc.abstractmethod
+    def get_permissions_at(self, path, engine_obj, project, service) -> Tuple[int, int, int]:
+        """
+        Returns for path the owner, group and octal mode as tuple.
+        Path is interpreted relative to container's current working directory
+        retuns: (ouid, ogid, mode)
+        """
+
+    @abc.abstractmethod
+    def get_env(self, env, engine_obj, project, service) -> Union[str, None]:
+        """
+        Returns the value of the environment variable env. MUST read directly via shell from container.
+        If the env variable is not set, must return None
+        """

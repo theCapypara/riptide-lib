@@ -24,9 +24,9 @@ class ProjectLoadResult(NamedTuple):
     engine_tester: AbstractEngineTester
     src: str
     # Temporary directory to store all files in, project is stored here
-    temp_dir: TemporaryDirectory
+    temp_dir: str
     # Temporary ~/.config/riptide-like directory
-    temp_system_dir: TemporaryDirectory
+    temp_system_dir: str
 
 
 def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator[ContextManager[ProjectLoadResult], None, None]:
@@ -69,7 +69,6 @@ def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator
                             with TemporaryDirectory() as project_directory:
                                 # Copy project file
                                 shutil.copy2(get_fixture_path('project' + os.sep + project_name), os.path.join(project_directory, 'riptide.yml'))
-                                os.chdir(project_directory)
 
                                 name = (caller_name + '--' + project_name + '--' + engine_name + '--' + src)
 
@@ -77,7 +76,9 @@ def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator
                                 def ctx_manager() -> ContextManager[ProjectLoadResult]:
                                     # replace dots with _, PyCharm seems to have parsing issues with .
                                     with testsuite.subTest(project=project_name.replace('.', '_'), src=src.replace('.', '_'), engine=engine_name):
+                                        old_dir = os.getcwd()
                                         try:
+                                            os.chdir(project_directory)
                                             # LOAD
                                             system_config = load_config(update_repositories=False)
                                             # Sanity assertions / first function checks
@@ -102,6 +103,7 @@ def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator
                                                 temp_system_dir=config_directory
                                             )
                                         finally:
+                                            os.chdir(old_dir)
                                             engine_tester.reset(engine)
 
                                 yield ctx_manager()
