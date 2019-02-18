@@ -71,11 +71,12 @@ def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator
                                 shutil.copy2(get_fixture_path('project' + os.sep + project_name), os.path.join(project_directory, 'riptide.yml'))
                                 os.chdir(project_directory)
 
-                                name = caller_name + '--' + project_name + '--' + engine_name + '--' + src
+                                name = (caller_name + '--' + project_name + '--' + engine_name + '--' + src)
 
                                 @contextmanager
                                 def ctx_manager() -> ContextManager[ProjectLoadResult]:
-                                    with testsuite.subTest(project=project_name, src=src, engine=engine_name):
+                                    # replace dots with _, PyCharm seems to have parsing issues with .
+                                    with testsuite.subTest(project=project_name.replace('.', '_'), src=src.replace('.', '_'), engine=engine_name):
                                         try:
                                             # LOAD
                                             system_config = load_config(update_repositories=False)

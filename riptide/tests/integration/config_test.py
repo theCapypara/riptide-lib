@@ -14,8 +14,6 @@ class ConfigTest(unittest.TestCase):
                                 ['integration_all.yml', 'integration_no_command.yml', 'integration_no_service.yml'],
                                 ['.', 'src']):
             with project_ctx as loaded:
-                self.assertEqual('test_load', loaded.config["project"]["name"],
-                                 'The loaded project must have the name of the test function')
                 self.assertEqual(loaded.src, loaded.config["project"]["src"],
                                  'The loaded project must have the src correctly set')
                 self.assertEqual(loaded.engine_name, loaded.config["engine"],
