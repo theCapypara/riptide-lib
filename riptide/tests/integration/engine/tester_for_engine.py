@@ -20,7 +20,7 @@ class AbstractEngineTester(abc.ABC):
         """
         For Docker:
             Stop and delete all created containers and created networks. May also clean images
-            Issue a warning by printing to the console, if containers needed to be cleaned up,
+            Raise a warning, if containers needed to be cleaned up,
             stating what needed to be done.
         For others:
             Equivalent to Docker cleanup
@@ -48,4 +48,10 @@ class AbstractEngineTester(abc.ABC):
         """
         Returns the value of the environment variable env. MUST read directly via shell from container.
         If the env variable is not set, must return None
+        """
+
+    @abc.abstractmethod
+    def get_file(self, file, engine, project, service) -> Union[str, None]:
+        """
+        Return the content of the file inside the container or None if file does not exist
         """

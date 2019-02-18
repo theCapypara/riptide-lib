@@ -62,7 +62,7 @@ class EngineTest(unittest.TestCase):
         response = requests.get('http://' + ip + ':' + port)
 
         self.assertEqual(200, response.status_code)
-        self.assertRegexpMatches(response.content.decode('utf-8'), regex)
+        self.assertRegex(response.content.decode('utf-8'), regex)
 
     async def _start_async_test(self, engine, project, services, engine_tester):
         """Start a project with the given services and run all assertions on it"""

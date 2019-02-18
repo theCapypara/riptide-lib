@@ -121,7 +121,7 @@ class ServiceTestCase(unittest.TestCase):
                     "to": "doesnt matter2"
                 }
             ]
-        }, path='PATH')
+        }, absolute_path='PATH')
 
         self.assertEqual([
             {
@@ -202,7 +202,7 @@ class ServiceTestCase(unittest.TestCase):
         }
 
         with self.assertRaises(ConfigcrunchError):
-            module.Service(doc, path='PATH')
+            module.Service(doc, absolute_path='PATH')
 
     def test_initialize_data_before_merge_illegal_config_from_os_sep(self):
         doc = {
@@ -213,7 +213,7 @@ class ServiceTestCase(unittest.TestCase):
         }
 
         with self.assertRaises(ConfigcrunchError):
-            module.Service(doc, path='PATH')
+            module.Service(doc, absolute_path='PATH')
 
     def test_initialize_data_after_merge_set_defaults(self):
         service = module.Service({}, dont_call_init_data=True)

@@ -93,3 +93,49 @@ class EngineServiceTest(EngineTest):
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, [service_name], loaded.engine_tester)
+
+    def test_configs(self):
+        for project_ctx in load(self,
+                                ['integration_all.yml'],
+                                ['.']):
+            with project_ctx as loaded:
+                engine = loaded.engine
+                project = loaded.config["project"]
+                service_name = "configs"
+                service = project["app"]["services"][service_name]
+
+                # START
+                self.run_start_test(loaded.engine, project, [service_name], loaded.engine_tester)
+
+                # Assert existing and content
+                self.assertEqual('no_variable_just_text', loaded.engine_tester.get_file('/config1', loaded.engine,
+                                                                                        project, service))
+
+                self.assertEqual(project["app"]["name"],  loaded.engine_tester.get_file('/config2', loaded.engine,
+                                                                                        project, service))
+
+                # Assert permissions
+                user1, group1, mode1 = loaded.engine_tester.get_permissions_at('/config1', loaded.engine,
+                                                                               project, service)
+
+                self.assertEqual(cpuser.getuid(), user1, 'The current user needs to own the config file')
+                self.assertEqual(cpuser.getgid(), group1, 'The current group needs to be the group of the config file')
+                self.assertTrue(bool(mode1 & stat.S_IRUSR), 'The config file must be readable by owner')
+                self.assertTrue(bool(mode1 & stat.S_IWUSR), 'The config file must be writable by owner')
+
+                user2, group2, mode2 = loaded.engine_tester.get_permissions_at('/config2', loaded.engine,
+                                                                               project, service)
+
+                self.assertEqual(cpuser.getuid(), user2, 'The current user needs to own the config file')
+                self.assertEqual(cpuser.getgid(), group2, 'The current group needs to be the group of the config file')
+                self.assertTrue(bool(mode2 & stat.S_IRUSR), 'The config file must be readable by owner')
+                self.assertTrue(bool(mode2 & stat.S_IWUSR), 'The config file must be writable by owner')
+
+                # Assert that files _riptide/config/NAME_WITH_DASHES have been created
+                self.assertTrue(os.path.isfile(os.path.join(loaded.temp_dir, '_riptide', 'processed_config',
+                                                            service_name,'configs-config1-txt')))
+                self.assertTrue(os.path.isfile(os.path.join(loaded.temp_dir, '_riptide', 'processed_config',
+                                                            service_name,'configs-config2-txt')))
+
+                # STOP
+                self.run_stop_test(loaded.engine, project, [service_name], loaded.engine_tester)

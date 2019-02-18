@@ -26,16 +26,17 @@ class Service(YamlConfigDocument):
             path: str = None,
             parent: 'YamlConfigDocument' = None,
             already_loaded_docs: List[str] = None,
-            dont_call_init_data= False
+            dont_call_init_data=False,
+            absolute_path=None
     ):
         self._db_driver = None
         self._loaded_port_mappings = None
-        super().__init__(document, path, parent, already_loaded_docs, dont_call_init_data)
+        super().__init__(document, path, parent, already_loaded_docs, dont_call_init_data, absolute_path)
 
     def _initialize_data_before_merge(self):
         """ Load the absolute path of the config documents specified in config[]["from"]"""
-        if self.path:
-            folder_of_self = os.path.dirname(self.path)
+        if self.absolute_path:
+            folder_of_self = os.path.dirname(self.absolute_path)
         else:
             try:
                 folder_of_self = self.get_project().folder()

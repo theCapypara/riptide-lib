@@ -11,6 +11,8 @@ app:
       $ref: service/integration_simple_with_src
     custom_command:
       $ref: service/integration_custom_command
+    configs:
+      $ref: service/integration_configs
     env:
       $ref: service/integration_env
   #commands:
