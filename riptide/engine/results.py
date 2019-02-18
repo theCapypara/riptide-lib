@@ -141,6 +141,11 @@ class MultiResultQueue(Generic[T]):
         # queue objects, so that when a get task finishes the queue that the task belongs to can be found
         self.pending_in_iteration = {}
         self.done_list = []
+
+        if len(self.dict_of_queues.keys()) == 0:
+            # Empty MultiResultQueue. End immediately
+            self.ended = True
+
         for queue in self.dict_of_queues.keys():
             task = asyncio.ensure_future(queue.get())
             self.pending_in_iteration[task] = queue

@@ -1,0 +1,3 @@
+service:
+  image: riptide_integration_test
+  port: 8080

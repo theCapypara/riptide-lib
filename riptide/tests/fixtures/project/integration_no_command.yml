@@ -1,0 +1,6 @@
+project:
+  name: integration_no_command
+  src: .  # is also replace by src in tests
+  app:
+    $ref: app/integration_app
+    commands: $remove

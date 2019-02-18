@@ -14,4 +14,21 @@ import abc
 
 
 class AbstractEngineTester(abc.ABC):
-    pass
+    @abc.abstractmethod
+    def reset(self, engine_obj):
+        """
+        For Docker:
+            Stop and delete all created containers and created networks. May also clean images
+            Issue a warning by printing to the console, if containers needed to be cleaned up,
+            stating what needed to be done.
+        For others:
+            Equivalent to Docker cleanup
+        """
+
+    def assert_running(self, project, services):
+        """TODO. Add description and make abstractmethod."""
+        pass
+
+    def assert_not_running(self, project, services):
+        """TODO. Add description and make abstractmethod."""
+        pass

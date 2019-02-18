@@ -14,8 +14,9 @@ class StartCtx:
         # Load the ports.json required for additional_ports
         PortsConfig.load()
         # Let all services run their before_start
-        for service in self.project["app"]["services"].values():
-            service.before_start()
+        if "services" in self.project["app"]:
+            for service in self.project["app"]["services"].values():
+                service.before_start()
 
     def __exit__(self, type, value, traceback):
         # Write the ports.json required for additional_ports

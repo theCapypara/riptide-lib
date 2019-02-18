@@ -1,0 +1,11 @@
+app:
+  name: integration_app
+  import:
+    import_test:
+      target: import_subdir/subdir2
+      name: import test
+  services:
+    simple:
+      $ref: service/integration_simple
+  #commands:
+    # todo

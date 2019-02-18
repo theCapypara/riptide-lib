@@ -1,21 +1,16 @@
-from typing import Generator
+from typing import Generator, Tuple
 
 import pkg_resources
 
 from riptide.engine.abstract import AbstractEngine
 from riptide.engine.loader import ENGINE_ENTRYPOINT_KEY
-from riptide.tests.integration.engine.dummy_engine.engine import DummyEngine
-from riptide.tests.integration.engine.dummy_engine.tester import DummyEngineTester
 from riptide.tests.integration.engine.tester_for_engine import AbstractEngineTester
 
 ENGINE_TESTER_ENTRYPOINT_KEY = 'riptide.engine.tests'
 
 
-def load_engines() -> Generator[None, (str, AbstractEngine, AbstractEngineTester), None]:
+def load_engines() -> Generator[Tuple[str, AbstractEngine, AbstractEngineTester], None, None]:
     """Generator that returns tuples of (name, engine, engine_tester)"""
-
-    # Yield Dummy engine + engine tester
-    yield ('dummy', DummyEngine(), DummyEngineTester())
 
     # Collect testers
     engine_testers = {
@@ -28,10 +23,11 @@ def load_engines() -> Generator[None, (str, AbstractEngine, AbstractEngineTester
         if engine_entry_point.name not in engine_testers:
             print("WARNING: No engine tester found for %s. Was not tested." % engine_entry_point.name)
             continue
-        if not isinstance(engine_testers[engine_entry_point.name], AbstractEngineTester):
+        if not issubclass(engine_testers[engine_entry_point.name], AbstractEngineTester):
             print("WARNING: Engine tester for %s was not instance of AbstractEngineTester. Was not tested." % engine_entry_point.name)
             continue
-        if not isinstance(engine_testers[engine_entry_point.name], AbstractEngineTester):
+        engine = engine_entry_point.load()
+        if not issubclass(engine, AbstractEngine):
             raise AssertionError("An engine must be an instance of AbstractEngine. %s was not." % engine_entry_point.name)
 
-        yield (engine_entry_point.name, engine_entry_point.load(), engine_testers[engine_entry_point.name])
+        yield (engine_entry_point.name, engine(), engine_testers[engine_entry_point.name]())

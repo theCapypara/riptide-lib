@@ -40,7 +40,7 @@ class Service(YamlConfigDocument):
             try:
                 folder_of_self = self.get_project().folder()
             except IndexError:
-                # Fallback: Assume pwd
+                # Fallback: Assume cwd
                 folder_of_self = os.getcwd()
 
         if "config" in self:

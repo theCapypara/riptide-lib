@@ -1,0 +1,6 @@
+project:
+  name: integration_no_service
+  src: .  # is also replace by src in tests
+  app:
+    $ref: app/integration_app
+    services: $remove

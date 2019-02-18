@@ -63,14 +63,17 @@ def patch_mock_db_driver(db_driver_get_path):
     return _DbDriverMock(db_driver_get_path)
 
 
+def get_fixture_paths():
+    return os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            'fixtures'
+        )
+    )
+
+
 def get_fixture_path(name):
     """
     Load a yaml fixture file, name relative to fixtures dir.
     """
-    return os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            'fixtures',
-            name
-        )
-    )
+    return os.path.join(get_fixture_paths(), name)
