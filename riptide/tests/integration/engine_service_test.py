@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 import stat
 
@@ -139,3 +140,51 @@ class EngineServiceTest(EngineTest):
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, [service_name], loaded.engine_tester)
+
+    def test_with_working_directory(self):
+        for project_ctx in load(self,
+                                ['integration_all.yml'],
+                                ['.', 'src']):
+            with project_ctx as loaded:
+                project = loaded.config["project"]
+                services = ["src_working_directory", "working_directory_absolute"]
+
+                # Put index.html into following folder:
+                # - <project>/workdir
+                # - <project>/src/workdir
+                index_file_in_src_workdir = b'hello src_workdir\n'
+                index_file_in_workdir = b'hello workdir\n'
+
+                os.makedirs(os.path.join(loaded.temp_dir, 'workdir'))
+                os.makedirs(os.path.join(loaded.temp_dir, 'src', 'workdir'))
+                with open(os.path.join(loaded.temp_dir, 'workdir', 'index.html'), 'wb') as f:
+                    f.write(index_file_in_workdir)
+                with open(os.path.join(loaded.temp_dir, 'src', 'workdir', 'index.html'), 'wb') as f:
+                    f.write(index_file_in_src_workdir)
+
+                # START
+                self.run_start_test(loaded.engine, project, services, loaded.engine_tester)
+
+                # Check response
+                for service_name in services:
+                    if service_name == 'src_working_directory':
+                        if loaded.src == '.':
+                            self.assert_response(index_file_in_workdir, loaded.engine, project, service_name)
+                        elif loaded.src == 'src':
+                            self.assert_response(index_file_in_src_workdir, loaded.engine, project, service_name)
+                        else:
+                            AssertionError('Error in test: Unexpected src')
+                    elif service_name == 'working_directory_absolute':
+                        # We didn't put an index.html at /a_folder, so we expect
+                        # a directory listing of the three files we put in the image
+                        self.assert_response_matches_regex(re.compile('<title>Index of /</title>.*'
+                                                                      '<a href="/file1">file1</a>.*'
+                                                                      '<a href="/file2">file2</a>.*'
+                                                                      '<a href="/file3">file3</a>'
+                                                           , re.MULTILINE | re.DOTALL),
+                                                           loaded.engine, project, service_name)
+                    else:
+                        AssertionError('Error in test: Unexpected service')
+
+                # STOP
+                self.run_stop_test(loaded.engine, project, services, loaded.engine_tester)

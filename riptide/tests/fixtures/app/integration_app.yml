@@ -15,5 +15,9 @@ app:
       $ref: service/integration_configs
     env:
       $ref: service/integration_env
+    src_working_directory:
+      $ref: service/integration_src_working_directory
+    working_directory_absolute:
+      $ref: service/integration_working_directory_absolute
   #commands:
     # todo

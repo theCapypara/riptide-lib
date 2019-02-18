@@ -1,0 +1,4 @@
+service:
+  image: riptide_integration_test
+  port: 8080
+  working_directory: /a_folder

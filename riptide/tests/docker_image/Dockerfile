@@ -6,6 +6,11 @@ RUN yarn global add http-server
 RUN mkdir -p /default_workdir && \
     echo "hello riptide" > /default_workdir/index.html && \
     chmod 777 /default_workdir -R
+# A random folder with some files in it for tests
+RUN mkdir -p /a_folder && \
+    touch /a_folder/file1 && \
+    touch /a_folder/file2 && \
+    touch /a_folder/file3
 WORKDIR /default_workdir
 # TODO Tests for engine-docker's handling of command / entrypoint
 CMD ["http-server", "--port", "8080"]
