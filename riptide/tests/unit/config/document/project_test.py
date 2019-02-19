@@ -20,11 +20,17 @@ class ProjectTestCase(unittest.TestCase):
         cmd = module.Project({})
         self.assertEqual(module.HEADER, cmd.header())
 
-    def test_validate_valid(self):
-        project = module.Project.from_yaml(get_fixture_path(
-            FIXTURE_BASE_PATH + 'valid.yml'
-        ))
-        self.assertTrue(project.validate())
+    def test_validate_valids(self):
+        valid_names = [
+            'valid.yml', 'integration_all.yml', 'integration_no_command.yml',
+            'integration_no_service.yml'
+        ]
+        for name in valid_names:
+            with self.subTest(name=name):
+                project = module.Project.from_yaml(get_fixture_path(
+                    FIXTURE_BASE_PATH + name
+                ))
+                self.assertTrue(project.validate())
 
     def test_validate_invalid_no_app(self):
         project = module.Project.from_yaml(get_fixture_path(

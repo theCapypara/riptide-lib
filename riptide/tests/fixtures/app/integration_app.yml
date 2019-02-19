@@ -19,5 +19,7 @@ app:
       $ref: service/integration_src_working_directory
     working_directory_absolute:
       $ref: service/integration_working_directory_absolute
+    additional_volumes:
+      $ref: service/integration_additional_volumes
   #commands:
     # todo

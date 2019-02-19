@@ -12,7 +12,8 @@ class EngineStartStopTest(EngineTest):
 
     def test_engine_loading(self):
         for project_ctx in load(self,
-                                ['integration_all.yml', 'integration_no_command.yml', 'integration_no_service.yml'],
+                                ['integration_all.yml', 'integration_some.yml',
+                                 'integration_no_command.yml', 'integration_no_service.yml'],
                                 ['.']):
             with project_ctx as loaded:
                 loaded_engine = riptide_engine_loader.load_engine(loaded.engine_name)

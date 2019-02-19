@@ -2,6 +2,7 @@ import os
 import unittest
 from unittest import mock
 
+from pathlib import PurePosixPath
 from unittest.mock import Mock, MagicMock, call
 
 from schema import SchemaError
@@ -24,7 +25,12 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual(module.HEADER, service.header())
 
     def test_validate_valids(self):
-        valid_names = ['valid_minimum.yml', 'valid_everything.yml']
+        valid_names = [
+            'valid_minimum.yml', 'valid_everything.yml', 'integration_additional_volumes.yml',
+            'integration_configs.yml', 'integration_custom_command.yml', 'integration_env.yml',
+            'integration_simple.yml', 'integration_simple_with_src.yml', 'integration_src_working_directory.yml',
+            'integration_working_directory_absolute.yml'
+        ]
         for name in valid_names:
             with self.subTest(name=name):
                 service = module.Service.from_yaml(get_fixture_path(
@@ -407,6 +413,11 @@ class ServiceTestCase(unittest.TestCase):
                     "mode": "rw"
                 },
                 {
+                    "host": "reltestc",
+                    "container": "reltest_container",
+                    "mode": "rw"
+                },
+                {
                     "host": "/absolute_with_ro",
                     "container": "/vol4",
                     "mode": "ro"
@@ -437,6 +448,7 @@ class ServiceTestCase(unittest.TestCase):
             os.path.join(os.sep + 'HOME', 'hometest'):      {'bind': '/vol1', 'mode': 'rw'},
             os.path.join(ProjectStub.FOLDER, './reltest1'): {'bind': '/vol2', 'mode': 'rw'},
             os.path.join(ProjectStub.FOLDER, 'reltest2'):   {'bind': '/vol3', 'mode': 'rw'},
+            os.path.join(ProjectStub.FOLDER, 'reltestc'):   {'bind': str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('reltest_container')), 'mode': 'rw'},
             '/absolute_with_ro':                            {'bind': '/vol4', 'mode': 'ro'},
             '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'}
         }
@@ -490,9 +502,6 @@ class ServiceTestCase(unittest.TestCase):
         ], any_order=True)
 
     def test_collect_volumes_no_src(self):
-        config1 = {'to': '/TO_1', 'from': '/FROM_1'}
-        config2 = {'to': '/TO_2', 'from': '/FROM_2'}
-        config3 = {'to': '/TO_2', 'from': '/FROM_3'}
         service = module.Service({"roles": ["something"]}, dont_call_init_data=True)
         expected = {}
 
@@ -505,9 +514,6 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("riptide.config.document.service.get_logging_path_for",
                 side_effect=lambda _, name: name + "~PROCESSED2")
     def test_collect_volumes_only_stdere(self, get_logging_path_for_mock: Mock, create_logging_path_mock: Mock):
-        config1 = {'to': '/TO_1', 'from': '/FROM_1'}
-        config2 = {'to': '/TO_2', 'from': '/FROM_2'}
-        config3 = {'to': '/TO_2', 'from': '/FROM_3'}
         service = module.Service(
             {"roles": ["something"], "logging": {"stderr": True}}, dont_call_init_data=True)
         expected = {

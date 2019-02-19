@@ -19,11 +19,14 @@ class AppTestCase(unittest.TestCase):
         app = module.App({})
         self.assertEqual(module.HEADER, app.header())
 
-    def test_validate_valid(self):
-        app = module.App.from_yaml(get_fixture_path(
-            FIXTURE_BASE_PATH + 'valid.yml'
-        ))
-        self.assertTrue(app.validate())
+    def test_validate_valids(self):
+        valid_names = ['valid.yml', 'integration_app.yml']
+        for name in valid_names:
+            with self.subTest(name=name):
+                app = module.App.from_yaml(get_fixture_path(
+                    FIXTURE_BASE_PATH + name
+                ))
+                self.assertTrue(app.validate())
 
     def test_validate_valid_with_some_optionals(self):
         app = module.App.from_yaml(get_fixture_path(

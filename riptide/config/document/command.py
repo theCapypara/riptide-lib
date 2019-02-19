@@ -1,4 +1,5 @@
 import os
+from pathlib import PurePosixPath
 
 from schema import Schema, Optional, Or
 
@@ -76,6 +77,10 @@ class Command(YamlConfigDocument):
                 # Relative paths
                 if not os.path.isabs(vol["host"]):
                     vol["host"] = os.path.join(project.folder(), vol["host"])
+
+                # relative container paths
+                if not PurePosixPath(vol["container"]).is_absolute():
+                    vol["container"] = str(PurePosixPath(CONTAINER_SRC_PATH).joinpath(vol["container"]))
 
                 mode = vol["mode"] if "mode" in vol else "rw"
                 volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}

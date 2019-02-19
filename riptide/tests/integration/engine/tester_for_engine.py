@@ -36,11 +36,16 @@ class AbstractEngineTester(abc.ABC):
         """Check that the services are actually non present"""
 
     @abc.abstractmethod
-    def get_permissions_at(self, path, engine_obj, project, service) -> Tuple[int, int, int]:
+    def get_permissions_at(self, path, engine_obj, project, service, write_check=True, is_directory=True, as_user=0) -> Tuple[int, int, int, bool]:
         """
         Returns for path the owner, group and octal mode as tuple.
+        if write_check and is_directory=True:
+            Also returns as a fourth item a real write check by trying to create the file
+            '__write_check' as user with id 'as_user' inside the path
+        if write_check and is_directory=False:
+            Also returns as a fourth item a real write check by trying to append a line to the file as user 'as_user'
         Path is interpreted relative to container's current working directory
-        retuns: (ouid, ogid, mode)
+        retuns: (ouid, ogid, mode, (write_check or false if parameter write_check=False))
         """
 
     @abc.abstractmethod
@@ -54,4 +59,17 @@ class AbstractEngineTester(abc.ABC):
     def get_file(self, file, engine, project, service) -> Union[str, None]:
         """
         Return the content of the file inside the container or None if file does not exist
+        """
+
+    @abc.abstractmethod
+    def assert_file_exists(self, file, engine, project, service, type='both'):
+        """
+        Assert that a file or directory at the given path exists
+        :type type: str file, dirctory or both
+        """
+
+    @abc.abstractmethod
+    def create_file(self, path, engine, project, service, as_user=0):
+        """
+        Try to create a file at the given path
         """

@@ -2,6 +2,8 @@ import os
 
 import unittest
 from unittest import mock
+
+from pathlib import PurePosixPath
 from unittest.mock import Mock, MagicMock
 
 from schema import SchemaError
@@ -33,6 +35,11 @@ class CommandTestCase(unittest.TestCase):
                 {
                     "host": "reltest2",
                     "container": "/vol3",
+                    "mode": "rw"
+                },
+                {
+                    "host": "reltestc",
+                    "container": "reltest_container",
                     "mode": "rw"
                 },
                 {
@@ -103,6 +110,11 @@ class CommandTestCase(unittest.TestCase):
                 },
                 {
                     "host": "NORMALIZED",
+                    "container": "reltest_container",
+                    "mode": "rw"
+                },
+                {
+                    "host": "NORMALIZED",
                     "container": "/vol4",
                     "mode": "ro"
                 },
@@ -112,7 +124,7 @@ class CommandTestCase(unittest.TestCase):
                 }
         ]
         cmd._initialize_data_after_variables()
-        self.assertEqual(5, normalize_mock.call_count, "cppath.normalize has to be called once for each volume")
+        self.assertEqual(6, normalize_mock.call_count, "cppath.normalize has to be called once for each volume")
         self.assertEqual(expected, cmd.doc['additional_volumes'])
 
     def test_get_project(self):
@@ -135,6 +147,7 @@ class CommandTestCase(unittest.TestCase):
             os.path.join(os.sep + 'HOME', 'hometest'):      {'bind': '/vol1', 'mode': 'rw'},
             os.path.join(ProjectStub.FOLDER, './reltest1'): {'bind': '/vol2', 'mode': 'rw'},
             os.path.join(ProjectStub.FOLDER, 'reltest2'):   {'bind': '/vol3', 'mode': 'rw'},
+            os.path.join(ProjectStub.FOLDER, 'reltestc'):   {'bind': str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('reltest_container')), 'mode': 'rw'},
             '/absolute_with_ro':                            {'bind': '/vol4', 'mode': 'ro'},
             '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'}
         }

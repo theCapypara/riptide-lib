@@ -232,6 +232,10 @@ class Service(YamlConfigDocument):
                 if not os.path.isabs(vol["host"]):
                     vol["host"] = os.path.join(project.folder(), vol["host"])
 
+                # relative container paths
+                if not PurePosixPath(vol["container"]).is_absolute():
+                    vol["container"] = str(PurePosixPath(CONTAINER_SRC_PATH).joinpath(vol["container"]))
+
                 mode = vol["mode"] if "mode" in vol else "rw"
                 volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}
                 # Create additional volumes as directories if they don't exist yet

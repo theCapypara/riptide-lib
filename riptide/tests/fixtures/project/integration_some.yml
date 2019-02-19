@@ -1,0 +1,15 @@
+project:
+  name: integration_some
+  src: .  # is also replace by src in tests
+  app:
+    name: some
+    services:
+      simple_with_src:
+        $ref: service/integration_simple_with_src
+      custom_command:
+        $ref: service/integration_custom_command
+        port: 8000
+        command: http-server -p 8000 -i false
+      something_else:
+        image: riptide_integration_test
+        port: 8080
