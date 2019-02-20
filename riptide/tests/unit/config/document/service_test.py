@@ -21,7 +21,7 @@ FIXTURE_BASE_PATH = 'service' + os.sep
 class ServiceTestCase(unittest.TestCase):
 
     def test_header(self):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         self.assertEqual(module.HEADER, service.header())
 
     def test_validate_valids(self):
@@ -36,6 +36,7 @@ class ServiceTestCase(unittest.TestCase):
                 service = module.Service.from_yaml(get_fixture_path(
                     FIXTURE_BASE_PATH + name
                 ))
+                service._initialize_data_after_merge()
                 self.assertTrue(service.validate())
 
     def test_validate_invalid_roles(self):
@@ -60,11 +61,11 @@ class ServiceTestCase(unittest.TestCase):
             service.validate()
 
     def test_validate_invalid_config(self):
-        service = module.Service.from_yaml(get_fixture_path(
-            FIXTURE_BASE_PATH + 'invalid_config.yml'
-        ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'to'"):
-            service.validate()
+        with self.assertRaises(ConfigcrunchError):
+            service = module.Service.from_yaml(get_fixture_path(
+                FIXTURE_BASE_PATH + 'invalid_config.yml'
+            ))
+            service._initialize_data_after_merge()
 
     def test_validate_invalid_additional_volumes(self):
         service = module.Service.from_yaml(get_fixture_path(
@@ -113,9 +114,9 @@ class ServiceTestCase(unittest.TestCase):
                                     "is available."):
             service.validate()
 
-    @mock.patch("os.path.dirname", return_value='DIRNAME')
-    def test_initialize_data_before_merge_has_path(self, dirname_mock: Mock):
-        # Tested via calling the constrcutor with dont_call_init_data=False (default)
+    @mock.patch("os.path.exists", side_effect=lambda path: path.startswith('FIRST~DIRNAME'))
+    @mock.patch("os.path.dirname", side_effect=lambda path: path + '~DIRNAME')
+    def test_init_data_after_merge_config_has_paths_found_at_first(self, dirname_mock: Mock, exists_mock: Mock):
         service = module.Service({
             "config": {
                 "one": {
@@ -127,24 +128,76 @@ class ServiceTestCase(unittest.TestCase):
                     "to": "doesnt matter2"
                 }
             }
-        }, absolute_path='PATH')
+        }, absolute_paths=['FIRST', 'SECOND'])
+        service._initialize_data_after_merge()
 
         self.assertEqual({
             "one": {
                 "from": "config1/path",
                 "to": "doesnt matter",
-                "$source": os.path.join("DIRNAME", "config1/path")
+                "$source": os.path.join("FIRST~DIRNAME", "config1/path")
             },
             "two": {
                 "from": "config2/path2/blub",
                 "to": "doesnt matter2",
-                "$source": os.path.join("DIRNAME", "config2/path2/blub")
+                "$source": os.path.join("FIRST~DIRNAME", "config2/path2/blub")
             }
         }, service['config'])
 
-        dirname_mock.assert_called_once_with('PATH')
+        dirname_mock.assert_has_calls([call('FIRST'), call('SECOND')])
 
-    def test_initialize_data_before_merge_has_project(self):
+    @mock.patch("os.path.exists", side_effect=lambda path: path.startswith('SECOND~DIRNAME'))
+    @mock.patch("os.path.dirname", side_effect=lambda path: path + '~DIRNAME')
+    def test_init_data_after_merge_config_has_paths_found_at_second(self, dirname_mock: Mock, exists_mock: Mock):
+        service = module.Service({
+            "config": {
+                "one": {
+                    "from": "config1/path",
+                    "to": "doesnt matter"
+                },
+                "two": {
+                    "from": "config2/path2/blub",
+                    "to": "doesnt matter2"
+                }
+            }
+        }, absolute_paths=['FIRST', 'SECOND'])
+        service._initialize_data_after_merge()
+
+        self.assertEqual({
+            "one": {
+                "from": "config1/path",
+                "to": "doesnt matter",
+                "$source": os.path.join("SECOND~DIRNAME", "config1/path")
+            },
+            "two": {
+                "from": "config2/path2/blub",
+                "to": "doesnt matter2",
+                "$source": os.path.join("SECOND~DIRNAME", "config2/path2/blub")
+            }
+        }, service['config'])
+
+        dirname_mock.assert_has_calls([call('FIRST'), call('SECOND')])
+
+    @mock.patch("os.path.exists", return_value=False)
+    @mock.patch("os.path.dirname", side_effect=lambda path: path + '~DIRNAME')
+    def test_init_data_after_merge_config_has_paths_not_found(self, dirname_mock: Mock, exist_mock: Mock):
+        service = module.Service({
+            "config": {
+                "one": {
+                    "from": "config1/path",
+                    "to": "doesnt matter"
+                },
+                "two": {
+                    "from": "config2/path2/blub",
+                    "to": "doesnt matter2"
+                }
+            }
+        }, absolute_paths=['FIRST', 'SECOND'])
+        with self.assertRaisesRegex(ConfigcrunchError, "This propably happens because one of your services"):
+            service._initialize_data_after_merge()
+
+    @mock.patch("os.path.exists", return_value=True)
+    def test_init_data_after_merge_config_has_project(self, exist_mock: Mock):
         service = module.Service({
             "config": {
                 "one": {
@@ -157,6 +210,7 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         }, parent=ProjectStub({}, set_parent_to_self=True))
+        service._initialize_data_after_merge()
 
         self.assertEqual({
             "one": {
@@ -171,7 +225,13 @@ class ServiceTestCase(unittest.TestCase):
             }
         }, service['config'])
 
-    def test_initialize_data_before_merge_has_no_path_no_project(self):
+        exist_mock.assert_has_calls([
+            call(os.path.join(ProjectStub.FOLDER, "config1/path")),
+            call(os.path.join(ProjectStub.FOLDER, "config2/path2/blub"))
+        ])
+
+    @mock.patch("os.path.exists", return_value=True)
+    def test_init_data_after_merge_config_has_no_path_no_project(self, exist_mock: Mock):
         service = module.Service({
             "config": {
                 "one": {
@@ -184,6 +244,7 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         })
+        service._initialize_data_after_merge()
 
         # Fallback is os.getcwd()
         self.assertEqual({
@@ -199,7 +260,12 @@ class ServiceTestCase(unittest.TestCase):
             }
         }, service['config'])
 
-    def test_initialize_data_before_merge_illegal_config_from_dot(self):
+        exist_mock.assert_has_calls([
+            call(os.path.join(os.getcwd(), "config1/path")),
+            call(os.path.join(os.getcwd(), "config2/path2/blub"))
+        ])
+
+    def test_init_data_after_merge_config_illegal_config_from_dot(self):
         doc = {
             "config": {"one": {
                 "from": ".PATH",
@@ -207,10 +273,11 @@ class ServiceTestCase(unittest.TestCase):
             }}
         }
 
+        service = module.Service(doc, absolute_paths=['PATH'])
         with self.assertRaises(ConfigcrunchError):
-            module.Service(doc, absolute_path='PATH')
+            service._initialize_data_after_merge()
 
-    def test_initialize_data_before_merge_illegal_config_from_os_sep(self):
+    def test_init_data_after_merge_config_illegal_config_from_os_sep(self):
         doc = {
             "config": {"one": {
                 "from": os.sep + "PATH",
@@ -218,11 +285,12 @@ class ServiceTestCase(unittest.TestCase):
             }}
         }
 
+        service =module.Service(doc, absolute_paths=['PATH'])
         with self.assertRaises(ConfigcrunchError):
-            module.Service(doc, absolute_path='PATH')
+            service._initialize_data_after_merge()
 
     def test_initialize_data_after_merge_set_defaults(self):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         service._initialize_data_after_merge()
         self.assertEqual({
             "run_as_root": False,
@@ -239,7 +307,7 @@ class ServiceTestCase(unittest.TestCase):
             "pre_start": 'SET',
             "post_start": 'SET',
             "roles": 'SET'
-        }, dont_call_init_data=True)
+        })
         service._initialize_data_after_merge()
         self.assertEqual({
             "run_as_root": 'SET',
@@ -254,7 +322,7 @@ class ServiceTestCase(unittest.TestCase):
             "roles": ["db"],
             "additional_ports": {"one": 1, "two": 2, "three": 3}
         }
-        service = module.Service(doc, dont_call_init_data=True)
+        service = module.Service(doc)
         with patch_mock_db_driver(
                 'riptide.config.document.service.db_driver_for_service.get'
         ) as (get, driver):
@@ -285,7 +353,7 @@ class ServiceTestCase(unittest.TestCase):
                     "from": "/from",
                 }
             }
-        }, dont_call_init_data=True)
+        })
         expected = {
             "additional_volumes": {
                 "one": {
@@ -332,7 +400,7 @@ class ServiceTestCase(unittest.TestCase):
                     "host_start": 4
                 },
             }
-        }, dont_call_init_data=True, parent=project_stub)
+        }, parent=project_stub)
 
         service.before_start()
 
@@ -349,13 +417,13 @@ class ServiceTestCase(unittest.TestCase):
         ], any_order=True)
 
     def test_get_project(self):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         project = ProjectStub({}, set_parent_to_self=True)
         service.parent_doc = project
         self.assertEqual(project, service.get_project())
 
     def test_get_project_no_parent(self):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         with self.assertRaises(IndexError):
             service.get_project()
 
@@ -426,7 +494,7 @@ class ServiceTestCase(unittest.TestCase):
                     "container": "/vol5"
                 }
             }
-        }, dont_call_init_data=True)
+        })
         expected = {
             # SRC
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
@@ -501,7 +569,7 @@ class ServiceTestCase(unittest.TestCase):
         ], any_order=True)
 
     def test_collect_volumes_no_src(self):
-        service = module.Service({"roles": ["something"]}, dont_call_init_data=True)
+        service = module.Service({"roles": ["something"]})
         expected = {}
 
         service.parent_doc = ProjectStub({}, set_parent_to_self=True)
@@ -514,7 +582,7 @@ class ServiceTestCase(unittest.TestCase):
                 side_effect=lambda _, name: name + "~PROCESSED2")
     def test_collect_volumes_only_stdere(self, get_logging_path_for_mock: Mock, create_logging_path_mock: Mock):
         service = module.Service(
-            {"roles": ["something"], "logging": {"stderr": True}}, dont_call_init_data=True)
+            {"roles": ["something"], "logging": {"stderr": True}})
         expected = {
             'stderr~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDERR, 'mode': 'rw'}
         }
@@ -533,7 +601,7 @@ class ServiceTestCase(unittest.TestCase):
                     "key1": "value1",
                     "key2": "value2"
                 }
-         }, dont_call_init_data=True)
+         })
 
         with patch_mock_db_driver(
                 'riptide.config.document.service.db_driver_for_service.get'
@@ -548,7 +616,7 @@ class ServiceTestCase(unittest.TestCase):
         }, service.collect_environment())
 
     def test_collect_ports(self):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
 
         service._loaded_port_mappings = [1, 3, 4]
 
@@ -558,45 +626,38 @@ class ServiceTestCase(unittest.TestCase):
                 side_effect=lambda name: name + '~PROCESSED')
     def test_volume_path(self, get_project_meta_folder_mock: Mock):
         service = module.Service({'$name': 'TEST'},
-                                 dont_call_init_data=True,
                                  parent=ProjectStub({}, set_parent_to_self=True))
 
         self.assertEqual(os.path.join(ProjectStub.FOLDER + '~PROCESSED', 'data', 'TEST'),
                          service.volume_path())
 
     def test_get_working_directory_no_wd_set_and_src_set(self):
-        service = module.Service({'roles': ['src']},
-                                 dont_call_init_data=True)
+        service = module.Service({'roles': ['src']})
 
         self.assertEqual(CONTAINER_SRC_PATH, service.get_working_directory())
 
     def test_get_working_directory_relative_wd_set_and_src_set(self):
-        service = module.Service({'working_directory': 'relative_path/in/test', 'roles': ['src']},
-                                 dont_call_init_data=True)
+        service = module.Service({'working_directory': 'relative_path/in/test', 'roles': ['src']})
 
         self.assertEqual(CONTAINER_SRC_PATH + '/relative_path/in/test', service.get_working_directory())
 
     def test_get_working_directory_absolute_wd_set_and_src_set(self):
-        service = module.Service({'working_directory': '/path/in/test', 'roles': ['?']},
-                                 dont_call_init_data=True)
+        service = module.Service({'working_directory': '/path/in/test', 'roles': ['?']})
 
         self.assertEqual('/path/in/test', service.get_working_directory())
 
     def test_get_working_directory_no_wd_set_and_src_not_set(self):
-        service = module.Service({'roles': ['?']},
-                                 dont_call_init_data=True)
+        service = module.Service({'roles': ['?']})
 
         self.assertEqual(None, service.get_working_directory())
 
     def test_get_working_directory_relative_wd_set_and_src_not_set(self):
-        service = module.Service({'working_directory': 'relative_path/in/test', 'roles': ['?']},
-                                 dont_call_init_data=True)
+        service = module.Service({'working_directory': 'relative_path/in/test', 'roles': ['?']})
 
         self.assertEqual(None, service.get_working_directory())
 
     def test_get_working_directory_absolute_wd_set_and_src_not_set(self):
-        service = module.Service({'working_directory': '/path/in/test', 'roles': ['?']},
-                                 dont_call_init_data=True)
+        service = module.Service({'working_directory': '/path/in/test', 'roles': ['?']})
 
         self.assertEqual('/path/in/test', service.get_working_directory())
 
@@ -605,7 +666,7 @@ class ServiceTestCase(unittest.TestCase):
         project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
         app = YamlConfigDocumentStub({}, parent=project)
         service = module.Service({'$name': 'TEST-SERVICE', 'roles': ['?']},
-                                 dont_call_init_data=True, parent=app)
+                                 parent=app)
 
         self.assertEqual('TEST-PROJECT__TEST-SERVICE.TEST-URL', service.domain())
 
@@ -614,28 +675,28 @@ class ServiceTestCase(unittest.TestCase):
         project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
         app = YamlConfigDocumentStub({}, parent=project)
         service = module.Service({'$name': 'TEST-SERVICE', 'roles': ['main']},
-                                 dont_call_init_data=True, parent=app)
+                                 parent=app)
 
         self.assertEqual('TEST-PROJECT.TEST-URL', service.domain())
 
     @mock.patch("riptide.config.document.service.getuid", return_value=1234)
     def test_os_user(self, getuid_mock: Mock):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         self.assertEqual("1234", service.os_user())
         getuid_mock.assert_called_once()
 
     @mock.patch("riptide.config.document.service.getgid", return_value=1234)
     def test_os_group(self, getgid_mock: Mock):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         self.assertEqual("1234", service.os_group())
         getgid_mock.assert_called_once()
 
     def test_host_address(self):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         self.assertEqual(RIPTIDE_HOST_HOSTNAME, service.host_address())
 
     def test_home_path(self):
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
         self.assertEqual(CONTAINER_HOME_PATH, service.home_path())
 
     @mock.patch("os.path.dirname", return_value='CALLED DIRNAME')
@@ -647,7 +708,7 @@ class ServiceTestCase(unittest.TestCase):
                                         get_config_file_path_mock: Mock, exists_mock: Mock,
                                         makedirs_mock: Mock, open_mock: Mock, dirname_mock: Mock):
 
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
 
         self.assertEqual('CALLED', service.config('FROM'))
         get_config_file_path_mock.assert_called_once_with('FROM', service)
@@ -671,7 +732,7 @@ class ServiceTestCase(unittest.TestCase):
                                         get_config_file_path_mock: Mock, exists_mock: Mock,
                                         makedirs_mock: Mock,):
 
-        service = module.Service({}, dont_call_init_data=True)
+        service = module.Service({})
 
         self.assertEqual('CALLED', service.config('FROM'))
         get_config_file_path_mock.assert_called_once_with('FROM', service)

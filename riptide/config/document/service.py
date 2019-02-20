@@ -26,30 +26,11 @@ class Service(YamlConfigDocument):
             path: str = None,
             parent: 'YamlConfigDocument' = None,
             already_loaded_docs: List[str] = None,
-            dont_call_init_data=False,
-            absolute_path=None
+            absolute_paths=None
     ):
         self._db_driver = None
         self._loaded_port_mappings = None
-        super().__init__(document, path, parent, already_loaded_docs, dont_call_init_data, absolute_path)
-
-    def _initialize_data_before_merge(self):
-        """ Load the absolute path of the config documents specified in config[]["from"]"""
-        if self.absolute_path:
-            folder_of_self = os.path.dirname(self.absolute_path)
-        else:
-            try:
-                folder_of_self = self.get_project().folder()
-            except IndexError:
-                # Fallback: Assume cwd
-                folder_of_self = os.getcwd()
-
-        if "config" in self and isinstance(self["config"], dict):
-            for config in self["config"].values():
-                # TODO: Currently doesn't allow . or os.sep at the beginning for security reasons.
-                if config["from"].startswith(".") or config["from"].startswith(os.sep):
-                    raise ConfigcrunchError("Config 'from' items in services may not start with . or %s." % os.sep)
-                config["$source"] = os.path.join(folder_of_self, config["from"])
+        super().__init__(document, path, parent, already_loaded_docs, absolute_paths)
 
     def _initialize_data_after_merge(self):
         if "run_as_root" not in self:
@@ -75,6 +56,37 @@ class Service(YamlConfigDocument):
                 db_ports = self._db_driver.collect_additional_ports()
                 self["additional_ports"] = db_ports.copy()
                 self["additional_ports"].update(my_original_ports)
+
+        # Load the absolute path of the config documents specified in config[]["from"]
+        if self.absolute_paths:
+            folders_to_search = [os.path.dirname(path) for path in self.absolute_paths]
+        else:
+            try:
+                folders_to_search = [self.get_project().folder()]
+            except IndexError:
+                # Fallback: Assume cwd
+                folders_to_search = [os.getcwd()]
+
+        if "config" in self and isinstance(self["config"], dict):
+            for config in self["config"].values():
+                # TODO: Currently doesn't allow . or os.sep at the beginning for security reasons.
+                if config["from"].startswith(".") or config["from"].startswith(os.sep):
+                    raise ConfigcrunchError("Config 'from' items in services may not start with . or %s." % os.sep)
+
+                config["$source"] = None
+                for folder in folders_to_search:
+                    path_to_config = os.path.join(folder, config["from"])
+                    if os.path.exists(path_to_config):
+                        config["$source"] = path_to_config
+                        break
+                if config["$source"] is None:
+                    # Did not find the file at any of the possible places
+                    raise ConfigcrunchError(
+                        "Configuration file '%s' in service at '%s' does not exist or is not a file. "
+                        "This propably happens because one of your services has an invalid setting for the 'config' entries. "
+                        "Based on how the configuration was merged, the following places were searched: %s"
+                        % (config["from"], self.absolute_paths[0] if self.absolute_paths else '???', str(folders_to_search))
+                    )
 
     def _initialize_data_after_variables(self):
         # Normalize all host-paths to only use the system-type directory separator

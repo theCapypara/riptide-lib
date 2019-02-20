@@ -45,7 +45,7 @@ def status_for(project: Project, engine: AbstractEngine, system_config: Config) 
             # Collect Additional Ports
             additional_ports = []
             if "additional_ports" in service:
-                for entry in service["additional_ports"]:
+                for entry in service["additional_ports"].values():
                     port_host = get_existing_port_mapping(project, service, entry["host_start"])
                     if port_host:
                         additional_ports.append(AdditionalPortsEntry(

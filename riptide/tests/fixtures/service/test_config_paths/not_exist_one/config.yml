@@ -1,0 +1,7 @@
+service:
+  $ref: ../two/config
+  image: hello/world:blubbel
+  config:
+    test:
+      from: config.txt
+      to: doesnotmatter

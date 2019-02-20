@@ -23,10 +23,10 @@ service:
     C_D_E: "123"
   config:
     one:
-      from: a
+      from: configs/config1.txt
       to: b
     two:
-      from: here
+      from: configs/config2.txt
       to: there
   run_as_root: false
   dont_create_user: no
