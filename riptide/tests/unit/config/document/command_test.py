@@ -157,6 +157,23 @@ class CommandTestCase(unittest.TestCase):
         # First command had ~ in it:
         expanduser_mock.assert_called_once_with('~')
 
+    @mock.patch("os.get_terminal_size", return_value=(10,20))
+    @mock.patch("os.environ.copy", return_value={'ENV': 'VALUE1', 'FROM_ENV': 'has to be overridden'})
+    def test_collect_environment(self, *args, **kwargs):
+        cmd = module.Command({
+            'environment': {
+                'FROM_ENV': 'FROM_ENV'
+            }
+        })
+        expected = {
+            'ENV': 'VALUE1',
+            'FROM_ENV': 'FROM_ENV',
+            'COLUMNS': '10',
+            'LINES': '20'
+        }
+
+        self.assertEqual(expected, cmd.collect_environment())
+
     def test_resolve_alias_nothing_to_alias(self):
         cmd = module.Command({})
         self.assertEqual(cmd, cmd.resolve_alias())

@@ -33,7 +33,8 @@ class Command(YamlConfigDocument):
                         'container': str,
                         Optional('mode'): str  # default: rw - can be rw/ro.
                     }
-                ]
+                ],
+                Optional('environment'): {str: str}
             }, {
                 Optional('$ref'): str,  # reference to other Service documents
                 Optional('$name'): str,  # Added by system during processing parent app.
@@ -101,12 +102,26 @@ class Command(YamlConfigDocument):
         The passed environment is simple all of the riptide's process environment,
         minus some important meta-variables such as USERNAME and PATH.
         Adds HOME to be /home_cmd.
+        Also collects all environment variables defined in command
+        and sets LINES and COLUMNS based on terminal size
         :return:
         """
         env = os.environ.copy()
         keys_to_remove = {"PATH", "PS1", "USERNAME", "PWD", "SHELL", "HOME"}.intersection(set(env.keys()))
         for key in keys_to_remove:
             del env[key]
+
+        if "environment" in self:
+            for key, value in self['environment'].items():
+                env[key] = value
+
+        try:
+            cols, lines = os.get_terminal_size()
+            env['COLUMNS'] = str(cols)
+            env['LINES'] = str(lines)
+        except OSError:
+            pass
+
         return env
 
     @variable_helper

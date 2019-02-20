@@ -37,6 +37,10 @@ class ResultError(EndResultQueue):
         return stri
 
 
+class ResultPoisoned(InterruptedError, ResultError):
+    pass
+
+
 T = TypeVar('T')
 
 
@@ -53,25 +57,45 @@ class ResultQueue(Generic[T]):
         Asynchronously (asyncio).
         Can be read by (async.) iterating over it or by using get().
 
+    All ResultQueues can be poisoned by calling position(). After calling this
+    class mehtod reading and writing for all existing and future queues will cause
+    an ResultPoisoned to be raised.
+    This is meant for system shutdowns operations.
+
     Queue can be ended with an error (ResultError), which will be raised when reading over it.
     """
+    __opened_instances = []
+
+    poisoned = False
+
     def __init__(self):
         self.queue = janus.Queue()
         self.was_ended_put = False
         self.was_ended_get = False
+        self.__class__.__opened_instances.append(self)
 
     def put(self, obj):
         if self.was_ended_put:
             raise EOFError("ResultQueue was already ended.")
+        if self.__class__.poisoned:
+            raise ResultPoisoned("Process was interrupted.")
+
         self.queue.sync_q.put(obj)
 
     def end(self):
         self.was_ended_put = True
         self.queue.sync_q.put(EndResultQueue())
+        self.__class__.__opened_instances.remove(self)
 
     def end_with_error(self, error: ResultError):
         self.was_ended_put = True
         self.queue.sync_q.put(error)
+
+    @classmethod
+    def poison(cls):
+        cls.poisoned = True
+        for instance in cls.__opened_instances:
+            instance.end_with_error(ResultPoisoned("Process was interrupted."))
 
     async def get(self):
         """
@@ -83,6 +107,8 @@ class ResultQueue(Generic[T]):
         """
         if self.was_ended_get:
             raise EOFError("ResultQueue was already ended.")
+        if self.__class__.poisoned:
+            raise ResultPoisoned("Process was interrupted.")
         top = await self.queue.async_q.get()
         if isinstance(top, EndResultQueue):
             self.was_ended_get = True

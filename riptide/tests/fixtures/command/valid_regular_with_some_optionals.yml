@@ -4,3 +4,5 @@ command:
   additional_volumes:
     - host: host
       container: container
+  environment:
+    env: value
