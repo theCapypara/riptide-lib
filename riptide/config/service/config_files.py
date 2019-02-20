@@ -6,7 +6,7 @@ from riptide.config.files import get_project_meta_folder, remove_all_special_cha
 FOLDER_FOR_PROCESSED_CONFIG = 'processed_config'
 
 
-def process_config(config, service):
+def process_config(config_name, config, service):
     """
     Processes the config file for the given project.
     Since project files can contain Jinja2 templating, variables are first resolved using configcrunch.
@@ -20,7 +20,7 @@ def process_config(config, service):
             % (config["$source"], config["from"], service["$name"])
         )
 
-    target_file = get_config_file_path(config["from"], service)
+    target_file = get_config_file_path(config_name, service)
 
     with open(config["$source"], 'r') as stream:
         processed_file = service.process_vars_for(stream.read())
@@ -36,7 +36,7 @@ def process_config(config, service):
     return target_file
 
 
-def get_config_file_path(config_from, service):
+def get_config_file_path(config_name, service):
     project = service.get_project()
     processed_config_folder = os.path.join(
         get_project_meta_folder(project.folder()),
@@ -45,7 +45,7 @@ def get_config_file_path(config_from, service):
     )
     target_file = os.path.join(
         processed_config_folder,
-        remove_all_special_chars(config_from)
+        remove_all_special_chars(config_name)
     )
 
     return target_file

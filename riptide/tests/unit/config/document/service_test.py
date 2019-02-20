@@ -117,94 +117,94 @@ class ServiceTestCase(unittest.TestCase):
     def test_initialize_data_before_merge_has_path(self, dirname_mock: Mock):
         # Tested via calling the constrcutor with dont_call_init_data=False (default)
         service = module.Service({
-            "config": [
-                {
+            "config": {
+                "one": {
                     "from": "config1/path",
                     "to": "doesnt matter"
                 },
-                {
+                "two": {
                     "from": "config2/path2/blub",
                     "to": "doesnt matter2"
                 }
-            ]
+            }
         }, absolute_path='PATH')
 
-        self.assertEqual([
-            {
+        self.assertEqual({
+            "one": {
                 "from": "config1/path",
                 "to": "doesnt matter",
                 "$source": os.path.join("DIRNAME", "config1/path")
             },
-            {
+            "two": {
                 "from": "config2/path2/blub",
                 "to": "doesnt matter2",
                 "$source": os.path.join("DIRNAME", "config2/path2/blub")
             }
-        ], service['config'])
+        }, service['config'])
 
         dirname_mock.assert_called_once_with('PATH')
 
     def test_initialize_data_before_merge_has_project(self):
         service = module.Service({
-            "config": [
-                {
+            "config": {
+                "one": {
                     "from": "config1/path",
                     "to": "doesnt matter"
                 },
-                {
+                "two": {
                     "from": "config2/path2/blub",
                     "to": "doesnt matter2"
                 }
-            ]
+            }
         }, parent=ProjectStub({}, set_parent_to_self=True))
 
-        self.assertEqual([
-            {
+        self.assertEqual({
+            "one": {
                 "from": "config1/path",
                 "to": "doesnt matter",
                 "$source": os.path.join(ProjectStub.FOLDER, "config1/path")
             },
-            {
+            "two": {
                 "from": "config2/path2/blub",
                 "to": "doesnt matter2",
                 "$source": os.path.join(ProjectStub.FOLDER, "config2/path2/blub")
             }
-        ], service['config'])
+        }, service['config'])
 
     def test_initialize_data_before_merge_has_no_path_no_project(self):
         service = module.Service({
-            "config": [
-                {
+            "config": {
+                "one": {
                     "from": "config1/path",
                     "to": "doesnt matter"
                 },
-                {
+                "two": {
                     "from": "config2/path2/blub",
                     "to": "doesnt matter2"
                 }
-            ]
+            }
         })
 
         # Fallback is os.getcwd()
-        self.assertEqual([
-            {
+        self.assertEqual({
+            "one": {
                 "from": "config1/path",
                 "to": "doesnt matter",
                 "$source": os.path.join(os.getcwd(), "config1/path")
             },
-            {
+            "two": {
                 "from": "config2/path2/blub",
                 "to": "doesnt matter2",
                 "$source": os.path.join(os.getcwd(), "config2/path2/blub")
             }
-        ], service['config'])
+        }, service['config'])
 
     def test_initialize_data_before_merge_illegal_config_from_dot(self):
         doc = {
-            "config": [{
+            "config": {"one": {
                 "from": ".PATH",
                 "to": "doesnt matter"
-            }]
+            }}
         }
 
         with self.assertRaises(ConfigcrunchError):
@@ -212,10 +212,10 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_initialize_data_before_merge_illegal_config_from_os_sep(self):
         doc = {
-            "config": [{
+            "config": {"one": {
                 "from": os.sep + "PATH",
                 "to": "doesnt matter"
-            }]
+            }}
         }
 
         with self.assertRaises(ConfigcrunchError):
@@ -229,8 +229,7 @@ class ServiceTestCase(unittest.TestCase):
             "dont_create_user": False,
             "pre_start": [],
             "post_start": [],
-            "roles": [],
-            "additional_ports": []
+            "roles": []
         }, service.doc)
 
     def test_initialize_data_after_merge_values_already_set(self):
@@ -239,8 +238,7 @@ class ServiceTestCase(unittest.TestCase):
             "dont_create_user": 'SET',
             "pre_start": 'SET',
             "post_start": 'SET',
-            "roles": 'SET',
-            "additional_ports": 'SET'
+            "roles": 'SET'
         }, dont_call_init_data=True)
         service._initialize_data_after_merge()
         self.assertEqual({
@@ -248,67 +246,66 @@ class ServiceTestCase(unittest.TestCase):
             "dont_create_user": 'SET',
             "pre_start": 'SET',
             "post_start": 'SET',
-            "roles": 'SET',
-            "additional_ports": 'SET'
+            "roles": 'SET'
         }, service.doc)
 
     def test_initialize_data_after_merge_db_driver_setup(self):
         doc = {
             "roles": ["db"],
-            "additional_ports": [1, 2, 3]
+            "additional_ports": {"one": 1, "two": 2, "three": 3}
         }
         service = module.Service(doc, dont_call_init_data=True)
         with patch_mock_db_driver(
                 'riptide.config.document.service.db_driver_for_service.get'
         ) as (get, driver):
-            driver.collect_additional_ports = MagicMock(return_value=[4, 5, 6])
+            driver.collect_additional_ports = MagicMock(return_value={"four": 4, "five": 5, "three": 6})
             service._initialize_data_after_merge()
             get.assert_called_once_with(service)
-            self.assertEqual([1, 2, 3, 4, 5, 6], service.doc["additional_ports"])
+            self.assertEqual({"one": 1, "two": 2, "four": 4, "five": 5, "three": 3}, service.doc["additional_ports"])
 
     @mock.patch('riptide.config.document.service.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):
         service = module.Service({
-            "additional_volumes": [
-                {
+            "additional_volumes": {
+                "one": {
                     "host": "TEST1",
                 },
-                {
+                "two": {
                     "host": "TEST2",
                     "mode": "rw"
                 }
-            ],
-            "config": [
-                {
+            },
+            "config": {
+                "three": {
                     "$source": "TEST3"
                 },
-                {
+                "four": {
                     "$source": "TEST4",
                     "to": "/to",
                     "from": "/from",
                 }
-            ]
+            }
         }, dont_call_init_data=True)
         expected = {
-            "additional_volumes": [
-                {
+            "additional_volumes": {
+                "one": {
                     "host": "NORMALIZED",
                 },
-                {
+                "two": {
                     "host": "NORMALIZED",
                     "mode": "rw"
                 }
-            ],
-            "config": [
-                {
+           },
+            "config": {
+                "three": {
                     "$source": "NORMALIZED"
                 },
-                {
+                "four": {
                     "$source": "NORMALIZED",
                     "to": "/to",
                     "from": "/from",
                 }
-            ]
+            }
         }
         service._initialize_data_after_variables()
         self.assertEqual(4, normalize_mock.call_count,
@@ -321,20 +318,20 @@ class ServiceTestCase(unittest.TestCase):
     def test_before_start(self, get_additional_port_mock: Mock):
         project_stub = ProjectStub({}, set_parent_to_self=True)
         service = module.Service({
-            "additional_ports": [
-                {
+            "additional_ports": {
+                "one": {
                     "container": 1,
                     "host_start": 2
                 },
-                {
+                "two": {
                     "container": 2,
                     "host_start": 3
                 },
-                {
+                "three": {
                     "container": 3,
                     "host_start": 4
                 },
-            ]
+            }
         }, dont_call_init_data=True, parent=project_stub)
 
         service.before_start()
@@ -369,7 +366,7 @@ class ServiceTestCase(unittest.TestCase):
                 side_effect=lambda _, name: name + "~PROCESSED2")
     @mock.patch("os.makedirs")
     @mock.patch("riptide.config.document.service.process_config",
-                side_effect=lambda config, _: config["from"] + "~PROCESSED")
+                side_effect=lambda config_name, config, _: config_name + "~" + config["from"] + "~PROCESSED")
     @mock.patch("os.path.expanduser", return_value=os.sep + 'HOME')
     def test_collect_volumes(self,
                              expanduser_mock: Mock, process_config_mock: Mock, makedirs_mock: Mock,
@@ -381,9 +378,11 @@ class ServiceTestCase(unittest.TestCase):
         config3 = {'to': '/TO_3', 'from': '/FROM_3'}
         service = module.Service({
             "roles": ["src"],
-            "config": [
-                config1, config2, config3
-            ],
+            "config": {
+                "config1": config1,
+                "config2": config2,
+                "config3": config3
+            },
             "logging": {
                 "stdout": True,
                 "stderr": True,
@@ -396,45 +395,45 @@ class ServiceTestCase(unittest.TestCase):
                     "four": "not used here"
                 }
             },
-            "additional_volumes": [
-                {
+            "additional_volumes": {
+                "one": {
                     "host": "~/hometest",
                     "container": "/vol1",
                     "mode": "rw"
                 },
-                {
+                "2": {
                     "host": "./reltest1",
                     "container": "/vol2",
                     "mode": "rw"
                 },
-                {
+                "three": {
                     "host": "reltest2",
                     "container": "/vol3",
                     "mode": "rw"
                 },
-                {
+                "FOUR": {
                     "host": "reltestc",
                     "container": "reltest_container",
                     "mode": "rw"
                 },
-                {
+                "faive": {
                     "host": "/absolute_with_ro",
                     "container": "/vol4",
                     "mode": "ro"
                 },
-                {
+                "xis": {
                     "host": "/absolute_no_mode",
                     "container": "/vol5"
                 }
-            ]
+            }
         }, dont_call_init_data=True)
         expected = {
             # SRC
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
             # CONFIG
-            '/FROM_1~PROCESSED':                            {'bind': '/TO_1', 'mode': 'rw'},
-            '/FROM_2~PROCESSED':                            {'bind': '/TO_2', 'mode': 'rw'},
-            '/FROM_3~PROCESSED':                            {'bind': '/TO_3', 'mode': 'rw'},
+            'config1~/FROM_1~PROCESSED':                    {'bind': '/TO_1', 'mode': 'rw'},
+            'config2~/FROM_2~PROCESSED':                    {'bind': '/TO_2', 'mode': 'rw'},
+            'config3~/FROM_3~PROCESSED':                    {'bind': '/TO_3', 'mode': 'rw'},
             # LOGGING
             'stdout~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDOUT, 'mode': 'rw'},
             'stderr~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDERR, 'mode': 'rw'},
@@ -467,9 +466,9 @@ class ServiceTestCase(unittest.TestCase):
 
         ## CONFIG ASSERTIONS
         process_config_mock.assert_has_calls([
-            call(config1, service),
-            call(config2, service),
-            call(config3, service),
+            call("config1", config1, service),
+            call("config2", config2, service),
+            call("config3", config3, service),
         ], any_order=True)
 
         ## LOGGING ASSERTIONS

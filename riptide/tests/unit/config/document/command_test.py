@@ -21,37 +21,37 @@ class CommandTestCase(unittest.TestCase):
 
     def setUp(self):
         self.fix_with_volumes = module.Command({
-            "additional_volumes": [
-                {
+            "additional_volumes": {
+                "one": {
                     "host": "~/hometest",
                     "container": "/vol1",
                     "mode": "rw"
                 },
-                {
+                "two": {
                     "host": "./reltest1",
                     "container": "/vol2",
                     "mode": "rw"
                 },
-                {
+                "three": {
                     "host": "reltest2",
                     "container": "/vol3",
                     "mode": "rw"
                 },
-                {
+                "four": {
                     "host": "reltestc",
                     "container": "reltest_container",
                     "mode": "rw"
                 },
-                {
+                "five": {
                     "host": "/absolute_with_ro",
                     "container": "/vol4",
                     "mode": "ro"
                 },
-                {
+                "six": {
                     "host": "/absolute_no_mode",
                     "container": "/vol5"
                 }
-            ]
+            }
         })
 
     def test_header(self):
@@ -92,37 +92,37 @@ class CommandTestCase(unittest.TestCase):
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):
         cmd = self.fix_with_volumes
-        expected = [
-                {
+        expected = {
+                "one": {
                     "host": "NORMALIZED",
                     "container": "/vol1",
                     "mode": "rw"
                 },
-                {
+                "two": {
                     "host": "NORMALIZED",
                     "container": "/vol2",
                     "mode": "rw"
                 },
-                {
+                "three": {
                     "host": "NORMALIZED",
                     "container": "/vol3",
                     "mode": "rw"
                 },
-                {
+                "four": {
                     "host": "NORMALIZED",
                     "container": "reltest_container",
                     "mode": "rw"
                 },
-                {
+                "five": {
                     "host": "NORMALIZED",
                     "container": "/vol4",
                     "mode": "ro"
                 },
-                {
+                "six": {
                     "host": "NORMALIZED",
                     "container": "/vol5"
                 }
-        ]
+        }
         cmd._initialize_data_after_variables()
         self.assertEqual(6, normalize_mock.call_count, "cppath.normalize has to be called once for each volume")
         self.assertEqual(expected, cmd.doc['additional_volumes'])

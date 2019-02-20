@@ -144,9 +144,9 @@ class EngineServiceTest(EngineTest):
 
                 # Assert that files _riptide/config/NAME_WITH_DASHES have been created
                 self.assertTrue(os.path.isfile(os.path.join(loaded.temp_dir, '_riptide', 'processed_config',
-                                                            service_name,'configs-config1-txt')))
+                                                            service_name, 'one')))
                 self.assertTrue(os.path.isfile(os.path.join(loaded.temp_dir, '_riptide', 'processed_config',
-                                                            service_name,'configs-config2-txt')))
+                                                            service_name, 'two')))
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, [service_name], loaded.engine_tester)

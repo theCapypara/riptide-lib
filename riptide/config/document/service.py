@@ -44,8 +44,8 @@ class Service(YamlConfigDocument):
                 # Fallback: Assume cwd
                 folder_of_self = os.getcwd()
 
-        if "config" in self:
-            for config in self["config"]:
+        if "config" in self and isinstance(self["config"], dict):
+            for config in self["config"].values():
                 # TODO: Currently doesn't allow . or os.sep at the beginning for security reasons.
                 if config["from"].startswith(".") or config["from"].startswith(os.sep):
                     raise ConfigcrunchError("Config 'from' items in services may not start with . or %s." % os.sep)
@@ -67,22 +67,22 @@ class Service(YamlConfigDocument):
         if "roles" not in self:
             self.doc["roles"] = []
 
-        if "additional_ports" not in self:
-            self.doc["additional_ports"] = []
-
         if "db" in self["roles"]:
             self._db_driver = db_driver_for_service.get(self)
             if self._db_driver:
                 # Collect additional ports for the db driver
-                self["additional_ports"] += self._db_driver.collect_additional_ports()
+                my_original_ports = self["additional_ports"] if "additional_ports" in self else {}
+                db_ports = self._db_driver.collect_additional_ports()
+                self["additional_ports"] = db_ports.copy()
+                self["additional_ports"].update(my_original_ports)
 
     def _initialize_data_after_variables(self):
         # Normalize all host-paths to only use the system-type directory separator
         if "additional_volumes" in self:
-            for obj in self.doc["additional_volumes"]:
+            for obj in self.doc["additional_volumes"].values():
                 obj["host"] = cppath.normalize(obj["host"])
         if "config" in self:
-            for obj in self.doc["config"]:
+            for obj in self.doc["config"].values():
                 obj["$source"] = cppath.normalize(obj["$source"])
 
     def validate(self) -> bool:
@@ -103,8 +103,10 @@ class Service(YamlConfigDocument):
         project = self.get_project()
         self._loaded_port_mappings = {}
 
-        for port_request in self["additional_ports"]:
-            self._loaded_port_mappings[port_request["container"]] = get_additional_port(project, self, port_request["host_start"])
+        if "additional_ports" in self:
+            for port_request in self["additional_ports"].values():
+                self._loaded_port_mappings[port_request["container"]] = get_additional_port(project, self,
+                                                                                            port_request["host_start"])
 
     @classmethod
     def header(cls) -> str:
@@ -128,32 +130,32 @@ class Service(YamlConfigDocument):
                 Optional('pre_start'): [str],
                 Optional('post_start'): [str],
                 Optional('environment'): {str: str},
-                Optional('config'): [
-                    {
+                Optional('config'): {
+                    str: {
                         'from': str,
                         '$source': str,  # Path to the document that "from" references. Is added durinng loading of service
                         'to': str
                     }
-                ],
+                },
                 # Whether to run as user using riptide or root. Default: False
                 Optional('run_as_root'): bool,
                 # Whether to create the riptide user and group, mapped to current user. Default: False
                 Optional('dont_create_user'): bool,
                 Optional('working_directory'): str,
-                Optional('additional_ports'): [
-                    {
+                Optional('additional_ports'): {
+                    str: {
                         'title': str,
                         'container': int,
                         'host_start': int
                     }
-                ],
-                Optional('additional_volumes'): [
-                    {
+                },
+                Optional('additional_volumes'): {
+                    str: {
                         'host': str,
                         'container': str,
                         Optional('mode'): Or('rw', 'ro')  # default: rw - can be rw/ro.
                     }
-                ],
+                },
                 # db only
                 Optional('driver'): {
                     'name': str,
@@ -193,8 +195,8 @@ class Service(YamlConfigDocument):
 
         # config
         if "config" in self:
-            for config in self["config"]:
-                volumes[process_config(config, self)] = {'bind': config["to"], 'mode': 'rw'}  # todo: ro default
+            for config_name, config in self["config"].items():
+                volumes[process_config(config_name, config, self)] = {'bind': config["to"], 'mode': 'rw'}  # todo: ro default
 
         # logging
         if "logging" in self:
@@ -224,7 +226,7 @@ class Service(YamlConfigDocument):
 
         # additional_volumes
         if "additional_volumes" in self:
-            for vol in self["additional_volumes"]:
+            for vol in self["additional_volumes"].values():
                 # ~ paths
                 if vol["host"][0] == "~":
                     vol["host"] = os.path.expanduser("~") + vol["host"][1:]

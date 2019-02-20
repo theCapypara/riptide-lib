@@ -1,6 +1,7 @@
 service:
   image: hello/world:blubbel
   additional_volumes:
-    - host: host
+    name:
+      host: host
       container: container
       mode: invalid

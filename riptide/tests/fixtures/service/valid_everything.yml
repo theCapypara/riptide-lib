@@ -22,23 +22,29 @@ service:
     A: b
     C_D_E: "123"
   config:
-    - from: a
+    one:
+      from: a
       to: b
-    - from: here
+    two:
+      from: here
       to: there
   run_as_root: false
   dont_create_user: no
   working_directory: home
   additional_ports:
-    - title: one
+    one:
+      title: one
       container: 1
       host_start: 2
-    - title: two
+    two:
+      title: two
       container: 1
       host_start: 2
   additional_volumes:
-    - host: one
+    one:
+      host: one
       container: eno
       mode: ro
-    - host: two
+    two:
+      host: two
       container: owt

@@ -4,15 +4,20 @@ service:
   roles:
     - src
   additional_volumes:
-    - host: "{{volume_path()}}/in_volume_path_rw"
+    rw:
+      host: "{{volume_path()}}/in_volume_path_rw"
       container: /in_volume_path_rw
-    - host: "{{volume_path()}}/in_volume_path_rw_explicit"
+    rw_explicit:
+      host: "{{volume_path()}}/in_volume_path_rw_explicit"
       container: /in_volume_path_rw_explicit
       mode: rw
-    - host: "{{volume_path()}}/in_volume_path_ro"
+    ro:
+      host: "{{volume_path()}}/in_volume_path_ro"
       container: /in_volume_path_ro
       mode: ro
-    - host: relative_to_project
+    rel:
+      host: relative_to_project
       container: relative_to_src
-    - host: "{{volume_path()}}/test_auto_create"
+    auto_create:
+      host: "{{volume_path()}}/test_auto_create"
       container: /test_auto_create

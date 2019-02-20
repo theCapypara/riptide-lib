@@ -6,7 +6,6 @@ from schema import Schema, Optional, Or
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
 from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
-from riptide.config.service.config_files import get_config_file_path
 from riptide.lib.cross_platform import cppath
 
 
@@ -27,13 +26,13 @@ class Command(YamlConfigDocument):
 
                 'image': str,
                 Optional('command'): str,
-                Optional('additional_volumes'): [
-                    {
+                Optional('additional_volumes'): {
+                    str: {
                         'host': str,
                         'container': str,
                         Optional('mode'): str  # default: rw - can be rw/ro.
                     }
-                ],
+                },
                 Optional('environment'): {str: str}
             }, {
                 Optional('$ref'): str,  # reference to other Service documents
@@ -46,7 +45,7 @@ class Command(YamlConfigDocument):
     def _initialize_data_after_variables(self):
         # Normalize all host-paths to only use the system-type directory separator
         if "additional_volumes" in self:
-            for obj in self.doc["additional_volumes"]:
+            for obj in self.doc["additional_volumes"].values():
                 obj["host"] = cppath.normalize(obj["host"])
 
     def get_project(self):
@@ -71,7 +70,7 @@ class Command(YamlConfigDocument):
         # additional_volumes
         # todo: merge with services logic
         if "additional_volumes" in self:
-            for vol in self["additional_volumes"]:
+            for vol in self["additional_volumes"].values():
                 # ~ paths
                 if vol["host"][0] == "~":
                     vol["host"] = os.path.expanduser("~") + vol["host"][1:]
