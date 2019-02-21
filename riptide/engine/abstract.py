@@ -82,10 +82,12 @@ class AbstractEngine(ABC):
         """
 
     @abstractmethod
-    def exec(self, project: 'Project', service_name: str) -> None:
+    def exec(self, project: 'Project', service_name: str, cols=None, lines=None) -> None:
         """
         Open an interactive shell into service_name and attach stdout/stdin/stderr.
         Returns when the shell is exited.
+        :param lines: Number of lines in the terminal, optional
+        :param cols: Number of columns in the terminal, optional
         :param project: 'Project'
         :param service_name: str
         :return:
