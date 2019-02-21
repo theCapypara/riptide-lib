@@ -381,11 +381,13 @@ class ServiceTestCase(unittest.TestCase):
 
         self.assertEqual(expected, service.doc)
 
+    @mock.patch("os.makedirs")
     @mock.patch("riptide.config.document.service.get_additional_port",
                 side_effect=lambda p, s, host_start: host_start + 10)
-    def test_before_start(self, get_additional_port_mock: Mock):
-        project_stub = ProjectStub({}, set_parent_to_self=True)
+    def test_before_start(self, get_additional_port_mock: Mock, makedirs_mock: Mock):
+        project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
         service = module.Service({
+            "working_directory": "WORKDIR",
             "additional_ports": {
                 "one": {
                     "container": 1,
@@ -415,6 +417,31 @@ class ServiceTestCase(unittest.TestCase):
             call(project_stub, service, 3),
             call(project_stub, service, 4)
         ], any_order=True)
+
+        # Assert creation of working directory
+        makedirs_mock.assert_called_with(os.path.join(ProjectStub.FOLDER, "SRC", "WORKDIR"), exist_ok=True)
+
+    @mock.patch("os.makedirs")
+    def test_before_start_absolute_workdir(self, makedirs_mock: Mock):
+        project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
+        service = module.Service({
+            "working_directory": "/WORKDIR"
+        }, parent=project_stub)
+
+        service.before_start()
+
+        # Assert NO creation of working directory
+        makedirs_mock.assert_not_called()
+
+    @mock.patch("os.makedirs")
+    def test_before_start_absolute_workdir_no_workdir(self, makedirs_mock: Mock):
+        project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
+        service = module.Service({}, parent=project_stub)
+
+        service.before_start()
+
+        # Assert NO creation of working directory
+        makedirs_mock.assert_not_called()
 
     def test_get_project(self):
         service = module.Service({})
@@ -699,44 +726,22 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service({})
         self.assertEqual(CONTAINER_HOME_PATH, service.home_path())
 
-    @mock.patch("os.path.dirname", return_value='CALLED DIRNAME')
-    @mock.patch("riptide.config.document.service.open")
-    @mock.patch("os.makedirs")
-    @mock.patch("os.path.exists", return_value=False)
-    @mock.patch("riptide.config.document.service.get_config_file_path", return_value='CALLED')
-    def test_config_file_does_not_exist(self,
-                                        get_config_file_path_mock: Mock, exists_mock: Mock,
-                                        makedirs_mock: Mock, open_mock: Mock, dirname_mock: Mock):
+    @mock.patch("riptide.config.document.service.process_config", return_value='CALLED')
+    def test_config_file_does_not_exist(self, process_config_mock: Mock):
 
         service = module.Service({})
 
-        self.assertEqual('CALLED', service.config('FROM'))
-        get_config_file_path_mock.assert_called_once_with('FROM', service)
-        # os.path.exists?
-        exists_mock.assert_called_once_with('CALLED')
-        # NO:
-        # os.path.dirname
-        dirname_mock.assert_called_once_with('CALLED')
-        # os.makedirs
-        makedirs_mock.assert_called_once_with('CALLED DIRNAME', exist_ok=True)
-        # open
-        open_mock.assert_called_once_with('CALLED', 'a')
-        # close
-        open_mock.return_value.close.assert_called_once()
+        with self.assertRaises(FileNotFoundError):
+            service.config('FROM')
 
+        process_config_mock.assert_not_called()
 
-    @mock.patch("os.makedirs")
-    @mock.patch("os.path.exists", return_value=True)
-    @mock.patch("riptide.config.document.service.get_config_file_path", return_value='CALLED')
-    def test_config_file_does_exist(self,
-                                        get_config_file_path_mock: Mock, exists_mock: Mock,
-                                        makedirs_mock: Mock,):
+    @mock.patch("riptide.config.document.service.process_config", return_value='CALLED')
+    def test_config_file_does_exist(self, process_config_mock: Mock):
 
-        service = module.Service({})
+        service = module.Service({"config": {"FROM": "CONFIG_OBJECT"}})
 
-        self.assertEqual('CALLED', service.config('FROM'))
-        get_config_file_path_mock.assert_called_once_with('FROM', service)
-        # os.path.exists?
-        exists_mock.assert_called_once_with('CALLED')
-        # YES
-        makedirs_mock.assert_not_called()
+        #with self.assertRaises(FileNotFoundError):
+        self.assertEquals('CALLED', service.config('FROM'))
+
+        process_config_mock.assert_called_once_with('FROM', "CONFIG_OBJECT", service)

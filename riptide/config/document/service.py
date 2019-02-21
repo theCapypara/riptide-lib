@@ -1,3 +1,4 @@
+from pathlib import PurePath
 from typing import List
 
 from schema import Schema, Optional, Or
@@ -119,6 +120,14 @@ class Service(YamlConfigDocument):
             for port_request in self["additional_ports"].values():
                 self._loaded_port_mappings[port_request["container"]] = get_additional_port(project, self,
                                                                                             port_request["host_start"])
+
+        # Create working_directory if it doesn't exist and it is relative
+        if "working_directory" in self and not PurePosixPath(self["working_directory"]).is_absolute():
+            os.makedirs(os.path.join(
+                self.get_project().folder(),
+                self.get_project()["src"],
+                self["working_directory"]
+            ), exist_ok=True)
 
     @classmethod
     def header(cls) -> str:
@@ -329,12 +338,9 @@ class Service(YamlConfigDocument):
         return CONTAINER_HOME_PATH
 
     @variable_helper
-    def config(self, from_path):
+    def config(self, config_name):
         """ TODO DOC """
-        config_path = get_config_file_path(from_path, self)
-        # Make sure the config file at least exists even if it wasn't actually created yet
-        # so engines like Docker don't put a directory there.
-        if not os.path.exists(config_path):
-            os.makedirs(os.path.dirname(config_path), exist_ok=True)
-            open(config_path, 'a').close()
-        return config_path
+        if "config" in self and config_name in self["config"]:
+            return process_config(config_name, self["config"][config_name], self)
+        raise FileNotFoundError("Config %s for service %s not found"
+                                % (config_name, self["$name"] if "$name" in self else "???"))
