@@ -1,6 +1,6 @@
 from typing import List
 
-from schema import Schema, Optional
+from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument, DocReference
 from riptide.config.document.project import Project
@@ -21,7 +21,7 @@ class Config(YamlConfigDocument):
                     'url': str,
                     'ports': {
                         'http': int,
-                        'https': int
+                        'https': Or(int, False)  # False disables HTTPS
                     },
                     'autostart': bool,
                     'autoexit': int
