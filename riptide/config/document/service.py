@@ -1,3 +1,4 @@
+import tempfile
 from pathlib import PurePath
 from typing import List
 
@@ -344,3 +345,8 @@ class Service(YamlConfigDocument):
             return process_config(config_name, self["config"][config_name], self)
         raise FileNotFoundError("Config %s for service %s not found"
                                 % (config_name, self["$name"] if "$name" in self else "???"))
+
+    @variable_helper
+    def get_tempdir(self):
+        """ Returns the path to the system tempoary directory where the user (should) have write access."""
+        return tempfile.gettempdir()
