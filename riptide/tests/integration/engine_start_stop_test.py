@@ -39,9 +39,36 @@ class EngineStartStopTest(EngineTest):
                 # STOP
                 self.run_stop_test(loaded.engine, project, services, loaded.engine_tester)
 
-    @unittest.skip('to do not done')
     def test_start_stop_subset(self):
-        """TODO"""
+        pass  # XXX: PyCharm has a problem with docstrings in tests with subtests
+        """Start some services, stop some again, assert that the rest is still running and then stop the rest."""
+        for project_ctx in load(self,
+                                ['integration_all.yml'],
+                                ['.']):
+            with project_ctx as loaded:
+                project = loaded.config["project"]
+                services_to_start_first = ["simple", "simple_with_src", "custom_command", "configs"]
+                services_to_stop_first = ["custom_command", "simple_with_src"]
+                still_running_after_first = ["configs", "simple"]
+                services_to_start_end = project["app"]["services"].keys() if "services" in project["app"] else []
+
+                # Create src folder
+                os.makedirs(os.path.join(loaded.temp_dir, loaded.src), exist_ok=True)
+
+                # START first
+                self.run_start_test(loaded.engine, project, services_to_start_first, loaded.engine_tester)
+
+                # STOP first
+                self.run_stop_test(loaded.engine, project, services_to_stop_first, loaded.engine_tester)
+
+                # Assert the rest is still running
+                self.assert_running(loaded.engine, project, still_running_after_first, loaded.engine_tester)
+
+                # START end
+                self.run_start_test(loaded.engine, project, services_to_start_end, loaded.engine_tester)
+
+                # STOP end
+                self.run_stop_test(loaded.engine, project, services_to_start_end, loaded.engine_tester)
 
     def test_simple_result(self):
         pass  # XXX: PyCharm has a problem with docstrings in tests with subtests
