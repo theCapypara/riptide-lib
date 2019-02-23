@@ -1,7 +1,7 @@
-# Riptide example system configuration file. Documentation: https://... # todo
+# Riptide example system configuration file.
 riptide:
   proxy:
-    url: local
+    url: riptide.local
     ports:
       http: 80
       https: 443
