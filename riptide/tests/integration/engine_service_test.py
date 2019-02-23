@@ -1,5 +1,7 @@
 import os
 import re
+from time import sleep
+
 import requests
 import stat
 from pathlib import PurePosixPath
@@ -328,3 +330,53 @@ class EngineServiceTest(EngineTest):
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, [service_name], loaded.engine_tester)
+
+    def test_logging(self):
+        MAIN_COMMAND_STDOUT = b"1, 2, 3 test\n"
+        MAIN_COMMAND_STDERR = b"1, 2, 3 error\n"
+        LOGGING_COMMAND_OUTPUT = b"1 2 3 4 this is command logging test\n"
+
+        for project_ctx in load(self,
+                                ['integration_all.yml'],
+                                ['.', 'src']):
+            with project_ctx as loaded:
+                project = loaded.config["project"]
+                services = ["logging", "simple"]
+
+                # START
+                self.run_start_test(loaded.engine, project, services, loaded.engine_tester)
+
+                # Give the app a few seconds
+                sleep(5)
+
+                path_to_logging = os.path.join(loaded.temp_dir, '_riptide', 'logs')
+                ### Logging service
+                # Assert all logging files are there
+                self.assertTrue(os.path.exists(os.path.join(path_to_logging, 'logging', 'stdout.log')))
+                self.assertTrue(os.path.exists(os.path.join(path_to_logging, 'logging', 'stderr.log')))
+                self.assertTrue(os.path.exists(os.path.join(path_to_logging, 'logging', 'one.log')))
+                self.assertTrue(os.path.exists(os.path.join(path_to_logging, 'logging', 'two.log')))
+
+                # Assert contents of files
+                with open(os.path.join(path_to_logging, 'logging', 'stdout.log'), 'r') as file:
+                    # Engines may add custom buffer on service restarts
+                    self.assertTrue(MAIN_COMMAND_STDOUT.decode('utf-8') in file.read())
+
+                with open(os.path.join(path_to_logging, 'logging', 'stderr.log'), 'r') as file:
+                    # Engines may add custom buffer on service restarts
+                    self.assertTrue(MAIN_COMMAND_STDERR.decode('utf-8') in file.read())
+
+                with open(os.path.join(path_to_logging, 'logging', 'one.log'), 'rb') as file:
+                    self.assertEquals(MAIN_COMMAND_STDOUT, file.read())
+
+                with open(os.path.join(path_to_logging, 'logging', 'two.log'), 'rb') as file:
+                    self.assertEquals(LOGGING_COMMAND_OUTPUT, file.read())
+
+                ### Non logging service
+                self.assertFalse(os.path.exists(os.path.join(path_to_logging, 'simple', 'stdout.log')))
+                self.assertFalse(os.path.exists(os.path.join(path_to_logging, 'simple', 'stderr.log')))
+                self.assertFalse(os.path.exists(os.path.join(path_to_logging, 'simple', 'one.log')))
+                self.assertFalse(os.path.exists(os.path.join(path_to_logging, 'simple', 'two.log')))
+
+                # STOP
+                self.run_stop_test(loaded.engine, project, services, loaded.engine_tester)

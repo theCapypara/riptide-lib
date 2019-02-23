@@ -21,5 +21,7 @@ app:
       $ref: service/integration_working_directory_absolute
     additional_volumes:
       $ref: service/integration_additional_volumes
+    logging:
+      $ref: service/integration_logging
   #commands:
     # todo

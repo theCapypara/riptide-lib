@@ -1,0 +1,13 @@
+service:
+  image: riptide_integration_test
+  command: (>&2 echo "1, 2, 3 error") ; (echo "1, 2, 3 test" | tee /logging_test) ; (http-server --port 8080 &> /dev/null)
+  port: 8080
+  roles:
+    - src
+  logging:
+    stdout: true
+    stderr: true
+    paths:
+      one: /logging_test
+    commands:
+      two: echo "1 2 3 4 this is command logging test"
