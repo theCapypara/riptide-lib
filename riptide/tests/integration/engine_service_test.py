@@ -1,10 +1,14 @@
+import json
 import os
+import platform
 import re
 from time import sleep
 
 import requests
 import stat
 from pathlib import PurePosixPath
+
+import unittest
 
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.lib.cross_platform import cpuser
@@ -380,3 +384,92 @@ class EngineServiceTest(EngineTest):
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, services, loaded.engine_tester)
+
+    def test_additional_ports(self):
+        for project_ctx in load(self,
+                                ['integration_all.yml'],
+                                ['.']):
+            with project_ctx as loaded:
+                project = loaded.config["project"]
+                service1 = "additional_ports"
+                service2 = "additional_ports_again"
+
+                # Test One: Only one services
+
+                # START
+                self.run_start_test(loaded.engine, project, [service1], loaded.engine_tester)
+
+                # Check if localhost:9965 get's us the contents of the service
+                response = requests.get('http://127.0.0.1:9965/hostname')
+                self.assertEqual(200, response.status_code)
+                self.assertEqual(response.content, b'additional_ports\n')
+
+                # STOP
+                self.run_stop_test(loaded.engine, project, [service1], loaded.engine_tester)
+
+                # Test Two: Two times same service, second service must have other host port (+1)
+                #           We start second service first, to really make sure it doesn't use the first port
+
+                # START
+                self.run_start_test(loaded.engine, project, [service2], loaded.engine_tester)
+                self.run_start_test(loaded.engine, project, [service1], loaded.engine_tester)
+
+                # Check both services on expected ports
+                response = requests.get('http://127.0.0.1:9965/hostname')
+                self.assertEqual(200, response.status_code)
+                self.assertEqual(response.content, b'additional_ports\n')
+                response = requests.get('http://127.0.0.1:9966/hostname')
+                self.assertEqual(200, response.status_code)
+                self.assertEqual(response.content, b'additional_ports_again\n',
+                                 "The second service must register an additional port on host of 9965 + 1")
+
+                # STOP
+                self.run_stop_test(loaded.engine, project, [service1, service2], loaded.engine_tester)
+
+                # Test contents of ports.json
+                with open(os.path.join(loaded.temp_system_dir, 'ports.json')) as file:
+                    json_ports = json.load(file)
+
+                self.assertDictEqual({
+                    "ports": {
+                        "9965": True,
+                        "9966": True
+                    },
+                    "requests": {
+                        project["name"]: {
+                            service1: {"9965": 9965},
+                            service2: {"9965": 9966}
+                        }
+                    }
+                }, json_ports)
+
+    @unittest.skipIf(platform.system().lower().startswith('win'),
+                     "Skipped on Windows. "
+                     "This tets does work on Windows, because of cpuser, but since with root and "
+                     "without root makes no difference, it's pointless.")
+    def test_run_as_root(self):
+        for project_ctx in load(self,
+                                ['integration_all.yml'],
+                                ['.']):
+            with project_ctx as loaded:
+                project = loaded.config["project"]
+                service_root = "run_as_root"
+                service_no_root = "simple"
+
+                # Test One: Only one services
+
+                # START
+                self.run_start_test(loaded.engine, project, [service_root, service_no_root], loaded.engine_tester)
+
+                self.assert_response(b'0\n',
+                                     loaded.engine, project, service_root, "/rootcheck",
+                                     "When running with run_as_root, a service must with user and group root")
+
+                # TODO: Group is currently not guaranteed to be the same. Change in the future?
+                self.assert_response(str.encode('%s\n' % cpuser.getuid()),
+                                     loaded.engine, project, service_no_root, "/rootcheck",
+                                     "When running without run_as_root, a service must "
+                                     "with user and group of the user that ran Riptide")
+
+                # STOP
+                self.run_stop_test(loaded.engine, project, [service_root, service_no_root], loaded.engine_tester)

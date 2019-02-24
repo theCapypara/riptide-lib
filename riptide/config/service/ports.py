@@ -88,6 +88,7 @@ def get_additional_port(project, service, start_port):
         }
     })
     port_cfg["ports"][str(port)] = True
+    return port
 
 
 def get_existing_port_mapping(project, service, start_port, load=True):

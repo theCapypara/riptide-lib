@@ -12,5 +12,6 @@ RUN mkdir -p /a_folder && \
     touch /a_folder/file2 && \
     touch /a_folder/file3
 WORKDIR /default_workdir
+COPY start.sh /start.sh
 # TODO Tests for engine-docker's handling of command / entrypoint
-CMD ["http-server", "--port", "8080"]
+CMD ["/start.sh"]
