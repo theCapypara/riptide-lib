@@ -1,5 +1,5 @@
 from schema import Optional, Schema
-from typing import List
+from typing import List, Union
 
 from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError
 from configcrunch import load_subdocument
@@ -12,7 +12,24 @@ HEADER = 'app'
 
 
 class App(YamlConfigDocument):
+    """
+    An application.
 
+    Consists of (multiple) :class:`riptide.config.document.service.Service`
+    and (multiple) :class:`riptide.config.document.command.Command`
+    and is usually included in a :class:`riptide.config.document.project.Project`.
+
+    Example::
+
+        app:
+          name: example
+          services:
+            example:
+              ...
+          commands:
+            example:
+              ...
+    """
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -62,7 +79,7 @@ class App(YamlConfigDocument):
         return self
 
     @variable_helper
-    def get_service_by_role(self, role_name):
+    def get_service_by_role(self, role_name: str) -> Union[Service, None]:
         """
         Returns any service with the given role name (first found in an unordered dict).
         """

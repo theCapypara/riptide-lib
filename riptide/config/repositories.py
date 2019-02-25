@@ -1,18 +1,24 @@
+"""Manages the synchronization of Riptide repositories."""
 import os
 import shutil
 
 from git import Repo, InvalidGitRepositoryError, NoSuchPathError, CommandError
+from typing import TYPE_CHECKING
+
 from riptide.config.files import riptide_local_repositories_path, remove_all_special_chars
 
+if TYPE_CHECKING:
+    from riptide.config.document.config import Config
 
 TAB = '    '
 
 
-def update(system_config, update_text_func):
+def update(system_config: 'Config', update_text_func):
     """
-    Update repostiories by checking remote state and downloading all changes.
-    :type update_func: lambda Function to execute for status updates of repository updating (one string parameter)
-    :type system_config: Config
+    Update repostiories by checking remote Git state and downloading all changes.
+
+    :param update_func: Function to execute for status updates of repository updating (one string parameter)
+    :param system_config: Config that includes the repository urls.
     """
     update_text_func("Updating Riptide repositories...")
     base_dir = riptide_local_repositories_path()

@@ -1,15 +1,21 @@
+"""
+Functions to load the system configuration and/or projects.
+"""
 import json
 import os
-
-from click import echo
+from typing import TYPE_CHECKING
 
 from riptide.config import repositories
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
 from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file
 
+if TYPE_CHECKING:
+    from riptide.config.document.config import Config
+    from riptide.config.document.project import Project
 
-def load_config(project_file=None, update_repositories=False, update_func=lambda msg: None):
+
+def load_config(project_file=None, update_repositories=False, update_func=lambda msg: None) -> 'Config':
     """
     Loads the specified project file and the system user configuration.
     If no project file is specified, it is auto-detected.
@@ -18,12 +24,15 @@ def load_config(project_file=None, update_repositories=False, update_func=lambda
     config will not exist. If the system config itself could not be found,
     a FileNotFound error is raised.
 
-    :param project_file: string project file to load or none
+    The loaded project is placed in the ``project`` field of the config.
+    The path to the project is place in the ``$path`` field of the project.
+
+    :param project_file: Project file to load or None for auto-discovery
     :param update_repositories: Update repositories defined in system config
     :param update_func: If update_repositories is set: Function to execute for status updates of repository updating
-    :return: config.document.config.Config object.
-    :raises: FileNotFoundError if the system config was not found
-    :raises: schema.SchemaError on validation errors
+    :return: :class:`riptide.config.document.config.Config` object.
+    :raises: :class:`FileNotFoundError`: If the system config was not found
+    :raises: :class:`schema.SchemaError`: On validation errors
     """
 
     config_path = riptide_main_config_file()
@@ -65,7 +74,8 @@ def load_config(project_file=None, update_repositories=False, update_func=lambda
     return system_config
 
 
-def load_projects():
+def load_projects() -> dict:
+    """Loads the contents of the projects.json file and returns them."""
     projects = {}
     if os.path.exists(riptide_projects_file()):
         with open(riptide_projects_file(), mode='r') as file:
@@ -73,9 +83,11 @@ def load_projects():
     return projects
 
 
-def load_config_by_project_name(name):
+def load_config_by_project_name(name: str) -> 'Config':
     """
-    Load project by entry in projects.json
+    Load project by entry in projects.json.
+
+    :func:`load_config` is used for the actual loading.
     """
     projects = load_projects()
     if name not in projects:
@@ -86,9 +98,10 @@ def load_config_by_project_name(name):
     return system_config
 
 
-def write_project(project, rename):
+def write_project(project: 'Project', rename=False):
     """
-    Write project to projects.yml if not already written.
+    Write project to projects.json if not already written.
+
     Throws an error if a project with the given name,
     but a different path exists, if rename is not specifed.
 
@@ -120,6 +133,6 @@ def write_project(project, rename):
         with open(riptide_projects_file(), mode='w') as file:
             json.dump(projects, file)
     if rename:
-        echo("Project reference renamed.")
-        echo("%s -> %s" % (project['name'], projects[project['name']]))
+        print("Project reference renamed.")
+        print("%s -> %s" % (project['name'], projects[project['name']]))
         exit(0)

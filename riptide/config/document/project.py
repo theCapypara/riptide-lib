@@ -12,7 +12,19 @@ HEADER = 'project'
 
 
 class Project(YamlConfigDocument):
+    """
+    A project file. Usually placed as ``riptide.yml`` inside the project directory.
+    Has an :class:`riptide.config.document.app.App` in it's ``app`` entry.
 
+    Example::
+
+        project:
+          name: test-project
+          src: src
+          app:
+            $ref: apps/reference-to-app
+
+    """
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -38,13 +50,13 @@ class Project(YamlConfigDocument):
         return self
 
     def folder(self):
-        """Returns the project folder if $path if set or None otherwise"""
+        """Returns the project folder if the special internal field "$path" if set or None otherwise"""
         if "$path" in self:
             return os.path.dirname(self["$path"])
         return None
 
     def src_folder(self):
-        """Returns the absolute path to the folder specified by self['src']"""
+        """Returns the absolute path to the folder specified by self['src']. Requires "$path" to be set."""
         if "$path" not in self:
             return None
         return os.path.join(self.folder(), self["src"])
