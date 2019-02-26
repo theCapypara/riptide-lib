@@ -2,7 +2,7 @@ import os
 from pathlib import PurePosixPath
 
 from schema import Schema, Optional, Or
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, OrderedDict
 
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
@@ -73,7 +73,7 @@ class Command(YamlConfigDocument):
         except Exception as ex:
             raise IndexError("Expected command to have a project assigned") from ex
 
-    def collect_volumes(self) -> dict:
+    def collect_volumes(self) -> OrderedDict:
         """
         Collect volume mappings that this command should be getting when running.
 
@@ -86,7 +86,7 @@ class Command(YamlConfigDocument):
                        See: https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
         """
         project = self.get_project()
-        volumes = {}
+        volumes = OrderedDict({})
 
         # source code
         volumes[project.src_folder()] = {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'}

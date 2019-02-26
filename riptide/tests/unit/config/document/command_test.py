@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import os
 
 import unittest
@@ -141,7 +143,7 @@ class CommandTestCase(unittest.TestCase):
     @mock.patch("os.path.expanduser", return_value=os.sep + 'HOME')
     def test_collect_volumes(self, expanduser_mock: Mock):
         cmd = self.fix_with_volumes
-        expected = {
+        expected = OrderedDict({
             # Source code also has to be mounted in:
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
             os.path.join(os.sep + 'HOME', 'hometest'):      {'bind': '/vol1', 'mode': 'rw'},
@@ -150,10 +152,12 @@ class CommandTestCase(unittest.TestCase):
             os.path.join(ProjectStub.FOLDER, 'reltestc'):   {'bind': str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('reltest_container')), 'mode': 'rw'},
             '/absolute_with_ro':                            {'bind': '/vol4', 'mode': 'ro'},
             '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'}
-        }
+        })
 
         cmd.parent_doc = ProjectStub({}, set_parent_to_self=True)
-        self.assertEqual(expected, cmd.collect_volumes())
+        actual = cmd.collect_volumes()
+        self.assertEqual(expected, actual)
+        self.assertIsInstance(actual, OrderedDict)
         # First command had ~ in it:
         expanduser_mock.assert_called_once_with('~')
 

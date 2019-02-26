@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import tempfile
 from pathlib import PurePath
 from typing import List, TYPE_CHECKING
@@ -221,7 +223,7 @@ class Service(YamlConfigDocument):
         except Exception as ex:
             raise IndexError("Expected service to have a project assigned") from ex
 
-    def collect_volumes(self) -> dict:
+    def collect_volumes(self) -> OrderedDict:
         """
         Collect volume mappings that this service should be getting when running.
 
@@ -240,7 +242,7 @@ class Service(YamlConfigDocument):
                        See: https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
         """
         project = self.get_project()
-        volumes = {}
+        volumes = OrderedDict({})
 
         # role src
         if "src" in self["roles"]:

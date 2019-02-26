@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import os
 import unittest
 from unittest import mock
@@ -522,7 +524,7 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         })
-        expected = {
+        expected = OrderedDict({
             # SRC
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
             # CONFIG
@@ -545,7 +547,7 @@ class ServiceTestCase(unittest.TestCase):
             os.path.join(ProjectStub.FOLDER, 'reltestc'):   {'bind': str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('reltest_container')), 'mode': 'rw'},
             '/absolute_with_ro':                            {'bind': '/vol4', 'mode': 'ro'},
             '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'}
-        }
+        })
 
         service.parent_doc = ProjectStub({}, set_parent_to_self=True)
 
@@ -557,7 +559,9 @@ class ServiceTestCase(unittest.TestCase):
             driver.collect_volumes.return_value = {'FROM_DB_DRIVER': 'VALUE'}
 
         ## OVERALL ASSERTIONS
-        self.assertEqual(expected, service.collect_volumes())
+        actual = service.collect_volumes()
+        self.assertEqual(expected, actual)
+        self.assertIsInstance(actual, OrderedDict)
 
         ## CONFIG ASSERTIONS
         process_config_mock.assert_has_calls([
