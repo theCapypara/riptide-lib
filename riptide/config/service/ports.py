@@ -52,7 +52,7 @@ def _is_open(current_port: int, list_reserved_ports: dict):
         # This might fail on some OSes. In this case, try to connect to it.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
-        return sock.connect_ex(('127.0.0.1', current_port)) == 56
+        return sock.connect_ex(('127.0.0.1', current_port)) != 0
 
 
 def find_open_port_starting_at(start_port: int):
