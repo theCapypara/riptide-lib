@@ -135,7 +135,7 @@ class Command(YamlConfigDocument):
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
         env = os.environ.copy()
-        keys_to_remove = {"PATH", "PS1", "USERNAME", "PWD", "SHELL", "HOME"}.intersection(set(env.keys()))
+        keys_to_remove = {"PATH", "PS1", "USERNAME", "PWD", "SHELL", "HOME", "TMPDIR"}.intersection(set(env.keys()))
         for key in keys_to_remove:
             del env[key]
 
