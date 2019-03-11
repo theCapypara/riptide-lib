@@ -9,5 +9,6 @@ riptide:
     autoexit: 15
 
   repos: []
+  update_hosts_file: true
 
   engine: docker

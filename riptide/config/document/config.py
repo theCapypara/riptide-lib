@@ -48,6 +48,7 @@ class Config(YamlConfigDocument):
                     'autostart': bool,
                     'autoexit': int
                 },
+                'update_hosts_file': bool,
                 'engine': str,
                 'repos': [str],
                 Optional('project'): DocReference(Project)  # Added and overwritten by system
