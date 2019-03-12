@@ -37,10 +37,7 @@ def status_for(project: Project, engine: AbstractEngine, system_config: Config) 
             # Collect URL
             proxy_url = None
             if "port" in service:
-                if "roles" in service and "main" in service["roles"]:
-                    proxy_url = "http://" + project["name"] + "." + system_config["proxy"]["url"]
-                else:
-                    proxy_url = "http://" + project["name"] + "__" + service["$name"] + "." + system_config["proxy"]["url"]
+                proxy_url = "https://" + service.domain()
 
             # Collect Additional Ports
             additional_ports = []

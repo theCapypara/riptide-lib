@@ -699,7 +699,7 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service({'$name': 'TEST-SERVICE', 'roles': ['?']},
                                  parent=app)
 
-        self.assertEqual('TEST-PROJECT__TEST-SERVICE.TEST-URL', service.domain())
+        self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
 
     def test_domain_main(self):
         system = YamlConfigDocumentStub({'proxy': {'url': 'TEST-URL'}})

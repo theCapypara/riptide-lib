@@ -19,6 +19,8 @@ from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.lib.cross_platform import cppath
 from riptide.lib.cross_platform.cpuser import getuid, getgid
 
+DOMAIN_PROJECT_SERVICE_SEP = "--"
+
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
 
@@ -83,6 +85,7 @@ class Service(YamlConfigDocument):
                     }
                 },
                 # Whether to run as user using riptide or root. Default: False
+                # TODO: Umbenennen in run_as_user (wert invertieren) und bei False mit Standard Image-User ausführen
                 Optional('run_as_root'): bool,
                 # Whether to create the riptide user and group, mapped to current user. Default: False
                 Optional('dont_create_user'): bool,
@@ -356,7 +359,7 @@ class Service(YamlConfigDocument):
         """Returns the full domain name that this service should be available under, without protocol."""
         if "main" in self["roles"]:
             return self.get_project()["name"] + "." + self.parent_doc.parent_doc.parent_doc["proxy"]["url"]
-        return self.get_project()["name"] + "__" + self["$name"] + "." + self.parent_doc.parent_doc.parent_doc["proxy"]["url"]
+        return self.get_project()["name"] + DOMAIN_PROJECT_SERVICE_SEP + self["$name"] + "." + self.parent_doc.parent_doc.parent_doc["proxy"]["url"]
 
     @variable_helper
     def os_user(self) -> str:
