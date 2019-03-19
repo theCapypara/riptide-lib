@@ -2,7 +2,7 @@ import os
 from pathlib import PurePosixPath
 
 from schema import Schema, Optional, Or
-from typing import TYPE_CHECKING, OrderedDict
+from typing import TYPE_CHECKING
 
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
