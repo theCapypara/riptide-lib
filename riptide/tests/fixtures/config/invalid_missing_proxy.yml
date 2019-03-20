@@ -1,3 +1,4 @@
 riptide:
   engine: dummy
   repos: []
+  update_hosts_file: false

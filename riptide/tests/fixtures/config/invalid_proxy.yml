@@ -1,4 +1,5 @@
 riptide:
   proxy: what
   engine: dummy
+  update_hosts_file: false
   repos: []

@@ -7,3 +7,4 @@ riptide:
     autostart: true
     autoexit: 15
   engine: dummy
+  update_hosts_file: false
