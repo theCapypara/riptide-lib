@@ -65,6 +65,28 @@ class AbstractEngine(ABC):
         Returns when the command is finished.
         :param project: 'Project'
         :param command_name: str
+        :param arguments: List of arguments
+        :return:
+        """
+
+    @abstractmethod
+    def service_fg(self, project: 'Project', service_name: str, arguments: List[str]) -> None:
+        """
+        Execute a service and attach output to stdout/stdin/stderr.
+        Returns when the service container is finished.
+
+        Following service options are ignored:
+
+        * logging.stdout (is false)
+        * logging.stderr (is false)
+        * pre_start (is empty)
+        * post_start (is empty)
+        * roles.src (is set)
+        * working_directory (is set to current working directory)
+
+        :param project: 'Project'
+        :param service_name: str
+        :param arguments: List of arguments
         :return:
         """
 
