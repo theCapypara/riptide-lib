@@ -46,7 +46,7 @@ class Config(YamlConfigDocument):
                         'https': Or(int, False)  # False disables HTTPS
                     },
                     'autostart': bool,
-                    'autoexit': int
+                    Optional('autoexit'): int  # TODO: Not used, deprecated.
                 },
                 'update_hosts_file': bool,
                 'engine': str,
