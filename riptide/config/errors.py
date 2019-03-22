@@ -1,0 +1,2 @@
+class RiptideDeprecationWarning(DeprecationWarning):
+    pass

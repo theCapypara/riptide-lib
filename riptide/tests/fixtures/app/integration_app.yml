@@ -27,7 +27,7 @@ app:
       $ref: service/integration_additional_ports
     additional_ports_again:
       $ref: service/integration_additional_ports
-    run_as_root:
-      $ref: service/integration_run_as_root
+    run_as_current_user_false:
+      $ref: service/integration_run_as_current_user_false
   #commands:
     # todo

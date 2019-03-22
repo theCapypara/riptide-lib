@@ -295,7 +295,7 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service({})
         service._initialize_data_after_merge()
         self.assertEqual({
-            "run_as_root": False,
+            "run_as_current_user": True,
             "dont_create_user": False,
             "pre_start": [],
             "post_start": [],
@@ -304,7 +304,7 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_initialize_data_after_merge_values_already_set(self):
         service = module.Service({
-            "run_as_root": 'SET',
+            "run_as_current_user": 'SET',
             "dont_create_user": 'SET',
             "pre_start": 'SET',
             "post_start": 'SET',
@@ -312,7 +312,7 @@ class ServiceTestCase(unittest.TestCase):
         })
         service._initialize_data_after_merge()
         self.assertEqual({
-            "run_as_root": 'SET',
+            "run_as_current_user": 'SET',
             "dont_create_user": 'SET',
             "pre_start": 'SET',
             "post_start": 'SET',

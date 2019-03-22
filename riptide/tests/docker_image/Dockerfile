@@ -13,5 +13,7 @@ RUN mkdir -p /a_folder && \
     touch /a_folder/file3
 WORKDIR /default_workdir
 COPY start.sh /start.sh
+RUN useradd -ms /bin/sh --home-dir /home/demo -u 12345 demo
+USER 12345
 # TODO Tests for engine-docker's handling of command / entrypoint
 CMD ["/start.sh"]

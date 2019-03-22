@@ -447,13 +447,13 @@ class EngineServiceTest(EngineTest):
                      "Skipped on Windows. "
                      "This tets does work on Windows, because of cpuser, but since with root and "
                      "without root makes no difference, it's pointless.")
-    def test_run_as_root(self):
+    def test_run_as_current_user_false(self):
         for project_ctx in load(self,
                                 ['integration_all.yml'],
                                 ['.']):
             with project_ctx as loaded:
                 project = loaded.config["project"]
-                service_root = "run_as_root"
+                service_root = "run_as_current_user_false"
                 service_no_root = "simple"
 
                 # Test One: Only one services
@@ -461,14 +461,15 @@ class EngineServiceTest(EngineTest):
                 # START
                 self.run_start_test(loaded.engine, project, [service_root, service_no_root], loaded.engine_tester)
 
-                self.assert_response(b'0\n',
+                self.assert_response(b'12345\n',
                                      loaded.engine, project, service_root, "/rootcheck",
-                                     "When running with run_as_root, a service must with user and group root")
+                                     "When running with run_as_current_user == false, a service must with "
+                                     "user and group of image")
 
                 # TODO: Group is currently not guaranteed to be the same. Change in the future?
                 self.assert_response(str.encode('%s\n' % cpuser.getuid()),
                                      loaded.engine, project, service_no_root, "/rootcheck",
-                                     "When running without run_as_root, a service must "
+                                     "When running without run_as_current_user, a service must "
                                      "with user and group of the user that ran Riptide")
 
                 # STOP

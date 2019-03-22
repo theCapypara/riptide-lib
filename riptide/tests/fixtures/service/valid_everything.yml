@@ -28,7 +28,7 @@ service:
     two:
       from: configs/config2.txt
       to: there
-  run_as_root: false
+  run_as_current_user: true
   dont_create_user: no
   working_directory: home
   additional_ports:

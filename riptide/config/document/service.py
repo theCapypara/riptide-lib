@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 
 import tempfile
@@ -8,6 +9,7 @@ from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument, ConfigcrunchError
 from configcrunch.abstract import variable_helper
+from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.config.service.config_files import *
 from riptide.config.service.logging import *
@@ -84,8 +86,11 @@ class Service(YamlConfigDocument):
                         'to': str
                     }
                 },
-                # Whether to run as user using riptide or root. Default: False
-                # TODO: Umbenennen in run_as_user (wert invertieren) und bei False mit Standard Image-User ausführen
+                # Whether to run as the user using riptide (True) or image default (False). Default: True
+                # Limitation: If false and the image USER is not root,
+                #             then a user with the id of the image USER must exist in /etc/passwd of the image.
+                Optional('run_as_current_user'): bool,
+                # DEPRECATED. Inverse of run_as_current_user if set
                 Optional('run_as_root'): bool,
                 # Whether to create the riptide user and group, mapped to current user. Default: False
                 Optional('dont_create_user'): bool,
@@ -117,8 +122,15 @@ class Service(YamlConfigDocument):
         Initializes non-set fields, initiliazes the database
         driver and creates all files for ``config`` entries.
         """
-        if "run_as_root" not in self:
-            self.doc["run_as_root"] = False
+        if "run_as_root" in self:
+            warnings.warn(
+                "Deprecated key run_as_root = %r in a service found. Please replace with run_as_current_user = %r." %
+                (self.doc["run_as_root"], not self.doc["run_as_root"]),
+                RiptideDeprecationWarning
+            )
+            self.doc["run_as_current_user"] = not self.doc["run_as_root"]
+        if "run_as_current_user" not in self:
+            self.doc["run_as_current_user"] = True
 
         if "dont_create_user" not in self:
             self.doc["dont_create_user"] = False

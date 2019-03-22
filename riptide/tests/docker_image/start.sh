@@ -1,5 +1,5 @@
 #!/bin/sh
-# Root checks
+# User / group checks
 id -u > /default_workdir/rootcheck
 # Hostname Tests
 cp /etc/hostname /default_workdir/hostname
