@@ -117,6 +117,32 @@ class AbstractEngine(ABC):
         """
         pass
 
+    @abstractmethod
+    def pull_images(self, project: 'Project', line_reset='\n', update_func=lambda msg: None) -> None:
+        """
+        Open an interactive shell into service_name and attach stdout/stdin/stderr.
+        Returns when the shell is exited.
+        Not fining an image should NOT raise an error and instead print a warning as status report.
+        :param project: The project to pull all images for. Applies to all commands and services in project.
+        :param line_reset: Characters that represent a line reset for the current terminal.
+        :param update_func: Function to send status updates to.
+                            Resetting the line via the provided parameter is allowed.
+                            Calling it does NOT add new lines (\n).
+                            End result should be looking like this::
+
+                                [service/service1] Pulling 'image/name':
+                                    Status report... Can use carriage return here.
+                                [service/service2] Pulling 'image/name':
+                                    Status report... Can use carriage return here.
+                                [command/command1] Pulling 'image/name':
+                                    Warning: Image not found in repository.
+
+                                Done.
+
+        :return:
+        """
+        pass
+
     def path_rm(self, path, project: 'Project'):
         """
         Delete a path. Default is using python builtin functions.

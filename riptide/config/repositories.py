@@ -20,7 +20,6 @@ def update(system_config: 'Config', update_text_func):
     :param update_func: Function to execute for status updates of repository updating (one string parameter)
     :param system_config: Config that includes the repository urls.
     """
-    update_text_func("Updating Riptide repositories...")
     base_dir = riptide_local_repositories_path()
     for repo_name in system_config["repos"]:
         # directory name for this repo on disk
@@ -41,7 +40,7 @@ def update(system_config: 'Config', update_text_func):
                 repo.git.pull()
             except CommandError as err:
                 # Git error, we can't update
-                update_text_func(TAB + TAB + "Warning: Could not update: " + err.stderr.replace('\n', ' '))
+                update_text_func(TAB + "Warning: Could not update: " + err.stderr.replace('\n', ' '))
     update_text_func("Done!")
     update_text_func("")
 
@@ -57,7 +56,7 @@ def _update_text(repo, update_text_func):
     """
     Sends message back to update_text_func that this repo is updating.
     """
-    update_text_func(TAB + "Updating '%s'..." % repo)
+    update_text_func("Updating '%s'..." % repo)
 
 
 def collect(system_config):
