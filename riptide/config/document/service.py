@@ -311,7 +311,10 @@ class Service(YamlConfigDocument):
                 mode = vol["mode"] if "mode" in vol else "rw"
                 volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}
                 # Create additional volumes as directories if they don't exist yet
-                os.makedirs(vol["host"], exist_ok=True)
+                try:
+                    os.makedirs(vol["host"], exist_ok=True)
+                except FileExistsError:
+                    pass
 
         return volumes
 
