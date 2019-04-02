@@ -22,6 +22,12 @@ def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
             hosts = Hosts()
             new_entries = []
             changes = False
+
+            base_url = system_config["proxy"]["url"]
+            if not hosts.exists(names=[base_url]):
+                changes = True
+                new_entries.append(HostsEntry(entry_type='ipv4', address='127.0.0.1', names=[base_url]))
+
             if "services" in system_config["project"]["app"]:
                 for service in system_config["project"]["app"]["services"].values():
                     domain = service.domain()
