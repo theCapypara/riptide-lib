@@ -1,0 +1,4 @@
+-e git+ssh://git@github.com/Parakoopa/riptide-cli.git#egg=riptide_cli
+-e git+ssh://git@github.com/Parakoopa/riptide-proxy.git#egg=riptide_proxy
+-e git+ssh://git@github.com/Parakoopa/riptide-engine-docker.git#egg=riptide_engine_docker
+-e git+ssh://git@github.com/Parakoopa/riptide-db-mysql.git#egg=riptide_db_mysql
