@@ -16,6 +16,7 @@ from riptide.config.service.logging import *
 
 # todo: validate actual schema values -> better schema | ALL documents
 from riptide.config.service.ports import get_additional_port
+from riptide.config.service.volumes import process_additional_volumes
 from riptide.db.driver import db_driver_for_service
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.lib.cross_platform import cppath
@@ -266,7 +267,7 @@ class Service(YamlConfigDocument):
         # config
         if "config" in self:
             for config_name, config in self["config"].items():
-                volumes[process_config(config_name, config, self)] = {'bind': config["to"], 'mode': 'rw'}  # todo: ro default
+                volumes[process_config(config_name, config, self)] = {'bind': config["to"], 'mode': 'rw'}
 
         # logging
         if "logging" in self:
@@ -293,28 +294,9 @@ class Service(YamlConfigDocument):
                 os.makedirs(vol, exist_ok=True)
             volumes.update(db_driver_volumes)
 
-
         # additional_volumes
         if "additional_volumes" in self:
-            for vol in self["additional_volumes"].values():
-                # ~ paths
-                if vol["host"][0] == "~":
-                    vol["host"] = os.path.expanduser("~") + vol["host"][1:]
-                # Relative paths
-                if not os.path.isabs(vol["host"]):
-                    vol["host"] = os.path.join(project.folder(), vol["host"])
-
-                # relative container paths
-                if not PurePosixPath(vol["container"]).is_absolute():
-                    vol["container"] = str(PurePosixPath(CONTAINER_SRC_PATH).joinpath(vol["container"]))
-
-                mode = vol["mode"] if "mode" in vol else "rw"
-                volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}
-                # Create additional volumes as directories if they don't exist yet
-                try:
-                    os.makedirs(vol["host"], exist_ok=True)
-                except FileExistsError:
-                    pass
+            volumes.update(process_additional_volumes(list(self['additional_volumes'].values()), project.folder()))
 
         return volumes
 

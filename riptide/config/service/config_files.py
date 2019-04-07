@@ -38,10 +38,7 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
     with open(config["$source"], 'r') as stream:
         processed_file = service.process_vars_for(stream.read())
 
-    try:
-        os.makedirs(os.path.dirname(target_file))
-    except FileExistsError:
-        pass # Already exists, we don't care.
+    os.makedirs(os.path.dirname(target_file), exist_ok=True)
 
     with open(target_file, 'w') as f:
         f.write(processed_file)

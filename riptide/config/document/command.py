@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
 from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
+from riptide.config.service.volumes import process_additional_volumes
 from riptide.lib.cross_platform import cppath
 
 if TYPE_CHECKING:
@@ -94,22 +95,9 @@ class Command(YamlConfigDocument):
         volumes[project.src_folder()] = {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'}
 
         # additional_volumes
-        # todo: merge with services logic
         if "additional_volumes" in self:
-            for vol in self["additional_volumes"].values():
-                # ~ paths
-                if vol["host"][0] == "~":
-                    vol["host"] = os.path.expanduser("~") + vol["host"][1:]
-                # Relative paths
-                if not os.path.isabs(vol["host"]):
-                    vol["host"] = os.path.join(project.folder(), vol["host"])
-
-                # relative container paths
-                if not PurePosixPath(vol["container"]).is_absolute():
-                    vol["container"] = str(PurePosixPath(CONTAINER_SRC_PATH).joinpath(vol["container"]))
-
-                mode = vol["mode"] if "mode" in vol else "rw"
-                volumes[vol["host"]] = {'bind': vol["container"], 'mode': mode}
+            # Shared with services logic
+            volumes.update(process_additional_volumes(list(self['additional_volumes'].values()), project.folder()))
 
         return volumes
 
@@ -121,10 +109,7 @@ class Command(YamlConfigDocument):
 
     def collect_environment(self) -> dict:
         """
-        Collect environment variables from the "environment" entry in the service
-        configuration.
-
-        TODO: This propably is really not the best idea
+        Collect environment variables.
 
         The passed environment is simple all of the riptide's process environment,
         minus some important meta-variables such as USERNAME and PATH.

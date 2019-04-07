@@ -4,7 +4,6 @@ import os
 import unittest
 from unittest import mock
 
-from pathlib import PurePosixPath
 from unittest.mock import Mock, MagicMock, call
 
 from schema import SchemaError
@@ -16,7 +15,7 @@ from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.tests.helpers import patch_mock_db_driver, get_fixture_path
 from riptide.tests.stubs import ProjectStub
-
+from riptide.tests.unit.config.service.volumes_test import STUB_PAV__KEY, STUB_PAV__VAL
 
 FIXTURE_BASE_PATH = 'service' + os.sep
 
@@ -464,9 +463,9 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("os.makedirs")
     @mock.patch("riptide.config.document.service.process_config",
                 side_effect=lambda config_name, config, _: config_name + "~" + config["from"] + "~PROCESSED")
-    @mock.patch("os.path.expanduser", return_value=os.sep + 'HOME')
+    @mock.patch("riptide.config.document.service.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})
     def test_collect_volumes(self,
-                             expanduser_mock: Mock, process_config_mock: Mock, makedirs_mock: Mock,
+                             process_additional_volumes_mock: Mock, process_config_mock: Mock, makedirs_mock: Mock,
                              get_logging_path_for_mock: Mock, get_command_logging_container_path_mock: Mock,
                              create_logging_path_mock: Mock
                              ):
@@ -541,12 +540,8 @@ class ServiceTestCase(unittest.TestCase):
             # DB DRIVER
             'FROM_DB_DRIVER':                               'VALUE',
             # ADDITIONAL VOLUMES
-            os.path.join(os.sep + 'HOME', 'hometest'):      {'bind': '/vol1', 'mode': 'rw'},
-            os.path.join(ProjectStub.FOLDER, './reltest1'): {'bind': '/vol2', 'mode': 'rw'},
-            os.path.join(ProjectStub.FOLDER, 'reltest2'):   {'bind': '/vol3', 'mode': 'rw'},
-            os.path.join(ProjectStub.FOLDER, 'reltestc'):   {'bind': str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('reltest_container')), 'mode': 'rw'},
-            '/absolute_with_ro':                            {'bind': '/vol4', 'mode': 'ro'},
-            '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'}
+            # process_additional_volumes has to be called
+            STUB_PAV__KEY: STUB_PAV__VAL
         })
 
         service.parent_doc = ProjectStub({}, set_parent_to_self=True)
@@ -585,16 +580,13 @@ class ServiceTestCase(unittest.TestCase):
         create_logging_path_mock.assert_called_once()
 
         ## ADDITIONAL VOLUMES ASSERTIONS
-        # First volume had ~ in it:
-        expanduser_mock.assert_called_once_with('~')
+        process_additional_volumes_mock.assert_called_with(
+            list(service['additional_volumes'].values()),
+            ProjectStub.FOLDER
+        )
 
-        ## ADDITIONAL VOLUMES AND DB DRIVER ASSERTIONS
+        ## DB DRIVER ASSERTIONS
         makedirs_mock.assert_has_calls([
-            # ADDITIONAL VOLUMES
-            call(os.path.join(os.sep + 'HOME', 'hometest'), exist_ok=True),
-            call(os.path.join(ProjectStub.FOLDER, './reltest1'), exist_ok=True),
-            call(os.path.join('/absolute_with_ro'), exist_ok=True),
-            call(os.path.join('/absolute_no_mode'), exist_ok=True),
             # DB DRIVER
             call('FROM_DB_DRIVER', exist_ok=True)
         ], any_order=True)

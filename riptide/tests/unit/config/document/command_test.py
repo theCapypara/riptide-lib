@@ -5,7 +5,6 @@ import os
 import unittest
 from unittest import mock
 
-from pathlib import PurePosixPath
 from unittest.mock import Mock, MagicMock
 
 from schema import SchemaError
@@ -15,6 +14,7 @@ from configcrunch.tests.test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.tests.helpers import get_fixture_path
 from riptide.tests.stubs import ProjectStub
+from riptide.tests.unit.config.service.volumes_test import STUB_PAV__KEY, STUB_PAV__VAL
 
 FIXTURE_BASE_PATH = 'command' + os.sep
 
@@ -140,26 +140,25 @@ class CommandTestCase(unittest.TestCase):
         with self.assertRaises(IndexError):
             cmd.get_project()
 
-    @mock.patch("os.path.expanduser", return_value=os.sep + 'HOME')
-    def test_collect_volumes(self, expanduser_mock: Mock):
+    @mock.patch("riptide.config.document.command.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})
+    def test_collect_volumes(self, process_additional_volumes_mock: Mock):
         cmd = self.fix_with_volumes
         expected = OrderedDict({
             # Source code also has to be mounted in:
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
-            os.path.join(os.sep + 'HOME', 'hometest'):      {'bind': '/vol1', 'mode': 'rw'},
-            os.path.join(ProjectStub.FOLDER, './reltest1'): {'bind': '/vol2', 'mode': 'rw'},
-            os.path.join(ProjectStub.FOLDER, 'reltest2'):   {'bind': '/vol3', 'mode': 'rw'},
-            os.path.join(ProjectStub.FOLDER, 'reltestc'):   {'bind': str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('reltest_container')), 'mode': 'rw'},
-            '/absolute_with_ro':                            {'bind': '/vol4', 'mode': 'ro'},
-            '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'}
+            # process_additional_volumes has to be called
+            STUB_PAV__KEY: STUB_PAV__VAL
         })
 
         cmd.parent_doc = ProjectStub({}, set_parent_to_self=True)
         actual = cmd.collect_volumes()
         self.assertEqual(expected, actual)
         self.assertIsInstance(actual, OrderedDict)
-        # First command had ~ in it:
-        expanduser_mock.assert_called_once_with('~')
+
+        process_additional_volumes_mock.assert_called_with(
+            list(self.fix_with_volumes['additional_volumes'].values()),
+            ProjectStub.FOLDER
+        )
 
     @mock.patch("os.get_terminal_size", return_value=(10,20))
     @mock.patch("os.environ.copy", return_value={'ENV': 'VALUE1', 'FROM_ENV': 'has to be overridden'})
