@@ -1,5 +1,5 @@
 pipeline {
-
+    agent any
     options {
         disableConcurrentBuilds()
     }
@@ -16,20 +16,18 @@ pipeline {
 
         stage("Tests") {
             steps {
-                sh """
+                sh '''#!/bin/bash
                     docker run \
                         -v /var/run/docker.sock:/var/run/docker.sock \
                         -e USER=$(id -u) \
                         -e DOCKER_GROUP=$(cut -d: -f3 < <(getent group docker)) \
-                        -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent \
-                        -v $HOME/.ssh:/home/riptide/.ssh:ro \
                         -v "/tmp:/tmp" \
                         -v "$(pwd):$(pwd)" \
                         --network host \
                         --workdir $(pwd) \
                         riptide_docker_tox \
                         tox
-                """
+                '''
             }
         }
 
