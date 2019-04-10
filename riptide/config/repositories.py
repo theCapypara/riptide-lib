@@ -6,6 +6,7 @@ from git import Repo, InvalidGitRepositoryError, NoSuchPathError, CommandError
 from typing import TYPE_CHECKING
 
 from riptide.config.files import riptide_local_repositories_path, remove_all_special_chars
+from riptide.util import get_riptide_version
 
 if TYPE_CHECKING:
     from riptide.config.document.config import Config
@@ -24,33 +25,29 @@ def update(system_config: 'Config', update_text_func):
     for repo_name in system_config["repos"]:
         # directory name for this repo on disk
         dir_name = os.path.join(base_dir, remove_all_special_chars(repo_name))
+        _update_text(repo_name, update_text_func)
         try:
             repo = Repo(dir_name)
         except InvalidGitRepositoryError:
             # Delete directory and start new
             shutil.rmtree(dir_name)
-            _create_new(repo_name, dir_name, update_text_func)
+            repo = Repo.clone_from(repo_name, dir_name)
         except NoSuchPathError:
             # Doesn't exist yet, start new
-            _create_new(repo_name, dir_name, update_text_func)
-        else:
-            # Update existing repositories
-            try:
-                _update_text(repo_name, update_text_func)
-                repo.git.pull()
-            except CommandError as err:
-                # Git error, we can't update
-                update_text_func(TAB + "Warning: Could not update: " + err.stderr.replace('\n', ' '))
-    update_text_func("Done!")
-    update_text_func("")
+            repo = Repo.clone_from(repo_name, dir_name)
 
+        # Update existing repositories
+        try:
+            repo.git.fetch()
+            remote = repo.remotes.origin if hasattr(repo.remotes, 'origin') else repo.remotes[0]
+            # Checkout either current Riptide version or master
+            _checkout(repo, remote)
+        except CommandError as err:
+            # Git error, we can't update
+            update_text_func(TAB + "Warning: Could not update: " + err.stderr.replace('\n', ' '))
 
-def _create_new(clone_url, repo_dir, update_text_func):
-    """Create a new repository and inform update_text_func about it, returns True."""
-    _update_text(clone_url, update_text_func)
-    Repo.clone_from(clone_url, repo_dir)
-    return True
-
+        update_text_func("Done!")
+        update_text_func("")
 
 def _update_text(repo, update_text_func):
     """
@@ -83,3 +80,33 @@ def collect(system_config):
     # return all repos that are downloaded and in the system config
     return [os.path.join(base_dir, dirname) for dirname in existing]
 
+
+def _checkout(repo, remote):
+    prefix = remote.name + '/'
+    ref_list = [ref.name for ref in remote.refs]
+    major, minor, patch = get_riptide_version()
+    if major is not None:
+        if minor is not None:
+            if patch is not None:
+                # X.X.X
+                candidate = prefix + '%s.%s.%s' % (major, minor, patch)
+                if candidate in ref_list:
+                    repo.git.checkout(candidate)
+                    return
+            # X.X
+            candidate = prefix + '%s.%s' % (major, minor)
+            if candidate in ref_list:
+                repo.git.checkout(candidate)
+                return
+        # X
+        candidate = prefix + str(major)
+        if candidate in ref_list:
+            repo.git.checkout(candidate)
+            return
+    # master
+    candidate = prefix + 'master'
+    if candidate in ref_list:
+        repo.git.checkout(candidate)
+        return
+    # HEAD
+    repo.git.checkout(prefix + 'HEAD')
