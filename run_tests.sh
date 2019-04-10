@@ -16,6 +16,8 @@
 #
 # If you have problems, try to delete the .tox directory.
 #
+# This script is not used in CI, see Jenkinsfile instead.
+#
 
 # 0. Build the integration test image...
 docker build -t riptide_integration_test riptide/tests/docker_image
