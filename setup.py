@@ -10,7 +10,7 @@ setup(
     install_requires=[
         'configcrunch >= 0.1',
         'schema >= 0.6',
-        'pyyaml >= 3.13',
+        'pyyaml >= 5.1',
         'appdirs >= 1.4',
         'janus >= 0.4.0',
         'psutil >= 5.4',
