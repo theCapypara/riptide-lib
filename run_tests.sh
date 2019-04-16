@@ -3,7 +3,7 @@
 ## RUN TESTS (Linux only)
 #
 # This will run all tests in this project, including the engine integration tests with the Docker engine backend.
-# The tests are run on Python versions 3.5 - 3.7.
+# The tests are run on Python versions 3.6 - 3.7.
 # See tox.ini for details :)
 #
 # For these tests to run, you need to have Docker installed. The tests will use a Docker image found in
