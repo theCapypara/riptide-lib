@@ -6,13 +6,13 @@
 
 .. class:: center
 
-    ===================  ===================  ===================  ===================
-    *Main packages:*     **lib**              proxy_               cli_
-    *Engine-Backends:*   engine_docker_
-    *Database Drivers:*  db_mysql_
-    *Related Projects:*  configcrunch_
-    *More:*              docs_                repo_
-    ===================  ===================  ===================  ===================
+    ======================  ===================  ===================  ===================
+    *Main packages:*        **lib**              proxy_               cli_
+    *Container-Backends:*   engine_docker_
+    *Database Drivers:*     db_mysql_
+    *Related Projects:*     configcrunch_
+    *More:*                 docs_                repo_                docker_images_
+    ======================  ===================  ===================  ===================
 
 .. _lib:            https://github.com/Parakoopa/riptide-lib
 .. _cli:            https://github.com/Parakoopa/riptide-cli
@@ -22,11 +22,12 @@
 .. _db_mysql:       https://github.com/Parakoopa/riptide-db-mysql
 .. _docs:           https://github.com/Parakoopa/riptide-docs
 .. _repo:           https://github.com/Parakoopa/riptide-repo
+.. _docker_images:  https://github.com/Parakoopa/riptide-docker-images
 
 |build| |docs|
 
-.. |build| image:: http://jenkins.riptide.parakoopa.de:8080/buildStatus/icon?job=riptide-lib%2Fmaster
-    :target: http://jenkins.riptide.parakoopa.de:8080/blue/organizations/jenkins/riptide-lib/activity
+.. |build| image:: https://jenkins.riptide.parakoopa.de/buildStatus/icon?job=riptide-lib%2Fmaster
+    :target: https://jenkins.riptide.parakoopa.de/blue/organizations/jenkins/riptide-lib/activity
     :alt: Build Status
 
 .. |docs| image:: https://readthedocs.org/projects/riptide-docs/badge/?version=latest
