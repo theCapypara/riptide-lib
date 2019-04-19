@@ -38,12 +38,14 @@ pipeline {
                 // Setup virtual env
                 sh "rm -rf .venv || true"
                 sh "virtualenv .venv"
-                sh ". .venv/bin/activate"
 
                 // Run build
                 sh "rm -rf dist build || true"
-                sh "pip3 install -r requirements.txt"
-                sh "python3 setup.py bdist_wheel"
+                sh '''
+                    . .venv/bin/activate"
+                    pip3 install -r requirements.txt
+                    python3 setup.py bdist_wheel
+                '''
             }
             post {
                 always {
