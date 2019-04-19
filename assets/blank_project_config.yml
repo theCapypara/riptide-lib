@@ -1,4 +1,4 @@
-# Riptide example project file. Documentation: https://... # todo
+# Riptide example project file. Documentation: https://riptide-docs.readthedocs.io/
 project:
   name: empty-project
   app:

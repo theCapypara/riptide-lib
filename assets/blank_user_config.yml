@@ -1,13 +1,25 @@
-# Riptide example system configuration file.
+# Riptide configuration file.
+# This file contains the basic configuration of Riptide.
+# We recommend you to read the documentation for more information.
 riptide:
   proxy:
+    # The prefix that you want your projects to be accessible
+    # under. riptide.local -> projectname.riptide.local
     url: riptide.local
     ports:
       http: 80
+      # Set to false to disable https
       https: 443
+    # Enable or disable auto-starting when a project or service is not running
     autostart: true
 
-  repos: []
+  # List of Riptide repositories.
+  repos:
+    # Public Riptide repo by the community
+    - https://github.com/Parakoopa/riptide-repo.git
+
+  # Add all project hostnames to the /etc/hosts file automatically, see documentation.
   update_hosts_file: true
 
+  # Riptide container backend name. Needs to be installed. Default is 'docker' (riptide_engine_docker).
   engine: docker
