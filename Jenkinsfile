@@ -41,10 +41,9 @@ pipeline {
 
                 // Run build
                 sh "rm -rf dist build || true"
-                sh '''
-                    . .venv/bin/activate"
-                    pip3 install -r requirements.txt
-                    python3 setup.py bdist_wheel
+                sh '''. .venv/bin/activate
+                      pip3 install -r requirements.txt
+                      python3 setup.py bdist_wheel
                 '''
             }
             post {
