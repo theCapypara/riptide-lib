@@ -1,37 +1,13 @@
-# Recursive dictionary merge
-# todo: replace by MIT compatible lib.
-#
-# Copyright (C) 2016 Paul Durivage <pauldurivage+github@gmail.com>
-#
-# Updated to Python 3: 2018 Marco Köpcke
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
+def dict_merge(target: dict, source: dict):
+    """
+    Merge the source dict into target. Like dict.update(), but recursive.
 
-
-def dict_merge(dct, merge_dct):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
-    :param dct: dict onto which the merge is executed
-    :param merge_dct: dct merged into dct
+    :param target: dict that is the target for merge
+    :param source: source dict
     :return: None
     """
-    for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
-            dict_merge(dct[k], merge_dct[k])
+    for key in source.keys():
+        if key in target and isinstance(target[key], dict) and isinstance(source[key], dict):
+            dict_merge(target, source)
         else:
-            dct[k] = merge_dct[k]
+            target[key] = source[key]
