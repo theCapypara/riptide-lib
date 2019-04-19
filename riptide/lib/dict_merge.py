@@ -8,6 +8,6 @@ def dict_merge(target: dict, source: dict):
     """
     for key in source.keys():
         if key in target and isinstance(target[key], dict) and isinstance(source[key], dict):
-            dict_merge(target, source)
+            dict_merge(target[key], source[key])
         else:
             target[key] = source[key]
