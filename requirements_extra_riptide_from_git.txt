@@ -1,4 +1,4 @@
--e git+https://github.com/Parakoopa/riptide-cli.git#egg=riptide_cli
--e git+https://github.com/Parakoopa/riptide-proxy.git#egg=riptide_proxy
--e git+https://github.com/Parakoopa/riptide-engine-docker.git#egg=riptide_engine_docker
--e git+https://github.com/Parakoopa/riptide-db-mysql.git#egg=riptide_db_mysql
+-e git+https://github.com/Parakoopa/riptide-cli.git#egg=riptide-cli
+-e git+https://github.com/Parakoopa/riptide-proxy.git#egg=riptide-proxy
+-e git+https://github.com/Parakoopa/riptide-engine-docker.git#egg=riptide-engine_docker
+-e git+https://github.com/Parakoopa/riptide-db-mysql.git#egg=riptide-db_mysql

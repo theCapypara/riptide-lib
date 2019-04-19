@@ -50,13 +50,13 @@ This repository contains the library with common code for the Riptide CLI and th
 contains the interfaces for engine implementations and database drivers and classes for all of the configuration entities
 (Apps, Projects, Services, Commands...).
 
-It can be installed via pip by installing ``riptide_lib``.
+It can be installed via pip by installing ``riptide-lib``.
 
 Tests
 -----
 
 Inside the ``riptide.tests package`` are unit tests for the library and integration tests. The integration
-tests require you to install at least one engine implementation (eg. ``riptide_engine_docker``). The integration
+tests require you to install at least one engine implementation (eg. ``riptide-engine-docker``). The integration
 tests test the Riptide Library itself and the specific engine implementations.
 
 To run the tests, see ``run_tests.sh``.

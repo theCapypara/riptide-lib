@@ -8,7 +8,7 @@ with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
 # END README read-in
 
 setup(
-    name='riptide_lib',
+    name='riptide-lib',
     version='0.1.1',
     packages=find_packages(),
     include_package_data=True,
