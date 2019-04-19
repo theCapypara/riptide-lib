@@ -351,7 +351,10 @@ class EngineServiceTest(EngineTest):
                 self.run_start_test(loaded.engine, project, services, loaded.engine_tester)
 
                 # Give the app a few seconds
-                sleep(5)
+                sleep(8)
+
+                # Must still be running
+                self.assert_running(loaded.engine, project, services, loaded.engine_tester)
 
                 path_to_logging = os.path.join(loaded.temp_dir, '_riptide', 'logs')
                 ### Logging service
