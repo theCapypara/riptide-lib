@@ -1,12 +1,21 @@
 from setuptools import setup, find_packages
 
+# README read-in
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
+# END README read-in
+
 setup(
     name='riptide_lib',
-    version='0.1',
+    version='0.1.1',
     packages=find_packages(),
     include_package_data=True,
-    description='TODO',  # TODO
-    long_description='TODO - Project will be available starting May/June',  # TODO
+    description='Tool to manage development environments for web applications using containers - Library Package',
+    long_description=long_description,
+    long_description_content_type='text/x-rst',
+    url='https://github.com/Parakoopa/riptide-lib/',
     install_requires=[
         'configcrunch >= 0.1',
         'schema >= 0.6',
@@ -18,9 +27,8 @@ setup(
         'pywinpty >= 0.5.5; sys_platform == "win32"',
         'python-hosts >= 0.4'
     ],
-    # TODO
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Programming Language :: Python',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
