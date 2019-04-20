@@ -111,3 +111,4 @@ venv.bak/
 ### Custom
 dev-draft/
 dev-test/
+test_reports/

@@ -40,7 +40,7 @@ class ConfigFilesTestCase(unittest.TestCase):
 
         expected = '/META' + os.sep + FOLDER_FOR_LOGGING + os.sep + service_name + os.sep + 'SPECIAL_CHARS_REMOVED.log'
 
-        self.assertEquals(
+        self.assertEqual(
             expected,
             get_logging_path_for(service, log_name)
         )

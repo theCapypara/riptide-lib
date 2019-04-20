@@ -738,6 +738,6 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service({"config": {"FROM": "CONFIG_OBJECT"}})
 
         #with self.assertRaises(FileNotFoundError):
-        self.assertEquals('CALLED', service.config('FROM'))
+        self.assertEqual('CALLED', service.config('FROM'))
 
         process_config_mock.assert_called_once_with('FROM', "CONFIG_OBJECT", service)

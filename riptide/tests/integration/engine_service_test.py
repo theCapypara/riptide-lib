@@ -374,10 +374,10 @@ class EngineServiceTest(EngineTest):
                     self.assertTrue(MAIN_COMMAND_STDERR.decode('utf-8') in file.read())
 
                 with open(os.path.join(path_to_logging, 'logging', 'one.log'), 'rb') as file:
-                    self.assertEquals(MAIN_COMMAND_STDOUT, file.read())
+                    self.assertEqual(MAIN_COMMAND_STDOUT, file.read())
 
                 with open(os.path.join(path_to_logging, 'logging', 'two.log'), 'rb') as file:
-                    self.assertEquals(LOGGING_COMMAND_OUTPUT, file.read())
+                    self.assertEqual(LOGGING_COMMAND_OUTPUT, file.read())
 
                 ### Non logging service
                 self.assertFalse(os.path.exists(os.path.join(path_to_logging, 'simple', 'stdout.log')))
