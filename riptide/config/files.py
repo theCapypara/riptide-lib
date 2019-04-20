@@ -5,6 +5,7 @@ Riptide uses.
 Also provides some utility file-related functions.
 """
 import os
+import pkg_resources
 import re
 from appdirs import user_config_dir
 
@@ -51,8 +52,7 @@ def discover_project_file() -> Optional[str]:
 
 def riptide_assets_dir() -> str:
     """ Path to the assets directory of riptide_lib. """
-    this_folder = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(this_folder, '..', '..', 'assets')
+    return pkg_resources.resource_filename('riptide', 'assets')
 
 
 def riptide_main_config_file() -> str:
