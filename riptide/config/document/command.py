@@ -14,6 +14,7 @@ from riptide.lib.cross_platform import cppath
 
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
+    from riptide.config.document.app import App
 
 
 HEADER = 'command'
@@ -25,17 +26,67 @@ class Command(YamlConfigDocument):
 
     Placed inside an :class:`riptide.config.document.app.App`.
 
-    Example::
-
-        command:
-          image: xyztest/helloworld
-
     """
     @classmethod
     def header(cls) -> str:
         return HEADER
 
     def schema(self) -> Schema:
+        """
+        Can be either a normal command or an alias command.
+
+        **Normal command**:
+
+        [$name]: str
+            Name as specified in the key of the parent app.
+
+            Added by system. DO NOT specify this yourself in the YAML files.
+
+        image: str
+            Docker Image to use
+
+        [command]: str
+            Command to run inside of the container. Default's to command defined in image.
+
+            .. warning:: Avoid quotes (", ') inside of the command, as those may lead to strange side effects.
+
+        [additional_volumes]
+            Additional volumes to mount into the container for this command.
+
+            {key}
+                host: str
+                    Path on the host system to the volume. Avoid hardcoded absolute paths.
+                container: str
+                    Path inside the container (relative to src of Project or absolute).
+                [mode]: str
+                    Whether to mount the volume read-write ("rw", default) or read-only ("ro").
+
+        [environment]
+            Additional environment variables
+
+            {key}: str
+                Key is the name of the variable, value is the value.
+
+
+        **Alias command**:
+
+        [$name]: str
+            Name as specified in the key of the parent app.
+
+            Added by system. DO NOT specify this yourself in the YAML files.
+
+        aliases: str
+            Name of the command that is aliased by this command.
+
+        **Example Document:**
+
+        .. code-block:: yaml
+
+            command:
+              image: riptidepy/php
+              command: 'php index.php'
+
+        """
         return Schema(
             Or({
                 Optional('$ref'): str,  # reference to other Service documents
@@ -139,14 +190,59 @@ class Command(YamlConfigDocument):
 
         return env
 
+    def error_str(self) -> str:
+        return "%s<%s>" % (self.__class__.__name__, self["$name"] if "$name" in self else "???")
+
     @variable_helper
-    def volume_path(self):
-        """Returns the path to a command-unique directory for storing container data."""
+    def parent(self) -> 'App':
+        """
+        Returns the app that this command belongs to.
+
+        Example usage::
+
+            something: '{{ parent().notices.usage }}'
+
+        Example result::
+
+            something: 'This is easy to use.'
+        """
+        # noinspection PyTypeChecker
+        return super().parent()
+
+    @variable_helper
+    def volume_path(self) -> str:
+        """
+        Returns the (host) path to a command-unique directory for storing container data.
+
+        Example usage::
+
+            additional_volumes:
+                command_cache:
+                    host: '{{ volume_path() }}/command_cache'
+                    container: '/foo/bar/cache'
+
+        Example result::
+
+            additional_volumes:
+                command_cache:
+                    host: '/home/peter/my_projects/project1/_riptide/cmd_data/command_name/command_cache'
+                    container: '/foo/bar/cache'
+        """
         path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data', self["$name"])
         os.makedirs(path, exist_ok=True)
         return path
 
     @variable_helper
-    def home_path(self):
-        """Returns the path to the home directory inside the container."""
+    def home_path(self) -> str:
+        """
+        Returns the path to the home directory inside the container.
+
+        Example usage::
+
+            something: '{{ home_path() }}'
+
+        Example result::
+
+            something: '/home/riptide'
+        """
         return CONTAINER_HOME_PATH

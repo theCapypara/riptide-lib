@@ -1,14 +1,17 @@
 import os
 
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from schema import Schema, Optional
 
-from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError
+from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, variable_helper
 from configcrunch import load_subdocument
 from riptide.config.document.app import App
 
 HEADER = 'project'
+
+if TYPE_CHECKING:
+    from riptide.config.document.config import Config
 
 
 class Project(YamlConfigDocument):
@@ -16,20 +19,34 @@ class Project(YamlConfigDocument):
     A project file. Usually placed as ``riptide.yml`` inside the project directory.
     Has an :class:`riptide.config.document.app.App` in it's ``app`` entry.
 
-    Example::
-
-        project:
-          name: test-project
-          src: src
-          app:
-            $ref: apps/reference-to-app
-
     """
     @classmethod
     def header(cls) -> str:
         return HEADER
 
     def schema(self) -> Schema:
+        """
+        name: str
+            Unique name of the project.
+
+        src: str
+            Relative path of the source code directory (relative to riptide.yml).
+            Services and Commands only get access to this directory.
+
+        app: :class:`~riptide.config.document.app.App`
+            App that this project uses.
+
+        **Example Document:**
+
+        .. code-block:: yaml
+
+            project:
+              name: test-project
+              src: src
+              app:
+                $ref: apps/reference-to-app
+
+        """
         return Schema(
             {
                 Optional('$ref'): str,  # reference to other Project documents
@@ -60,3 +77,23 @@ class Project(YamlConfigDocument):
         if "$path" not in self:
             return None
         return os.path.join(self.folder(), self["src"])
+
+    def error_str(self) -> str:
+        return "%s<%s>" % (self.__class__.__name__, self["name"] if "name" in self else "???")
+
+    @variable_helper
+    def parent(self) -> 'Config':
+        """
+        Returns the system configuration document.
+
+        Example usage::
+
+            something: '{{ parent().proxy.url }}'
+
+        Example result::
+
+            something: 'riptide.local'
+
+        """
+        # noinspection PyTypeChecker
+        return super().parent()
