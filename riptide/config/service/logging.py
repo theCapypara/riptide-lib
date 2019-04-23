@@ -36,7 +36,7 @@ def create_logging_path(service: 'Service'):
 
 def get_logging_path_for(service: 'Service', log_name: str) -> str:
     """
-    Get the host path to store the logfile with the given name at.
+    Get the host path to store the log file with the given name at.
     """
     path = _get_log_path(service)
     filename = os.path.join(path, remove_all_special_chars(log_name) + '.log')

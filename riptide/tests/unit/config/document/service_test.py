@@ -194,7 +194,7 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         }, absolute_paths=['FIRST', 'SECOND'])
-        with self.assertRaisesRegex(ConfigcrunchError, "This propably happens because one of your services"):
+        with self.assertRaisesRegex(ConfigcrunchError, "This probably happens because one of your services"):
             service._initialize_data_after_merge()
 
     @mock.patch("os.path.exists", return_value=True)

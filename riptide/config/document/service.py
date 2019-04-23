@@ -66,7 +66,7 @@ class Service(YamlConfigDocument):
 
         [roles]: List[str]
             A list of roles for this service. You can use arbitrary strings and get services by their
-            assigned roles using ~`riptide.config.document.app.App.get_service_by_role`.
+            assigned roles using :func:`~riptide.config.document.app.App.get_service_by_role`.
 
             Some roles are pre-defined and have a special meaning:
 
@@ -96,7 +96,7 @@ class Service(YamlConfigDocument):
             .. warning:: Avoid quotes (", ') inside of the command, as those may lead to strange side effects.
 
         [port]: int
-            HTTP port that the webservice is accessible under. This port will be used by the proxy server to redirect
+            HTTP port that the web service is accessible under. This port will be used by the proxy server to redirect
             the traffic.
 
             If the port is not specified, the service is not accessible via proxy server.
@@ -121,7 +121,7 @@ class Service(YamlConfigDocument):
             List of commands to run, before the container starts. They are run sequentially.
             The startup will wait for the commands to finish. Exit codes (failures) are ignored.
 
-            Each of these commands is run in a seperate container based on the service specification. Each command
+            Each of these commands is run in a separate container based on the service specification. Each command
             is run in a "sh" shell.
 
         [post_start]: List[str]
@@ -383,7 +383,7 @@ class Service(YamlConfigDocument):
                     # Did not find the file at any of the possible places
                     raise ConfigcrunchError(
                         "Configuration file '%s' in service at '%s' does not exist or is not a file. "
-                        "This propably happens because one of your services has an invalid setting for the 'config' entries. "
+                        "This probably happens because one of your services has an invalid setting for the 'config' entries. "
                         "Based on how the configuration was merged, the following places were searched: %s"
                         % (config["from"], self.absolute_paths[0] if self.absolute_paths else '???', str(folders_to_search))
                     )

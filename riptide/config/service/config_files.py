@@ -29,7 +29,7 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
     if not os.path.exists(config["$source"]) or not os.path.isfile(config["$source"]):
         raise ValueError(
             "Configuration file %s, specified by %s in service %s does not exist or is not a file."
-            "This propably happens because one of your services has an invalid setting for the 'config' entries."
+            "This probably happens because one of your services has an invalid setting for the 'config' entries."
             % (config["$source"], config["from"], service["$name"])
         )
 
