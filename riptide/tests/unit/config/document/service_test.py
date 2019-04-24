@@ -290,6 +290,19 @@ class ServiceTestCase(unittest.TestCase):
         with self.assertRaises(ConfigcrunchError):
             service._initialize_data_after_merge()
 
+    def test_init_data_after_merge_config_invalid_entry(self):
+        # Invalid entries should be skipped, the validation will
+        # filter them out.
+        doc = {
+            "config": {"one": {
+                "to": "doesnt matter"
+            }}
+        }
+
+        service = module.Service(doc, absolute_paths=['PATH'])
+        service._initialize_data_after_merge()
+        self.assertDictEqual(doc["config"], service["config"])
+
     def test_initialize_data_after_merge_set_defaults(self):
         service = module.Service({})
         service._initialize_data_after_merge()

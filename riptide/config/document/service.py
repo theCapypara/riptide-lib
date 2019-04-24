@@ -369,7 +369,12 @@ class Service(YamlConfigDocument):
 
         if "config" in self and isinstance(self["config"], dict):
             for config in self["config"].values():
-                # TODO: Currently doesn't allow . or os.sep at the beginning for security reasons.
+                # sanity check if from and to are in this config entry, if not it's invalid.
+                # the validation will catch this later
+                if "from" not in config or "to" not in config:
+                    continue
+
+                # Doesn't allow . or os.sep at the beginning for security reasons.
                 if config["from"].startswith(".") or config["from"].startswith(os.sep):
                     raise ConfigcrunchError("Config 'from' items in services may not start with . or %s." % os.sep)
 
