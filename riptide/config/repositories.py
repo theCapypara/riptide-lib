@@ -67,18 +67,16 @@ def collect(system_config):
     # Get all repos that are downloaded
     repos = set(next(os.walk(base_dir))[1])
     # Get all expected repositories, clean up the names to match the directory names
-    repos_in_system_config = set(remove_all_special_chars(repo) for repo in system_config["repos"])
+    repos_in_system_config = [remove_all_special_chars(repo) for repo in system_config["repos"]]
 
     # Get all repos that are downloaded, but not in the system config
-    to_remove = repos - repos_in_system_config
+    to_remove = repos - set(repos_in_system_config)
     # remove them
     for remove in to_remove:
         shutil.rmtree(os.path.join(base_dir, remove))
 
-    existing = repos - to_remove
-
     # return all repos that are downloaded and in the system config
-    return [os.path.join(base_dir, dirname) for dirname in existing]
+    return [os.path.join(base_dir, dirname) for dirname in repos_in_system_config]
 
 
 def _checkout(repo, remote):
