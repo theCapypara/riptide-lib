@@ -134,6 +134,7 @@ class Command(YamlConfigDocument):
         Volumes are built from following sources:
 
         * Source code is mounted as volume if role "src" is set
+        * SSH_AUTH_SOCKET path is added as a volume
         * additional_volumes are added.
 
         :return: dict. Return format is the docker container API volumes dict format.
@@ -144,6 +145,10 @@ class Command(YamlConfigDocument):
 
         # source code
         volumes[project.src_folder()] = {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'}
+
+        # If SSH_AUTH_SOCK is set, provide the ssh auth socket as a volume
+        if 'SSH_AUTH_SOCK' in os.environ:
+            volumes[os.environ['SSH_AUTH_SOCK']] = {'bind': os.environ['SSH_AUTH_SOCK'], 'mode': 'rw'}
 
         # additional_volumes
         if "additional_volumes" in self:
