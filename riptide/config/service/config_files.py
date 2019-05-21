@@ -38,6 +38,18 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
     with open(config["$source"], 'r') as stream:
         processed_file = service.process_vars_for(stream.read())
 
+    # Weird Docker bug: The file has to exist in the actual code directory
+    # as well, otherwise strange things happen. Create the file and add a notice
+    if config['to'].startswith('/src/') and 'roles' in service and 'src' in service['roles']:
+        relative_to = config['to'][5:]
+        config_in_project_src = os.path.join(service.parent().parent().src_folder(), relative_to)
+        if not os.path.isfile(config_in_project_src):
+            with open(config_in_project_src, 'w') as f:
+                f.writelines([
+                    'This file was created by Riptide. It is not actually used. In the service container the file '
+                    '%s is mounted here instead.' % target_file
+                ])
+
     os.makedirs(os.path.dirname(target_file), exist_ok=True)
 
     with open(target_file, 'w') as f:
