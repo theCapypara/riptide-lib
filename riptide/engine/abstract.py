@@ -21,6 +21,7 @@ class AbstractEngine(ABC):
     def start_project(self, project: 'Project', services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project
+
         :type project: 'Project'
         :param services: Names of the services to start
         :return: MultiResultQueue[StartResult]
@@ -31,6 +32,7 @@ class AbstractEngine(ABC):
     def stop_project(self, project: 'Project', services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         """
         Stops all services in the project
+
         :type project: 'Project'
         :param services: Names of the services to stop
         :return: MultiResultQueue[StopResult]
@@ -41,6 +43,7 @@ class AbstractEngine(ABC):
     def status(self, project: 'Project', system_config: 'Config') -> Dict[str, bool]:
         """
         Returns the status for the given project (whether services are started or not)
+
         :param system_config: Main system config
         :param project: 'Project'
         :return: StatusResult
@@ -51,6 +54,7 @@ class AbstractEngine(ABC):
     def address_for(self, project: 'Project', service_name: str) -> Union[None, Tuple[str, int]]:
         """
         Returns the ip address and port of the host providing the service for project.
+
         :param project: 'Project'
         :param service_name: str
         :return: Tuple[str, int]
@@ -63,6 +67,7 @@ class AbstractEngine(ABC):
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
         Returns when the command is finished.
+
         :param project: 'Project'
         :param command_name: str
         :param arguments: List of arguments
@@ -97,6 +102,7 @@ class AbstractEngine(ABC):
         return the exit code (int), stdout/stderr of the command (str).
         Src/Current working directory is not mounted.
         Returns when finished.
+
         :param run_as_root: Force execution of the command container with the highest possible permissions
         :param project: 'Project'
         :param command: Command Command to run. May not be part of the passed project object but must be treated as such.
@@ -108,6 +114,7 @@ class AbstractEngine(ABC):
         """
         Open an interactive shell into service_name and attach stdout/stdin/stderr.
         Returns when the shell is exited.
+
         :param root: If true, run as root user instead of current shell user
         :param lines: Number of lines in the terminal, optional
         :param cols: Number of columns in the terminal, optional
@@ -123,11 +130,14 @@ class AbstractEngine(ABC):
         Open an interactive shell into service_name and attach stdout/stdin/stderr.
         Returns when the shell is exited.
         Not fining an image should NOT raise an error and instead print a warning as status report.
-        :param project: The project to pull all images for. Applies to all commands and services in project.
-        :param line_reset: Characters that represent a line reset for the current terminal.
+
+        :param project:     The project to pull all images for. Applies to all commands and services in project.
+
+        :param line_reset:  Characters that represent a line reset for the current terminal.
+
         :param update_func: Function to send status updates to.
                             Resetting the line via the provided parameter is allowed.
-                            Calling it does NOT add new lines (\n).
+                            Calling it does NOT add new lines (\\n).
                             End result should be looking like this::
 
                                 [service/service1] Pulling 'image/name':
@@ -138,8 +148,6 @@ class AbstractEngine(ABC):
                                     Warning: Image not found in repository.
 
                                 Done.
-
-        :return:
         """
         pass
 
@@ -180,6 +188,5 @@ class AbstractEngine(ABC):
     def supports_exec(self):
         """
         Whether or not this engine supports exec.
-        :return:
         """
         pass
