@@ -44,6 +44,8 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
         relative_to = config['to'][5:]
         config_in_project_src = os.path.join(service.parent().parent().src_folder(), relative_to)
         if not os.path.isfile(config_in_project_src):
+            # Create the directories of the dummy file as well, in case they don't exist.
+            os.makedirs(os.path.dirname(config_in_project_src), exist_ok=True)
             with open(config_in_project_src, 'w') as f:
                 f.writelines([
                     'This file was created by Riptide. It is not actually used. In the service container the file '
