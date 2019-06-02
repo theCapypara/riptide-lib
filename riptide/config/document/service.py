@@ -689,62 +689,6 @@ class Service(YamlConfigDocument):
         return CONTAINER_HOME_PATH
 
     @variable_helper
-    def config(self, config_name: str) -> str:
-        """
-        Returns the (host)-path to a config-entry of this service, for use in other services.
-
-        The config file will be processed as it would normally, all variables in it will be resolved relative to this
-        service.
-
-        This allows you, for example, to use service configuration files for commands (as shown below).
-
-        Example usage::
-
-            app:
-                name: demo
-                services:
-                    service:
-                        image: riptidepy/example
-                        config:
-                            example_config:
-                                from: 'foo.yml'
-                                to: '/bar.yml'
-                commands:
-                    command:
-                        image: riptidepy/example
-                        additional_volumes:
-                            example_config_for_command:
-                                host: '{{ parent().services.service.config("example_config")}}'
-                                container: '/bar.yml'
-
-
-        Example result::
-
-            app:
-                name: demo
-                services:
-                    service:
-                        image: riptidepy/example
-                        config:
-                            example_config:
-                                from: 'foo.yml'
-                                to: '/bar.yml'
-                commands:
-                    command:
-                        image: riptidepy/example
-                        additional_volumes:
-                            example_config_for_command:
-                                host: '/path/to/project/_riptide/processed_configs/service/example-config'
-                                container: '/bar.yml'
-
-        :param config_name: Key of the entry in this service's ``config`` map.
-        """
-        if "config" in self and config_name in self["config"]:
-            return process_config(config_name, self["config"][config_name], self)
-        raise FileNotFoundError("Config %s for service %s not found"
-                                % (config_name, self["$name"] if "$name" in self else "???"))
-
-    @variable_helper
     def get_tempdir(self) -> str:
         """
         Returns the path to the system (host!) temporary directory where the user (should) have write access.

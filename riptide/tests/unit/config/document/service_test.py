@@ -734,23 +734,3 @@ class ServiceTestCase(unittest.TestCase):
     def test_home_path(self):
         service = module.Service({})
         self.assertEqual(CONTAINER_HOME_PATH, service.home_path())
-
-    @mock.patch("riptide.config.document.service.process_config", return_value='CALLED')
-    def test_config_file_does_not_exist(self, process_config_mock: Mock):
-
-        service = module.Service({})
-
-        with self.assertRaises(FileNotFoundError):
-            service.config('FROM')
-
-        process_config_mock.assert_not_called()
-
-    @mock.patch("riptide.config.document.service.process_config", return_value='CALLED')
-    def test_config_file_does_exist(self, process_config_mock: Mock):
-
-        service = module.Service({"config": {"FROM": "CONFIG_OBJECT"}})
-
-        #with self.assertRaises(FileNotFoundError):
-        self.assertEqual('CALLED', service.config('FROM'))
-
-        process_config_mock.assert_called_once_with('FROM', "CONFIG_OBJECT", service)

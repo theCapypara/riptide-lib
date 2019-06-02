@@ -188,3 +188,38 @@ class AppTestCase(unittest.TestCase):
         app = module.App(doc)
 
         self.assertEqual(service_searched_role,    app.get_service_by_role(SEARCHED_ROLE))
+
+    def test_get_services_by_role(self):
+
+        SEARCHED_ROLE = 'needle'
+
+        service_no_roles = {
+            '$name': 'service1'
+        }
+
+        service_searched_role1 = {
+            '$name': 'service1',
+            'roles': [
+                'role1', SEARCHED_ROLE, 'role2', 'role3'
+            ]
+        }
+
+        service_searched_role2 = {
+            '$name': 'service2',
+            'roles': [
+                'role1', SEARCHED_ROLE, 'role2', 'role3'
+            ]
+        }
+
+        doc = {
+            'name': 'test',
+            'services': {
+                'service_no_roles': service_no_roles,
+                'service_searched_role1': service_searched_role1,
+                'service_searched_role2': service_searched_role2
+            }
+        }
+
+        app = module.App(doc)
+
+        self.assertEqual([service_searched_role1, service_searched_role2], app.get_services_by_role(SEARCHED_ROLE))

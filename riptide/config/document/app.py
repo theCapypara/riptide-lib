@@ -162,3 +162,16 @@ class App(YamlConfigDocument):
         for service in self["services"].values():
             if "roles" in service and role_name in service["roles"]:
                 return service
+
+    @variable_helper
+    def get_services_by_role(self, role_name: str) -> List[Service]:
+        """
+        Returns all services with the given role name.
+
+        :param role_name: Role to search for
+        """
+        services = []
+        for service in self["services"].values():
+            if "roles" in service and role_name in service["roles"]:
+                services.append(service)
+        return services

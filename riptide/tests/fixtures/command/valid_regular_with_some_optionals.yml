@@ -7,3 +7,5 @@ command:
       container: container
   environment:
     env: value
+  config_from_roles:
+    - test

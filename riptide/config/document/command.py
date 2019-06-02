@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 import os
-from pathlib import PurePosixPath
 
 from schema import Schema, Optional, Or
 from typing import TYPE_CHECKING
@@ -9,6 +8,7 @@ from typing import TYPE_CHECKING
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
 from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
+from riptide.config.service.config_files import process_config
 from riptide.config.service.volumes import process_additional_volumes
 from riptide.lib.cross_platform import cppath
 
@@ -67,6 +67,10 @@ class Command(YamlConfigDocument):
             {key}: str
                 Key is the name of the variable, value is the value.
 
+        [config_from_roles]: List[str]
+            List of role names. All files defined under "config" for services matching the roles are mounted
+            into the command container.
+
 
         **Alias command**:
 
@@ -101,7 +105,8 @@ class Command(YamlConfigDocument):
                         Optional('mode'): str  # default: rw - can be rw/ro.
                     }
                 },
-                Optional('environment'): {str: str}
+                Optional('environment'): {str: str},
+                Optional('config_from_roles'): [str]
             }, {
                 Optional('$ref'): str,  # reference to other Service documents
                 Optional('$name'): str,  # Added by system during processing parent app.
@@ -136,6 +141,9 @@ class Command(YamlConfigDocument):
         * Source code is mounted as volume if role "src" is set
         * SSH_AUTH_SOCKET path is added as a volume
         * additional_volumes are added.
+        * All config files from all services matching the roles in 'config_from_roles' are added. No service
+          is processed twice. Order is arbitrary, with the exception that roles are processed in the order they are
+          defined in.
 
         :return: dict. Return format is the docker container API volumes dict format.
                        See: https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
@@ -154,6 +162,16 @@ class Command(YamlConfigDocument):
         if "additional_volumes" in self:
             # Shared with services logic
             volumes.update(process_additional_volumes(list(self['additional_volumes'].values()), project.folder()))
+
+        # config_from_role
+        if "config_from_roles" in self:
+            services_already_checked = []
+            for role in self["config_from_roles"]:
+                for service in self.parent().get_services_by_role(role):
+                    if "config" in service and service not in services_already_checked:
+                        services_already_checked.append(service)
+                        for config_name, config in service["config"].items():
+                            volumes[process_config(config_name, config, service)] = {'bind': config["to"], 'mode': 'rw'}
 
         return volumes
 

@@ -5,7 +5,7 @@ import os
 import unittest
 from unittest import mock
 
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, call
 
 from schema import SchemaError
 
@@ -53,7 +53,8 @@ class CommandTestCase(unittest.TestCase):
                     "host": "/absolute_no_mode",
                     "container": "/vol5"
                 }
-            }
+            },
+            "config_from_roles": ["A", "B"]
         })
 
     def test_header(self):
@@ -140,17 +141,92 @@ class CommandTestCase(unittest.TestCase):
         with self.assertRaises(IndexError):
             cmd.get_project()
 
+    @mock.patch("os.environ")
     @mock.patch("riptide.config.document.command.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})
-    def test_collect_volumes(self, process_additional_volumes_mock: Mock):
+    @mock.patch("riptide.config.document.command.process_config",
+                side_effect=lambda config_name, config, service: "%s~%s~%s" % (config_name, config["from"], service['__UNIT_TEST_NAME']))
+    def test_collect_volumes(self, process_config_mock: Mock, process_additional_volumes_mock: Mock, os_environ_mock: Mock):
+        env = {}
+        os_environ_mock.__getitem__.side_effect = env.__getitem__
+        os_environ_mock.__iter__.side_effect = env.__iter__
+        os_environ_mock.__contains__.side_effect = env.__contains__
+        # Fixture also wants config_from_roles A and B
         cmd = self.fix_with_volumes
-        expected = OrderedDict({
+        # Dict order is not checked here, because it can be arbitrary for config_from_roles. Order
+        # is checked in the other collect_volume tests.
+        expected = dict({
             # Source code also has to be mounted in:
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
             # process_additional_volumes has to be called
-            STUB_PAV__KEY: STUB_PAV__VAL
+            STUB_PAV__KEY: STUB_PAV__VAL,
+            # config_from_roles :
+            'config1~/FROM_1~serviceRoleA1':                {'bind': '/TO_1', 'mode': 'rw'},
+            'config2~/FROM_2~serviceRoleA1':                {'bind': '/TO_2', 'mode': 'rw'},
+            'config2~/FROM_2~serviceRoleA2B1':              {'bind': '/TO_2', 'mode': 'rw'},
+            'config3~/FROM_3~serviceRoleA2B1':              {'bind': '/TO_3', 'mode': 'rw'},
+            'config3~/FROM_3~serviceRoleB2':                {'bind': '/TO_3', 'mode': 'rw'},
         })
 
-        cmd.parent_doc = ProjectStub({}, set_parent_to_self=True)
+        # Config entries
+        config1 = {'to': '/TO_1', 'from': '/FROM_1'}
+        config2 = {'to': '/TO_2', 'from': '/FROM_2'}
+        config3 = {'to': '/TO_3', 'from': '/FROM_3'}
+
+        # Services
+        serviceRoleA1 = {
+            "__UNIT_TEST_NAME": "serviceRoleA1",
+            "roles": ["A"],
+            "config": {
+                "config1": config1,
+                "config2": config2
+            }
+        }
+        # Is in two searched rules, must only be included once:
+        serviceRoleA2B1 = {
+            "__UNIT_TEST_NAME": "serviceRoleA2B1",
+            "roles": ["A", "B"],
+            "config": {
+                "config2": config2,
+                "config3": config3
+            }
+        }
+        serviceRoleB2 = {
+            "__UNIT_TEST_NAME": "serviceRoleB2",
+            "roles": ["B"],
+            "config": {
+                "config3": config3
+            }
+        }
+        # Has role C, should not be used:
+        serviceRoleC1 = {
+            "__UNIT_TEST_NAME": "serviceRoleC1",
+            "roles": ["C"],
+            "config": {
+                "config1": config1,
+                "config2": config2
+            }
+        }
+
+        # The project contains some services matching the defined roles
+        cmd.parent_doc = YamlConfigDocumentStub({
+            'services': {
+                'serviceRoleA1': serviceRoleA1,
+                'serviceRoleA2B1': serviceRoleA2B1,
+                'serviceRoleB2': serviceRoleB2,
+                'serviceRoleC1': serviceRoleC1
+            }
+        }, parent=ProjectStub({}))
+
+        def get_services_by_role_mock(role):
+            if role == "A":
+                return [serviceRoleA1, serviceRoleA2B1]
+            if role == "B":
+                return [serviceRoleA2B1, serviceRoleB2]
+            if role == "C":
+                return [serviceRoleC1]
+            return []
+
+        cmd.parent_doc.get_services_by_role = get_services_by_role_mock
         actual = cmd.collect_volumes()
         self.assertEqual(expected, actual)
         self.assertIsInstance(actual, OrderedDict)
@@ -159,6 +235,68 @@ class CommandTestCase(unittest.TestCase):
             list(self.fix_with_volumes['additional_volumes'].values()),
             ProjectStub.FOLDER
         )
+
+        ## CONFIG ASSERTIONS
+        process_config_mock.assert_has_calls([
+            call("config1", config1, serviceRoleA1),
+            call("config2", config2, serviceRoleA1),
+            call("config2", config2, serviceRoleA2B1),
+            call("config3", config3, serviceRoleA2B1),
+            call("config3", config3, serviceRoleB2)
+        ], any_order=True)
+
+    @mock.patch("os.environ")
+    @mock.patch("riptide.config.document.command.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})
+    def test_collect_volumes_no_roles(self, process_additional_volumes_mock: Mock, os_environ_mock: Mock):
+        env = {}
+        os_environ_mock.__getitem__.side_effect = env.__getitem__
+        os_environ_mock.__iter__.side_effect = env.__iter__
+        os_environ_mock.__contains__.side_effect = env.__contains__
+        cmd = self.fix_with_volumes
+        expected = OrderedDict({
+            # Source code also has to be mounted in:
+            ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
+            # process_additional_volumes has to be called
+            STUB_PAV__KEY: STUB_PAV__VAL
+        })
+
+        # The project contains NO services matching the defined roles
+        cmd.parent_doc = YamlConfigDocumentStub({"services": {}}, parent=ProjectStub({}))
+
+        def get_services_by_role_mock(role):
+            return []
+
+        cmd.parent_doc.get_services_by_role = get_services_by_role_mock
+        actual = cmd.collect_volumes()
+        self.assertEqual(expected, actual)
+        self.assertIsInstance(actual, OrderedDict)
+
+        process_additional_volumes_mock.assert_called_with(
+            list(self.fix_with_volumes['additional_volumes'].values()),
+            ProjectStub.FOLDER
+        )
+
+
+    @mock.patch("os.environ")
+    def test_collect_volumes_ssh_auth_socket(self, os_environ_mock: Mock):
+        ssh_auth_path = 'DUMMY'
+        env = {'SSH_AUTH_SOCK': ssh_auth_path}
+        os_environ_mock.__getitem__.side_effect = env.__getitem__
+        os_environ_mock.__iter__.side_effect = env.__iter__
+        os_environ_mock.__contains__.side_effect = env.__contains__
+        cmd = module.Command({})
+        expected = OrderedDict({
+            # Source code also has to be mounted in:
+            ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
+            # SSH_AUTH_SOCK:
+            ssh_auth_path:                                  {'bind': ssh_auth_path, 'mode': 'rw'}
+        })
+
+        # The project contains NO services matching the defined roles
+        cmd.parent_doc = ProjectStub({}, set_parent_to_self=True)
+        actual = cmd.collect_volumes()
+        self.assertEqual(expected, actual)
+        self.assertIsInstance(actual, OrderedDict)
 
     @mock.patch("os.get_terminal_size", return_value=(10,20))
     @mock.patch("os.environ.copy", return_value={'ENV': 'VALUE1', 'FROM_ENV': 'has to be overridden'})
