@@ -49,14 +49,10 @@ if platform.system().lower().startswith('win'):
             pass
 
         process.close()
+        return process.exitstatus()
 else:
     # linux and mac
     import pty
 
     def spawn(argv, **kwargs):
         return pty.spawn(argv)
-
-#elif platform.system().lower().startswith('lin'):
-    # import linux specific modules
-#elif platform.system().lower().startswith('dar'):
-    # import ...

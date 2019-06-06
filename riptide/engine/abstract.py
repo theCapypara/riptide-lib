@@ -62,16 +62,16 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, project: 'Project', command_name: str, arguments: List[str]) -> None:
+    def cmd(self, project: 'Project', command_name: str, arguments: List[str]) -> int:
         """
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
-        Returns when the command is finished.
+        Returns when the command is finished. Returns the command exit code.
 
         :param project: 'Project'
         :param command_name: str
         :param arguments: List of arguments
-        :return:
+        :return: exit code
         """
 
     @abstractmethod

@@ -48,7 +48,7 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
             os.makedirs(os.path.dirname(config_in_project_src), exist_ok=True)
             with open(config_in_project_src, 'w') as f:
                 f.writelines([
-                    'This file was created by Riptide. It is not actually used. In the service container the file '
+                    '#This file was created by Riptide. It is not actually used. In the service container the file '
                     '%s is mounted here instead.' % target_file
                 ])
 
