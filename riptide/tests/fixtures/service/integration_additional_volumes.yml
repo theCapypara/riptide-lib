@@ -21,3 +21,8 @@ service:
     auto_create:
       host: "{{volume_path()}}/test_auto_create"
       container: /test_auto_create
+      type: directory
+    type_file:
+      host: "{{volume_path()}}/type_file"
+      container: /type_file
+      type: file

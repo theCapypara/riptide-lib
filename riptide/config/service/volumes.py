@@ -8,6 +8,10 @@ from typing import List
 from riptide.config.files import CONTAINER_SRC_PATH
 
 
+VOLUME_TYPE_DIRECTORY = "directory"
+VOLUME_TYPE_FILE = "file"
+
+
 def process_additional_volumes(volumes: List[dict], project_folder: str):
     """
     Process the volume entries provided and return volume entries
@@ -29,9 +33,16 @@ def process_additional_volumes(volumes: List[dict], project_folder: str):
 
         mode = vol["mode"] if "mode" in vol else "rw"
         out[vol["host"]] = {'bind': vol["container"], 'mode': mode}
-        # Create additional volumes as directories if they don't exist yet
+        # Create additional volumes as defined type, if not exist
         try:
-            os.makedirs(vol["host"], exist_ok=True)
+            vol_type = vol["type"] if "type" in vol else VOLUME_TYPE_DIRECTORY
+            if vol_type == VOLUME_TYPE_FILE:
+                # Create as file
+                os.makedirs(os.path.dirname(vol["host"]), exist_ok=True)
+                open(vol["host"], 'a').close()
+            else:
+                # Create as dir
+                os.makedirs(vol["host"], exist_ok=True)
         except FileExistsError:
             pass
     return out

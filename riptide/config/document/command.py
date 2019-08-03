@@ -60,6 +60,9 @@ class Command(YamlConfigDocument):
                     Path inside the container (relative to src of Project or absolute).
                 [mode]: str
                     Whether to mount the volume read-write ("rw", default) or read-only ("ro").
+                [type]: str
+                    Whether this volume is a "directory" (default) or a "file". Only checked if the file/dir does
+                    not exist yet on the host system. Riptide will then create it with the appropriate type.
 
         [environment]
             Additional environment variables
@@ -102,7 +105,8 @@ class Command(YamlConfigDocument):
                     str: {
                         'host': str,
                         'container': str,
-                        Optional('mode'): str  # default: rw - can be rw/ro.
+                        Optional('mode'): str,  # default: rw - can be rw/ro.
+                        Optional('type'): Or('directory', 'file')  # default: directory
                     }
                 },
                 Optional('environment'): {str: str},

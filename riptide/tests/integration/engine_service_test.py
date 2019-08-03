@@ -220,6 +220,7 @@ class EngineServiceTest(EngineTest):
                 host_in_volume_path_ro = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'in_volume_path_ro')
                 host_relative_to_project = os.path.join(loaded.temp_dir, 'relative_to_project')
                 host_test_auto_create = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'test_auto_create')
+                host_type_file = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'type_file')
 
                 # container paths
                 cnt_in_volume_path_rw = '/in_volume_path_rw'
@@ -227,6 +228,7 @@ class EngineServiceTest(EngineTest):
                 cnt_in_volume_path_ro = '/in_volume_path_ro'
                 cnt_relative_to_project = str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('relative_to_src'))
                 cnt_test_auto_create = '/test_auto_create'
+                cnt_type_file = '/test_auto_create'
 
                 # Create most volume mounts
                 os.makedirs(host_in_volume_path_rw)
@@ -261,6 +263,7 @@ class EngineServiceTest(EngineTest):
                 self.assertTrue(os.path.isdir(host_in_volume_path_ro))
                 self.assertTrue(os.path.isdir(host_relative_to_project))
                 self.assertTrue(os.path.isdir(host_test_auto_create))
+                self.assertTrue(os.path.isfile(host_type_file))
 
                 # Assert volume mounts in container there
                 loaded.engine_tester.assert_file_exists(cnt_in_volume_path_rw, loaded.engine, project, service)
@@ -268,6 +271,7 @@ class EngineServiceTest(EngineTest):
                 loaded.engine_tester.assert_file_exists(cnt_in_volume_path_ro, loaded.engine, project, service)
                 loaded.engine_tester.assert_file_exists(cnt_relative_to_project, loaded.engine, project, service)
                 loaded.engine_tester.assert_file_exists(cnt_test_auto_create, loaded.engine, project, service)
+                loaded.engine_tester.assert_file_exists(cnt_type_file, loaded.engine, project, service)
 
                 # Assert files there in container
                 loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_in_volume_path_rw).joinpath('rw1'),
