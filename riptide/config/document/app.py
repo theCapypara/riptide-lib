@@ -1,4 +1,4 @@
-from schema import Optional, Schema
+from schema import Optional, Schema, Or
 from typing import List, Union, TYPE_CHECKING
 
 from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError
@@ -96,14 +96,22 @@ class App(YamlConfigDocument):
                         'name': str
                     }
                 },
-                Optional('services'): {
+                Optional('services'): Or({
                     str: DocReference(Service)
-                },
-                Optional('commands'): {
+                }, {}),
+                Optional('commands'): Or({
                     str: DocReference(Command)
-                }
+                }, {})
             }
         )
+
+    """ Initialise the optional services and command dicts """
+    def _initialize_data_after_merge(self):
+        if "services" not in self:
+            self.doc["services"] = {}
+
+        if "commands" not in self:
+            self.doc["commands"] = {}
 
     def resolve_and_merge_references(self, lookup_paths: List[str]):
         super().resolve_and_merge_references(lookup_paths)
