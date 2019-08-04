@@ -15,10 +15,11 @@ if TYPE_CHECKING:
     from riptide.config.document.project import Project
 
 
-def load_config(project_file=None, update_repositories=False, update_func=lambda msg: None) -> 'Config':
+def load_config(project_file=None, skip_project_load=False) -> 'Config':
     """
     Loads the specified project file and the system user configuration.
-    If no project file is specified, it is auto-detected.
+    If no project file is specified, it is auto-detected. Project loading can be
+    disabled by setting skip_project_load to False.
 
     If the project config could not be found, the project key in the system
     config will not exist. If the system config itself could not be found,
@@ -28,8 +29,7 @@ def load_config(project_file=None, update_repositories=False, update_func=lambda
     The path to the project is place in the ``$path`` field of the project.
 
     :param project_file: Project file to load or None for auto-discovery
-    :param update_repositories: Update repositories defined in system config
-    :param update_func: If update_repositories is set: Function to execute for status updates of repository updating
+    :param skip_project_load: Skip project loading. If True, the project_file setting will be ignored
     :return: :class:`riptide.config.document.config.Config` object.
     :raises: :class:`FileNotFoundError`: If the system config was not found
     :raises: :class:`schema.SchemaError`: On validation errors
@@ -49,12 +49,9 @@ def load_config(project_file=None, update_repositories=False, update_func=lambda
     if "project" in system_config:
         del system_config["project"]
 
-    # Update repositories
-    if update_repositories:
-        repositories.update(system_config, update_func)
     repos = repositories.collect(system_config)
 
-    if project_path is not None:
+    if project_path is not None and not skip_project_load:
         project_path = os.path.abspath(project_path)
         try:
             project_config = Project.from_yaml(project_path)

@@ -18,7 +18,7 @@ def update(system_config: 'Config', update_text_func):
     """
     Update repostiories by checking remote Git state and downloading all changes.
 
-    :param update_func: Function to execute for status updates of repository updating (one string parameter)
+    :param update_text_func: Function to execute for status updates of repository updating (one string parameter)
     :param system_config: Config that includes the repository urls.
     """
     base_dir = riptide_local_repositories_path()
