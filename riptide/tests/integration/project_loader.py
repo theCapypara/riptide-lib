@@ -80,7 +80,7 @@ def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator
                                         try:
                                             os.chdir(project_directory)
                                             # LOAD
-                                            system_config = load_config(update_repositories=False)
+                                            system_config = load_config()
                                             # Sanity assertions / first function checks
                                             assert isinstance(system_config, Config)
                                             assert "project" in system_config
