@@ -99,6 +99,11 @@ class Command(YamlConfigDocument):
                 Optional('$ref'): str,  # reference to other Service documents
                 Optional('$name'): str,  # Added by system during processing parent app.
 
+                'aliases': str
+            }, {
+                Optional('$ref'): str,  # reference to other Service documents
+                Optional('$name'): str,  # Added by system during processing parent app.
+
                 'image': str,
                 Optional('command'): str,
                 Optional('additional_volumes'): {
@@ -111,11 +116,6 @@ class Command(YamlConfigDocument):
                 },
                 Optional('environment'): {str: str},
                 Optional('config_from_roles'): [str]
-            }, {
-                Optional('$ref'): str,  # reference to other Service documents
-                Optional('$name'): str,  # Added by system during processing parent app.
-
-                'aliases': str
             })
         )
 

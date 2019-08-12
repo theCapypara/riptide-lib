@@ -96,12 +96,12 @@ class App(YamlConfigDocument):
                         'name': str
                     }
                 },
-                Optional('services'): Or({
+                Optional('services'): Or({}, {
                     str: DocReference(Service)
-                }, {}),
-                Optional('commands'): Or({
+                }),
+                Optional('commands'): Or({}, {
                     str: DocReference(Command)
-                }, {})
+                })
             }
         )
 
