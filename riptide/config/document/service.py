@@ -227,6 +227,13 @@ class Service(YamlConfigDocument):
             Please note that, if you set this to false and also specify the role 'src', you may run
             into permission issues.
 
+        [allow_full_memlock]: bool
+            Whether to set memlock ulimit to -1:-1 (soft:hard).
+            This is required for some database services, such as Elasticsearch.
+            Note that engines might ignore this setting, if they don't support it.
+
+            Default: False
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -317,6 +324,7 @@ class Service(YamlConfigDocument):
                         Optional('type'): Or('directory', 'file')  # default: directory
                     }
                 },
+                Optional('allow_full_memlock'): bool,
                 # db only
                 Optional('driver'): {
                     'name': str,
