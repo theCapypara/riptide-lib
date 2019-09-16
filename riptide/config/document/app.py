@@ -110,12 +110,14 @@ class App(YamlConfigDocument):
         Initialise the optional services and command dicts.
         Has to be done after validate because of some issues with Schema validation error handling :(
         """
-        super().validate()
-        if "services" not in self:
-            self.doc["services"] = {}
+        ret_val = super().validate()
+        if ret_val:
+            if "services" not in self:
+                self.doc["services"] = {}
 
-        if "commands" not in self:
-            self.doc["commands"] = {}
+            if "commands" not in self:
+                self.doc["commands"] = {}
+        return ret_val
 
     def resolve_and_merge_references(self, lookup_paths: List[str]):
         super().resolve_and_merge_references(lookup_paths)
