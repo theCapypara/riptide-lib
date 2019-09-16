@@ -96,17 +96,21 @@ class App(YamlConfigDocument):
                         'name': str
                     }
                 },
-                Optional('services'): Or({}, {
+                Optional('services'): {
                     str: DocReference(Service)
-                }),
-                Optional('commands'): Or({}, {
+                },
+                Optional('commands'): {
                     str: DocReference(Command)
-                })
+                }
             }
         )
 
-    """ Initialise the optional services and command dicts """
-    def _initialize_data_after_merge(self):
+    def validate(self):
+        """
+        Initialise the optional services and command dicts.
+        Has to be done after validate because of some issues with Schema validation error handling :(
+        """
+        super().validate()
         if "services" not in self:
             self.doc["services"] = {}
 
