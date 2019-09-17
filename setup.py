@@ -9,7 +9,7 @@ with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='riptide-lib',
-    version='0.2.3',
+    version='0.3.0',
     packages=find_packages(),
     package_data={'riptide': ['assets/*']},
     description='Tool to manage development environments for web applications using containers - Library Package',
