@@ -9,7 +9,7 @@ with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='riptide-lib',
-    version='0.3.0',
+    version='0.3.1',
     packages=find_packages(),
     package_data={'riptide': ['assets/*']},
     description='Tool to manage development environments for web applications using containers - Library Package',
@@ -25,7 +25,7 @@ setup(
         'psutil >= 5.4',
         'GitPython >= 2.1',
         'pywinpty >= 0.5.5; sys_platform == "win32"',
-        'python-hosts >= 0.4'
+        'python-hosts >= 0.4, < 0.4.6'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
