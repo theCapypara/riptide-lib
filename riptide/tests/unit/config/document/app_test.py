@@ -50,8 +50,7 @@ class AppTestCase(unittest.TestCase):
         app.resolve_and_merge_references(['./path1', './path2'])
         super_mock.assert_called_once_with(['./path1', './path2'])
 
-    @mock.patch('riptide.config.document.app.YamlConfigDocument.resolve_and_merge_references')
-    def test_resolve_and_merge_references_with_services(self, super_mock):
+    def test_resolve_and_merge_references_with_services(self):
         paths = ['path1', 'path2']
 
         service1 = {'key1': 'value1'}
@@ -76,7 +75,6 @@ class AppTestCase(unittest.TestCase):
             self.assertEqual({'$name': 'service1', 'key1': 'value1'}, app['services']['service1'].doc)
             self.assertEqual({'$name': 'service2', 'key2': 'value2'}, app['services']['service2'].doc)
 
-            super_mock.assert_called_once_with(paths)
             load_subdoc_mock.assert_has_calls([
                 call(service1, app, module.Service, paths),
                 call(service2, app, module.Service, paths)
@@ -102,8 +100,7 @@ class AppTestCase(unittest.TestCase):
             with self.assertRaises(ConfigcrunchError):
                 app.resolve_and_merge_references(paths)
 
-    @mock.patch('riptide.config.document.app.YamlConfigDocument.resolve_and_merge_references')
-    def test_resolve_and_merge_references_with_commands(self, super_mock):
+    def test_resolve_and_merge_references_with_commands(self):
         paths = ['path1', 'path2']
 
         cmd1 = {'key1': 'value1'}
@@ -128,7 +125,6 @@ class AppTestCase(unittest.TestCase):
             self.assertEqual({'$name': 'cmd1', 'key1': 'value1'}, app['commands']['cmd1'].doc)
             self.assertEqual({'$name': 'cmd2', 'key2': 'value2'}, app['commands']['cmd2'].doc)
 
-            super_mock.assert_called_once_with(paths)
             load_subdoc_mock.assert_has_calls([
                 call(cmd1, app, module.Command, paths),
                 call(cmd2, app, module.Command, paths)

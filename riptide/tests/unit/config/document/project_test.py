@@ -62,8 +62,7 @@ class ProjectTestCase(unittest.TestCase):
         project.resolve_and_merge_references(['./path1', './path2'])
         super_mock.assert_called_once_with(['./path1', './path2'])
 
-    @mock.patch('riptide.config.document.project.YamlConfigDocument.resolve_and_merge_references')
-    def test_resolve_and_merge_references_with_app(self, super_mock):
+    def test_resolve_and_merge_references_with_app(self):
         paths = ['path1', 'path2']
 
         app = {'key1': 'value1'}
@@ -82,7 +81,6 @@ class ProjectTestCase(unittest.TestCase):
             self.assertIsInstance(project['app'], YamlConfigDocumentStub)
             self.assertEqual(app, project['app'].doc)
 
-            super_mock.assert_called_once_with(paths)
             load_subdoc_mock.assert_has_calls([
                 call(app, project, module.App, paths),
             ], any_order=True)
