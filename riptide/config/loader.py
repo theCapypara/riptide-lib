@@ -133,3 +133,15 @@ def write_project(project: 'Project', rename=False):
         print("Project reference renamed.")
         print("%s -> %s" % (project['name'], projects[project['name']]))
         exit(0)
+
+
+def remove_project(project_name: str):
+    """
+    Remove a project from the projects json list
+    :param project_name:
+    :return:
+    """
+    projects = load_projects()
+    del projects[project_name]
+    with open(riptide_projects_file(), mode='w') as file:
+        json.dump(projects, file)
