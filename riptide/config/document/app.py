@@ -1,7 +1,7 @@
 from schema import Optional, Schema, Or
 from typing import List, Union, TYPE_CHECKING
 
-from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError
+from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, REMOVE
 from configcrunch import load_subdocument
 from configcrunch.abstract import variable_helper
 from riptide.config.document.command import Command
@@ -119,23 +119,24 @@ class App(YamlConfigDocument):
                 self.doc["commands"] = {}
         return ret_val
 
-    def resolve_and_merge_references(self, lookup_paths: List[str]):
-        super().resolve_and_merge_references(lookup_paths)
-        if "services" in self:
+    def _load_subdocuments(self, lookup_paths: List[str]):
+        if "services" in self and self["services"] != REMOVE:
             for key, servicedoc in self["services"].items():
-                self["services"][key] = load_subdocument(servicedoc, self, Service, lookup_paths)
-                if not isinstance(self["services"][key].doc, dict):
-                    raise ConfigcrunchError("Error loading Service for App: "
-                                            "The service with the name %s needs to be an object in the source document." % key)
-                self["services"][key]["$name"] = key
+                if servicedoc != REMOVE:
+                    self["services"][key] = load_subdocument(servicedoc, self, Service, lookup_paths)
+                    if not isinstance(self["services"][key].doc, dict):
+                        raise ConfigcrunchError("Error loading Service for App: "
+                                                "The service with the name %s needs to be an object in the source document." % key)
+                    self["services"][key]["$name"] = key
 
-        if "commands" in self:
+        if "commands" in self and self["commands"] != REMOVE:
             for key, commanddoc in self["commands"].items():
-                self["commands"][key] = load_subdocument(commanddoc, self, Command, lookup_paths)
-                if not isinstance(self["commands"][key].doc, dict):
-                    raise ConfigcrunchError("Error loading Command for App: "
-                                            "The command with the name %s needs to be an object in the source document." % key)
-                self["commands"][key]["$name"] = key
+                if commanddoc != REMOVE:
+                    self["commands"][key] = load_subdocument(commanddoc, self, Command, lookup_paths)
+                    if not isinstance(self["commands"][key].doc, dict):
+                        raise ConfigcrunchError("Error loading Command for App: "
+                                                "The command with the name %s needs to be an object in the source document." % key)
+                    self["commands"][key]["$name"] = key
 
         return self
 

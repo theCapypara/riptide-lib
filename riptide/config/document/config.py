@@ -89,7 +89,7 @@ class Config(YamlConfigDocument):
             }
         )
 
-    def resolve_and_merge_references(self, lookup_paths: List[str]) -> 'YamlConfigDocument':
+    def _load_subdocuments(self, lookup_paths: List[str]):
         # Can not contain references to other documents other than
         # the "project" reference which is added by the system.
         return self

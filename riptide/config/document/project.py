@@ -4,7 +4,7 @@ from typing import List, TYPE_CHECKING
 
 from schema import Schema, Optional
 
-from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, variable_helper
+from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, variable_helper, REMOVE
 from configcrunch import load_subdocument
 from riptide.config.document.app import App
 
@@ -57,9 +57,8 @@ class Project(YamlConfigDocument):
             }
         )
 
-    def resolve_and_merge_references(self, lookup_paths: List[str]):
-        super().resolve_and_merge_references(lookup_paths)
-        if "app" in self:
+    def _load_subdocuments(self, lookup_paths: List[str]):
+        if "app" in self and self["app"] != REMOVE:
             self["app"] = load_subdocument(self["app"], self, App, lookup_paths)
             if not isinstance(self["app"].doc, dict):
                 raise ConfigcrunchError("Error loading App for Project: "
