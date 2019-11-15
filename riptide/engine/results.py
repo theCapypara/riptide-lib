@@ -29,7 +29,7 @@ class ResultError(EndResultQueue):
 
     def __str__(self):
         if self.cause:
-            stri = "%s : %s(%s)" % (self.message, self.cause.__class__.__name__, str(self.cause))
+            stri = f"{self.message} : {self.cause.__class__.__name__}({str(self.cause)})"
         else:
             stri = self.message
         if self.details:

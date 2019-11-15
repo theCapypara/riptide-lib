@@ -21,13 +21,13 @@ def load_engines() -> Generator[Tuple[str, AbstractEngine, AbstractEngineTester]
     # Iterate engines
     for engine_entry_point in pkg_resources.iter_entry_points(ENGINE_ENTRYPOINT_KEY):
         if engine_entry_point.name not in engine_testers:
-            print("WARNING: No engine tester found for %s. Was not tested." % engine_entry_point.name)
+            print(f"WARNING: No engine tester found for {engine_entry_point.name}. Was not tested.")
             continue
         if not issubclass(engine_testers[engine_entry_point.name], AbstractEngineTester):
-            print("WARNING: Engine tester for %s was not instance of AbstractEngineTester. Was not tested." % engine_entry_point.name)
+            print(f"WARNING: Engine tester for {engine_entry_point.name} was not instance of AbstractEngineTester. Was not tested.")
             continue
         engine = engine_entry_point.load()
         if not issubclass(engine, AbstractEngine):
-            raise AssertionError("An engine must be an instance of AbstractEngine. %s was not." % engine_entry_point.name)
+            raise AssertionError(f"An engine must be an instance of AbstractEngine. {engine_entry_point.name} was not.")
 
         yield (engine_entry_point.name, engine(), engine_testers[engine_entry_point.name]())

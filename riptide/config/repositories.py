@@ -53,7 +53,7 @@ def _update_text(repo, update_text_func):
     """
     Sends message back to update_text_func that this repo is updating.
     """
-    update_text_func("Updating '%s'..." % repo)
+    update_text_func(f"Updating '{repo}'...")
 
 
 def collect(system_config):
@@ -87,12 +87,12 @@ def _checkout(repo, remote):
         if minor is not None:
             if patch is not None:
                 # X.X.X
-                candidate = prefix + '%s.%s.%s' % (major, minor, patch)
+                candidate = prefix + f'{major}.{minor}.{patch}'
                 if candidate in ref_list:
                     repo.git.checkout(candidate)
                     return
             # X.X
-            candidate = prefix + '%s.%s' % (major, minor)
+            candidate = prefix + f'{major}.{minor}'
             if candidate in ref_list:
                 repo.git.checkout(candidate)
                 return

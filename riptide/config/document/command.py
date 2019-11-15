@@ -223,7 +223,7 @@ class Command(YamlConfigDocument):
         return env
 
     def error_str(self) -> str:
-        return "%s<%s>" % (self.__class__.__name__, self["$name"] if "$name" in self else "???")
+        return f"{self.__class__.__name__}<{(self['$name'] if '$name' in self else '???')}>"
 
     @variable_helper
     def parent(self) -> 'App':

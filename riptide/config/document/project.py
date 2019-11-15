@@ -79,7 +79,7 @@ class Project(YamlConfigDocument):
         return os.path.join(self.folder(), self["src"])
 
     def error_str(self) -> str:
-        return "%s<%s>" % (self.__class__.__name__, self["name"] if "name" in self else "???")
+        return f"{self.__class__.__name__}<{(self['name'] if 'name' in self else '???')}>"
 
     @variable_helper
     def parent(self) -> 'Config':

@@ -39,12 +39,8 @@ def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
                 try:
                     hosts.write()
                 except UnableToWriteHosts:
-                    warning_callback("Could not update the hosts-file (%s) to configure proxy server routing.\n"
-                                     "> Give your user permission to edit this file, to remove this warning.\n"
-                                     "> If you wish to manually add the entries instead, "
-                                     "add the following entries to %s:\n%s\n"
-                                     % (
-                                         hosts.hosts_path,
-                                         hosts.hosts_path,
-                                         "\n".join(["%s\t%s" % (e.address, e.names[0]) for e in new_entries])
-                                     ))
+                    entries = "\n".join([f"{e.address}\t{e.names[0]}" for e in new_entries])
+                    warning_callback(f"Could not update the hosts-file ({hosts.hosts_path}) to configure proxy server routing.\n"
+                                     f"> Give your user permission to edit this file, to remove this warning.\n"
+                                     f"> If you wish to manually add the entries instead, "
+                                     f"add the following entries to {hosts.hosts_path}:\n{entries}\n")

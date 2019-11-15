@@ -97,7 +97,7 @@ class DbEnvironments:
         """
         new_env_path = self._path_to_env(environment)
         if self.config[CONFIG_DBENV] == environment:
-            raise EnvironmentError("Can not delete currently used environment")
+            raise OSError("Can not delete currently used environment")
         if not os.path.exists(new_env_path):
             raise FileNotFoundError("Database environment not found")
         self.engine.path_rm(new_env_path, self.project)

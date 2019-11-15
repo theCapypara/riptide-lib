@@ -25,17 +25,18 @@ class EngineTest(unittest.TestCase):
                 # 2. Check if services with port can be resolved to an ip address
                 address = engine.address_for(project, service_name)
                 self.assertIsNotNone(address,
-                                     'After starting a service with a port configured, it has to be resolvable. '
-                                     'Service: %s' % service_name)
+                                     f'After starting a service with a port configured, '
+                                     f'it has to be resolvable. Service: {service_name}')
 
                 # 3. Check if these services can be reached via HTTP
                 http_address = 'http://' + address[0] + ':' + address[1]
                 try:
                     request.urlopen(http_address)
                 except OSError as err:
-                    raise AssertionError("A service must be reachable on it's "
-                                         "address after start. Service: %s, address: %s"
-                                         % (service_name, http_address)) from err
+                    raise AssertionError(
+                        f"A service must be reachable on it's address after start. "
+                        f"Service: {service_name}, address: {http_address}"
+                    ) from err
 
         # 4. Let engine tester check details
         service_objects = [project["app"]["services"][name] for name in services]

@@ -144,7 +144,7 @@ class CommandTestCase(unittest.TestCase):
     @mock.patch("os.environ")
     @mock.patch("riptide.config.document.command.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})
     @mock.patch("riptide.config.document.command.process_config",
-                side_effect=lambda config_name, config, service: "%s~%s~%s" % (config_name, config["from"], service['__UNIT_TEST_NAME']))
+                side_effect=lambda config_name, config, service: f"{config_name}~{config['from']}~{service['__UNIT_TEST_NAME']}")
     def test_collect_volumes(self, process_config_mock: Mock, process_additional_volumes_mock: Mock, os_environ_mock: Mock):
         env = {}
         os_environ_mock.__getitem__.side_effect = env.__getitem__

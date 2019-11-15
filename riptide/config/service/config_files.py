@@ -28,9 +28,9 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
     """
     if not os.path.exists(config["$source"]) or not os.path.isfile(config["$source"]):
         raise ValueError(
-            "Configuration file %s, specified by %s in service %s does not exist or is not a file."
-            "This probably happens because one of your services has an invalid setting for the 'config' entries."
-            % (config["$source"], config["from"], service["$name"])
+            f"Configuration file {config['$source']}, specified by {config['from']} in service {service['$name']} "
+            f"does not exist or is not a file. This probably happens because one of your services has an invalid "
+            f"setting for the 'config' entries."
         )
 
     target_file = get_config_file_path(config_name, service)
@@ -48,8 +48,8 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
             os.makedirs(os.path.dirname(config_in_project_src), exist_ok=True)
             with open(config_in_project_src, 'w') as f:
                 f.writelines([
-                    '#This file was created by Riptide. It is not actually used. In the service container the file '
-                    '%s is mounted here instead.' % target_file
+                    f'#This file was created by Riptide. It is not actually used. '
+                    f'In the service container the file {target_file} is mounted here instead.'
                 ])
 
     os.makedirs(os.path.dirname(target_file), exist_ok=True)

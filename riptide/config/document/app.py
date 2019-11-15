@@ -126,8 +126,9 @@ class App(YamlConfigDocument):
                 if servicedoc != REMOVE:
                     self["services"][key] = load_subdocument(servicedoc, self, Service, lookup_paths)
                     if not isinstance(self["services"][key].doc, dict):
-                        raise ConfigcrunchError("Error loading Service for App: "
-                                                "The service with the name %s needs to be an object in the source document." % key)
+                        raise ConfigcrunchError(
+                            f"Error loading Service for App: The service with the name {key} needs to be an object in the source document."
+                        )
                     self["services"][key]["$name"] = key
 
         if "commands" in self and self["commands"] != REMOVE:
@@ -135,14 +136,15 @@ class App(YamlConfigDocument):
                 if commanddoc != REMOVE:
                     self["commands"][key] = load_subdocument(commanddoc, self, Command, lookup_paths)
                     if not isinstance(self["commands"][key].doc, dict):
-                        raise ConfigcrunchError("Error loading Command for App: "
-                                                "The command with the name %s needs to be an object in the source document." % key)
+                        raise ConfigcrunchError(
+                            f"Error loading Command for App: The command with the name {key} needs to be an object in the source document."
+                        )
                     self["commands"][key]["$name"] = key
 
         return self
 
     def error_str(self) -> str:
-        return "%s<%s>" % (self.__class__.__name__, self["name"] if "name" in self else "???")
+        return f"{self.__class__.__name__}<{(self['name'] if 'name' in self else '???')}>"
 
     @variable_helper
     def parent(self) -> 'Project':

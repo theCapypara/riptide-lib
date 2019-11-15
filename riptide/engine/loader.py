@@ -12,4 +12,4 @@ def load_engine(engine_name):
     }
     if engine_name in engines:
         return engines[engine_name]()
-    raise NotImplementedError("Unknown Engine %s" % engine_name)
+    raise NotImplementedError(f"Unknown Engine {engine_name}")

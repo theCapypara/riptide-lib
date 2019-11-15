@@ -34,7 +34,7 @@ class UtilTestCase(unittest.TestCase):
                 version_mock.version = version
                 gd_mock.return_value = version_mock
 
-                self.assertEqual(expected, get_riptide_version(), 'for entry %i' % i)
+                self.assertEqual(expected, get_riptide_version(), f'for entry {i:d}')
 
                 gd_mock.assert_called_with('riptide_lib')
             i += 1

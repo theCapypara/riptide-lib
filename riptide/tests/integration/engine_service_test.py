@@ -474,7 +474,7 @@ class EngineServiceTest(EngineTest):
                                      "user and group of image")
 
                 # TODO: Group is currently not guaranteed to be the same. Change in the future?
-                self.assert_response(str.encode('%s\n' % cpuser.getuid()),
+                self.assert_response(str.encode(f'{cpuser.getuid()}\n'),
                                      loaded.engine, project, service_no_root, "/rootcheck",
                                      "When running without run_as_current_user, a service must "
                                      "with user and group of the user that ran Riptide")

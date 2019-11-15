@@ -118,12 +118,11 @@ def write_project(project: 'Project', rename=False):
             changed = True
             if not rename:
                 raise FileExistsError(
-                    'The Riptide project named %s is already located at %s but your current project file is in %s.\n'
-                    'Each project name can only be mapped to one path. If you want to "rename" %s to use this '
-                    'new path, pass the --rename flag, otherwise rename the project in the riptide.yml file.\n'
-                    'If you want to edit these mappings manually, have a look at the file %s.'
-                    % (project['name'], projects[project['name']], project['$path'],
-                       project['name'], riptide_projects_file())
+                    f'The Riptide project named {project["name"]} is already located at '
+                    f'{projects[project["name"]]} but your current project file is at {project["$path"]}.\n'
+                    f'Each project name can only be mapped to one path. If you want to "rename" {project["name"]} to use '
+                    f'this new path, pass the --rename flag, otherwise rename the project in the riptide.yml file.\n'
+                    f'If you want to edit these mappings manually, have a look at the file {riptide_projects_file()}.'
                 )
     if changed:
         projects[project['name']] = project['$path']
@@ -131,7 +130,7 @@ def write_project(project: 'Project', rename=False):
             json.dump(projects, file)
     if rename:
         print("Project reference renamed.")
-        print("%s -> %s" % (project['name'], projects[project['name']]))
+        print(f"{project['name']} -> {projects[project['name']]}")
         exit(0)
 
 

@@ -389,7 +389,7 @@ class Service(YamlConfigDocument):
 
                 # Doesn't allow . or os.sep at the beginning for security reasons.
                 if config["from"].startswith(".") or config["from"].startswith(os.sep):
-                    raise ConfigcrunchError("Config 'from' items in services may not start with . or %s." % os.sep)
+                    raise ConfigcrunchError(f"Config 'from' items in services may not start with . or {os.sep}.")
 
                 config["$source"] = None
                 for folder in folders_to_search:
@@ -399,11 +399,12 @@ class Service(YamlConfigDocument):
                         break
                 if config["$source"] is None:
                     # Did not find the file at any of the possible places
+                    p = self.absolute_paths[0] if self.absolute_paths else '???'
                     raise ConfigcrunchError(
-                        "Configuration file '%s' in service at '%s' does not exist or is not a file. "
-                        "This probably happens because one of your services has an invalid setting for the 'config' entries. "
-                        "Based on how the configuration was merged, the following places were searched: %s"
-                        % (config["from"], self.absolute_paths[0] if self.absolute_paths else '???', str(folders_to_search))
+                        f"Configuration file '{config['from']}' in service at '{p}' does not exist or is not a file. "
+                        f"This probably happens because one of your services has an invalid setting for the 'config' "
+                        f"entries. Based on how the configuration was merged, the following places were searched: "
+                        f"{str(folders_to_search)}"
                     )
 
     def _initialize_data_after_variables(self):
@@ -425,8 +426,11 @@ class Service(YamlConfigDocument):
         # Db Driver constraints. If role db is set, a "driver" has to be set and code has to exist for it.
         if "roles" in self and "db" in self["roles"]:
             if "driver" not in self or self._db_driver is None:
-                raise ConfigcrunchError("Service %s validation: If a service has the role 'db' it has to have a valid "
-                                        "'driver' entry with a driver that is available." % self["$name"])
+                raise ConfigcrunchError(
+                    f"Service {self['$name']} validation: "
+                    f"If a service has the role 'db' it has to have a valid "
+                    f"'driver' entry with a driver that is available."
+                )
             self._db_driver.validate_service()
         return True
 
@@ -556,7 +560,7 @@ class Service(YamlConfigDocument):
         return self._loaded_port_mappings
 
     def error_str(self) -> str:
-        return "%s<%s>" % (self.__class__.__name__, self["$name"] if "$name" in self else "???")
+        return f"{self.__class__.__name__}<{(self['$name'] if '$name' in self else '???')}>"
 
     @variable_helper
     def parent(self) -> 'App':

@@ -72,7 +72,7 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_additional_volumes.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Or\('rw', 'ro'\) did not validate"):
+        with self.assertRaisesRegex(SchemaError, r"Or\('rw', 'ro'\) did not validate"):
             service.validate()
 
     def test_validate_invalid_ports(self):
