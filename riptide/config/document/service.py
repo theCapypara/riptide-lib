@@ -57,7 +57,8 @@ class Service(YamlConfigDocument):
     def header(cls) -> str:
         return HEADER
 
-    def schema(self) -> Schema:
+    @classmethod
+    def schema(cls) -> Schema:
         """
         [$name]: str
             Name as specified in the key of the parent app.

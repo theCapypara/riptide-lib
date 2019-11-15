@@ -31,12 +31,18 @@ class Command(YamlConfigDocument):
     def header(cls) -> str:
         return HEADER
 
-    def schema(self) -> Schema:
+    @classmethod
+    def schema(cls) -> Schema:
         """
         Can be either a normal command or an alias command.
+        """
+        return Schema(
+            Or(cls.schema_alias(), cls.schema_normal())
+        )
 
-        **Normal command**:
-
+    @classmethod
+    def schema_normal(cls):
+        """
         [$name]: str
             Name as specified in the key of the parent app.
 
@@ -74,17 +80,6 @@ class Command(YamlConfigDocument):
             List of role names. All files defined under "config" for services matching the roles are mounted
             into the command container.
 
-
-        **Alias command**:
-
-        [$name]: str
-            Name as specified in the key of the parent app.
-
-            Added by system. DO NOT specify this yourself in the YAML files.
-
-        aliases: str
-            Name of the command that is aliased by this command.
-
         **Example Document:**
 
         .. code-block:: yaml
@@ -92,32 +87,42 @@ class Command(YamlConfigDocument):
             command:
               image: riptidepy/php
               command: 'php index.php'
-
         """
-        return Schema(
-            Or({
-                Optional('$ref'): str,  # reference to other Service documents
-                Optional('$name'): str,  # Added by system during processing parent app.
+        return Schema({
+            Optional('$ref'): str,  # reference to other Service documents
+            Optional('$name'): str,  # Added by system during processing parent app.
 
-                'aliases': str
-            }, {
-                Optional('$ref'): str,  # reference to other Service documents
-                Optional('$name'): str,  # Added by system during processing parent app.
+            'image': str,
+            Optional('command'): str,
+            Optional('additional_volumes'): {
+                str: {
+                    'host': str,
+                    'container': str,
+                    Optional('mode'): str,  # default: rw - can be rw/ro.
+                    Optional('type'): Or('directory', 'file')  # default: directory
+                }
+            },
+            Optional('environment'): {str: str},
+            Optional('config_from_roles'): [str]
+        })
 
-                'image': str,
-                Optional('command'): str,
-                Optional('additional_volumes'): {
-                    str: {
-                        'host': str,
-                        'container': str,
-                        Optional('mode'): str,  # default: rw - can be rw/ro.
-                        Optional('type'): Or('directory', 'file')  # default: directory
-                    }
-                },
-                Optional('environment'): {str: str},
-                Optional('config_from_roles'): [str]
-            })
-        )
+    @classmethod
+    def schema_alias(cls):
+        """
+        [$name]: str
+            Name as specified in the key of the parent app.
+
+            Added by system. DO NOT specify this yourself in the YAML files.
+
+        aliases: str
+            Name of the command that is aliased by this command.
+        """
+        return Schema({
+            Optional('$ref'): str,  # reference to other Service documents
+            Optional('$name'): str,  # Added by system during processing parent app.
+
+            'aliases': str
+        })
 
     def _initialize_data_after_variables(self):
         """ Normalize all host-paths to only use the system-type directory separator """

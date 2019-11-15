@@ -25,7 +25,8 @@ class App(YamlConfigDocument):
     def header(cls) -> str:
         return HEADER
 
-    def schema(self) -> Schema:
+    @classmethod
+    def schema(cls) -> Schema:
         """
         name: str
             Name describing this app.
