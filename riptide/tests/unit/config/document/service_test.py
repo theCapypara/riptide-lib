@@ -51,7 +51,7 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_no_image.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'image'"):
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'image'"):
             service.validate()
 
     def test_validate_invalid_logging(self):

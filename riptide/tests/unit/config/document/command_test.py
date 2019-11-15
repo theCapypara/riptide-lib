@@ -75,21 +75,21 @@ class CommandTestCase(unittest.TestCase):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_alias_no_aliases.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys:"):
+        with self.assertRaisesRegex(SchemaError, "Missing key:"):
             command.validate()
 
     def test_validate_invalid_regular_no_image(self):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_regular_no_image.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys:"):
+        with self.assertRaisesRegex(SchemaError, "Missing key:"):
             command.validate()
 
     def test_validate_invalid_weird_mixup(self):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_weird_mixup.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Wrong keys"):
+        with self.assertRaisesRegex(SchemaError, "Wrong key"):
             command.validate()
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')

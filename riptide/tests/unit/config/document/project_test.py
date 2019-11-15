@@ -36,21 +36,21 @@ class ProjectTestCase(unittest.TestCase):
         project = module.Project.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_no_app.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'app'"):
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'app'"):
             project.validate()
 
     def test_validate_invalid_no_name(self):
         project = module.Project.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_no_name.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'name'"):
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'name'"):
             project.validate()
 
     def test_validate_invalid_no_src(self):
         project = module.Project.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_no_src.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'src'"):
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'src'"):
             project.validate()
 
     @mock.patch("riptide.config.document.project.YamlConfigDocument.resolve_and_merge_references")

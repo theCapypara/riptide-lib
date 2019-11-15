@@ -8,6 +8,7 @@ from riptide.tests.helpers import get_fixture_path
 
 FIXTURE_BASE_PATH = 'config' + os.sep
 
+
 class ConfigTestCase(unittest.TestCase):
 
     def test_header(self):
@@ -24,21 +25,21 @@ class ConfigTestCase(unittest.TestCase):
         config = module.Config.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_missing_engine.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'engine'"):
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'engine'"):
             config.validate()
 
     def test_validate_invalid_missing_proxy(self):
         config = module.Config.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_missing_proxy.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'proxy'"):
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'proxy'"):
             config.validate()
 
     def test_validate_invalid_missing_repos(self):
         config = module.Config.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_missing_repos.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing keys: 'repos'"):
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'repos'"):
             config.validate()
 
     def test_validate_invalid_proxy(self):
