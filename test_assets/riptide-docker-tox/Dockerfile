@@ -20,10 +20,12 @@ RUN echo "deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu xenial main" >> /et
         python3.5 python3.5-dev libpython3.5-dev \
         python3.6 python3.6-dev libpython3.6-dev \
         python3.7 python3.7-dev libpython3.7-dev \
+        python3.8 python3.8-dev libpython3.8-dev python3.8-distutils \
     && curl -fSL "https://bootstrap.pypa.io/get-pip.py" -o get-pip.py \
     && python3.5 get-pip.py \
     && python3.6 get-pip.py \
     && python3.7 get-pip.py \
+    && python3.8 get-pip.py \
     && rm get-pip.py \
     && rm -rf /var/lib/apt/lists/*
 
