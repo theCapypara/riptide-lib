@@ -22,10 +22,10 @@ setup(
         'pyyaml >= 5.1',
         'appdirs >= 1.4',
         'janus >= 0.4.0',
-        'psutil >= 5.4',
-        'GitPython >= 2.1',
+        'psutil >= 5.6',
+        'GitPython >= 3.0',
         'pywinpty >= 0.5.5; sys_platform == "win32"',
-        'python-hosts >= 0.4, < 0.4.6'
+        'python-hosts >= 0.4'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -34,5 +34,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
 )
