@@ -46,7 +46,30 @@ class AbstractEngine(ABC):
 
         :param system_config: Main system config
         :param project: 'Project'
-        :return: StatusResult
+        :return: Dict[str, bool]
+        """
+        pass
+
+    @abstractmethod
+    def service_status(self, project: 'Project', service_name: str, system_config: 'Config') -> bool:
+        """
+        Returns the status for a single service in a given project (whether service is started or not)
+
+        :param system_config: Main system config
+        :param project: 'Project'
+        :param service_name: str
+        :return: bool
+        """
+        pass
+
+    @abstractmethod
+    def container_name_for(self, project: 'Project', service_name: str) -> str:
+        """
+        Returns the container name for the given service or whatever is the equivalent.
+
+        :param project: 'Project'
+        :param service_name: str
+        :return: bool
         """
         pass
 

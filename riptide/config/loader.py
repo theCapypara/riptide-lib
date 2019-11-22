@@ -88,10 +88,10 @@ def load_config_by_project_name(name: str) -> 'Config':
     """
     projects = load_projects()
     if name not in projects:
-        raise Exception("todo")  # todo ProjectNotFoundError
+        raise FileNotFoundError("Project was not found.")
     system_config = load_config(projects[name])  # may raise FileNotFound
     if "project" not in system_config:
-        raise FileNotFoundError("todo")  # todo
+        raise Exception("Unknown error.")
     return system_config
 
 
