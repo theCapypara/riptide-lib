@@ -15,6 +15,11 @@ if TYPE_CHECKING:
     from riptide.config.document.project import Project
 
 
+RESERVED_NAMES = [
+    "control"  # Riptide Mission Control endpoint on Proxy Server
+]
+
+
 def load_config(project_file=None, skip_project_load=False) -> 'Config':
     """
     Loads the specified project file and the system user configuration.
@@ -102,9 +107,20 @@ def write_project(project: 'Project', rename=False):
     Throws an error if a project with the given name,
     but a different path exists, if rename is not specifed.
 
+    A blacklist (RESERVED_NAMES) is checked, if the project name is on the blacklist,
+    Riptide refuses to load it. The blacklist contains reserved names.
+
     :param project:             Project object
     :param rename:              Rename an existing project entry, if found.
     """
+
+    # Check reserved names
+    if project['name'] in RESERVED_NAMES:
+        raise FileExistsError(
+            f'The project name {project["name"]} is reserved by Riptide. '
+            f'Please use a different name for your project.'
+        )
+
     projects = load_projects()
 
     # xxx: This doesn't look really nice to understand. Basically, check if the project is
