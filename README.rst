@@ -24,7 +24,7 @@
 .. _repo:           https://github.com/Parakoopa/riptide-repo
 .. _docker_images:  https://github.com/Parakoopa/riptide-docker-images
 
-|build| |docs|
+|build| |docs| |slack|
 
 .. |build| image:: https://jenkins.riptide.parakoopa.de/buildStatus/icon?job=riptide-lib%2Fmaster
     :target: https://jenkins.riptide.parakoopa.de/blue/organizations/jenkins/riptide-lib/activity
@@ -33,6 +33,10 @@
 .. |docs| image:: https://readthedocs.org/projects/riptide-docs/badge/?version=latest
     :target: https://riptide-docs.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
+
+.. |slack| image:: https://slack.riptide.parakoopa.de/badge.svg
+    :target: https://slack.riptide.parakoopa.de
+    :alt: Join our Slack workspace
 
 Riptide is a set of tools to manage development environments for web applications.
 It's using container virtualization tools, such as `Docker <https://www.docker.com/>`_
