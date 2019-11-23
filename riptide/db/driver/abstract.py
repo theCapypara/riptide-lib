@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Dict
 
 from riptide.engine.abstract import AbstractEngine
 
@@ -25,12 +26,12 @@ class AbstractDbDriver(ABC):
         pass
 
     @abstractmethod
-    def importt(self, project: 'Project', engine: AbstractEngine, absolute_path_to_import_object):
+    def importt(self, engine: AbstractEngine, absolute_path_to_import_object):
         """Import a directory/file into the database."""
         pass
 
     @abstractmethod
-    def export(self, project: 'Project', engine: AbstractEngine, absolute_path_to_export_target):
+    def export(self, engine: AbstractEngine, absolute_path_to_export_target):
         """Export a directory/file representing the database data from the database. Must be importable with importt."""
         pass
 
@@ -62,3 +63,12 @@ class AbstractDbDriver(ABC):
         the path to the import file/directory.
         :return:
         """
+
+    @abstractmethod
+    def collect_info(self) -> Dict[str, str]:
+        """
+        Collect information about accessing the database.
+
+        Returned dict is a map of descriptions.
+        """
+        pass
