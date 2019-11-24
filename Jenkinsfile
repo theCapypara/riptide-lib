@@ -17,6 +17,8 @@ pipeline {
         stage("Tests") {
             steps {
                 lock('riptide-integration-tests') {
+                    // Tox has issues with the venv directories for some reasons, so we just reset it each time
+                    sh "rm .tox -rf || true"
                     sh '''#!/bin/bash
                         docker run \
                             -v /var/run/docker.sock:/var/run/docker.sock \
