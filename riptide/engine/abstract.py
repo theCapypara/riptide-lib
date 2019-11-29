@@ -148,6 +148,24 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
+    def exec_custom(self, project: 'Project', service_name: str, command: str, cols=None, lines=None, root=False) -> None:
+        """
+        Run a custom command in service service_name and attach stdout/stdin/stderr.
+        Returns when the command is exited.
+
+        Commands in the server container are execute using a sh shell.
+
+        :param root: If true, run as root user instead of current shell user
+        :param command: The command string to execute.
+        :param lines: Number of lines in the terminal, optional
+        :param cols: Number of columns in the terminal, optional
+        :param project: 'Project'
+        :param service_name: str
+        :return:
+        """
+        pass
+
+    @abstractmethod
     def pull_images(self, project: 'Project', line_reset='\n', update_func=lambda msg: None) -> None:
         """
         Open an interactive shell into service_name and attach stdout/stdin/stderr.
