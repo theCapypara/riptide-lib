@@ -361,6 +361,9 @@ class Service(YamlConfigDocument):
         if "roles" not in self:
             self.doc["roles"] = []
 
+        if "working_directory" not in self:
+            self.doc["working_directory"] = "."
+
         if "db" in self["roles"]:
             self._db_driver = db_driver_for_service.get(self)
             if self._db_driver:

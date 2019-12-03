@@ -311,7 +311,8 @@ class ServiceTestCase(unittest.TestCase):
             "dont_create_user": False,
             "pre_start": [],
             "post_start": [],
-            "roles": []
+            "roles": [],
+            "working_directory": "."
         }, service.doc)
 
     def test_initialize_data_after_merge_values_already_set(self):
@@ -320,7 +321,8 @@ class ServiceTestCase(unittest.TestCase):
             "dont_create_user": 'SET',
             "pre_start": 'SET',
             "post_start": 'SET',
-            "roles": 'SET'
+            "roles": 'SET',
+            "working_directory": 'SET'
         })
         service._initialize_data_after_merge()
         self.assertEqual({
@@ -328,7 +330,8 @@ class ServiceTestCase(unittest.TestCase):
             "dont_create_user": 'SET',
             "pre_start": 'SET',
             "post_start": 'SET',
-            "roles": 'SET'
+            "roles": 'SET',
+            "working_directory": 'SET'
         }, service.doc)
 
     def test_initialize_data_after_merge_db_driver_setup(self):
