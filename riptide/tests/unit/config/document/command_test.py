@@ -76,54 +76,75 @@ class CommandTestCase(unittest.TestCase):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_alias_no_aliases.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing key:"):
+        with self.assertRaises(SchemaError):
             command.validate()
 
     def test_validate_invalid_regular_no_image(self):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_regular_no_image.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing key:"):
+        with self.assertRaises(SchemaError):
             command.validate()
 
     def test_validate_invalid_weird_mixup(self):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_weird_mixup.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Wrong key"):
+        with self.assertRaises(SchemaError):
             command.validate()
 
     def test_validate_via_service_no_command(self):
-        # TODO
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_via_service_no_command.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "XXX"):
+        with self.assertRaises(SchemaError):
             command.validate()
 
     def test_get_service_valid(self):
-        # TODO
+        test_service = YamlConfigDocumentStub({
+            'roles': ['rolename']
+        })
+        app = YamlConfigDocumentStub({
+            'services': {
+                'test': test_service
+            }
+        })
+
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'valid_via_service.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "XXX"):
-            command.get_service()
+        self.assertEqual('test', command.get_service(app))
 
     def test_get_service_not_via_service(self):
-        # TODO
+        test_service = YamlConfigDocumentStub({
+            'roles': ['rolename']
+        })
+        app = YamlConfigDocumentStub({
+            'services': {
+                'test': test_service
+            }
+        })
+
         command = module.Command.from_yaml(get_fixture_path(
-            FIXTURE_BASE_PATH + 'valid_via_service.yml'
+            FIXTURE_BASE_PATH + 'valid_regular.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "XXX"):
-            command.get_service()
+        with self.assertRaisesRegex(TypeError, 'get_service can only be used on "in service" commands.'):
+            command.get_service(app)
 
     def test_get_service_no_service_with_role(self):
-        # TODO
+        test_service = YamlConfigDocumentStub({
+            'roles': []
+        })
+        app = YamlConfigDocumentStub({
+            'services': {
+                'test': test_service
+            }
+        })
+
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'valid_via_service.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "XXX"):
-            command.get_service()
+        self.assertEqual(None, command.get_service(app))
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):

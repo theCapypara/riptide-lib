@@ -16,6 +16,10 @@ class ExecError(BaseException):
     pass
 
 
+class ServiceStoppedException(BaseException):
+    pass
+
+
 class AbstractEngine(ABC):
     @abstractmethod
     def start_project(self,
@@ -149,8 +153,7 @@ class AbstractEngine(ABC):
         :param service_name: str
         :param arguments: List of arguments
         :return: exit code
-        :todo exception type:
-        :raises: XyzException: If the service is not running.
+        :raises: ServiceStoppedException: If the service is not running.
         """
 
     @abstractmethod

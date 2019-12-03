@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 
 HEADER = 'command'
+KEY_IDENTIFIER_IN_SERVICE_COMMAND = 'in_service_with_role'
 
 
 class Command(YamlConfigDocument):
@@ -160,7 +161,7 @@ class Command(YamlConfigDocument):
             Optional('$ref'): str,  # reference to other Service documents
             Optional('$name'): str,  # Added by system during processing parent app.
 
-            'in_service_with_role': str,
+            KEY_IDENTIFIER_IN_SERVICE_COMMAND: str,
             'command': str,
             Optional('environment'): {str: str},
         })
@@ -299,6 +300,16 @@ class Command(YamlConfigDocument):
         :param app: The app to search in
         :return: Name of the service (key) in app.
         """
+        if KEY_IDENTIFIER_IN_SERVICE_COMMAND not in self.doc:
+            raise TypeError('get_service can only be used on "in service" commands.')
+
+        if 'services' not in app:
+            return None
+
+        for service_name, service in app['services'].items():
+            if 'roles' in service and self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND] in service['roles']:
+                return service_name
+
         return None
 
     def error_str(self) -> str:
