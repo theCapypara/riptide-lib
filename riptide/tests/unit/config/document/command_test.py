@@ -63,7 +63,8 @@ class CommandTestCase(unittest.TestCase):
 
     def test_validate_valids(self):
         valid_names = ['valid_regular.yml', 'valid_alias.yml',
-                       'valid_regular_with_some_optionals.yml']
+                       'valid_regular_with_some_optionals.yml',
+                       'valid_via_service.yml', 'valid_regular_with_volumes_named.yml']
         for name in valid_names:
             with self.subTest(name=name):
                 command = module.Command.from_yaml(get_fixture_path(
@@ -91,6 +92,38 @@ class CommandTestCase(unittest.TestCase):
         ))
         with self.assertRaisesRegex(SchemaError, "Wrong key"):
             command.validate()
+
+    def test_validate_via_service_no_command(self):
+        # TODO
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_via_service_no_command.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "XXX"):
+            command.validate()
+
+    def test_get_service_valid(self):
+        # TODO
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_via_service.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "XXX"):
+            command.get_service()
+
+    def test_get_service_not_via_service(self):
+        # TODO
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_via_service.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "XXX"):
+            command.get_service()
+
+    def test_get_service_no_service_with_role(self):
+        # TODO
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_via_service.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "XXX"):
+            command.get_service()
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):

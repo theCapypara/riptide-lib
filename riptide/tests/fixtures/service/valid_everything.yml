@@ -48,3 +48,4 @@ service:
     two:
       host: two
       container: owt
+      volume_name: abc123

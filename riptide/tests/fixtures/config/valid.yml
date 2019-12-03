@@ -9,3 +9,6 @@ riptide:
   engine: dummy
   update_hosts_file: false
   repos: []
+  performance:
+    dont_sync_named_volumes_with_host: auto
+    dont_sync_unimportant_src: false
