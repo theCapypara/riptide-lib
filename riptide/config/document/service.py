@@ -204,6 +204,12 @@ class Service(YamlConfigDocument):
                 [type]: str
                     Whether this volume is a "directory" (default) or a "file". Only checked if the file/dir does
                     not exist yet on the host system. Riptide will then create it with the appropriate type.
+                [volume_name]: str
+                    Name of a named volume for this additional volume. Used instead of "host" if present and
+                    the dont_sync_named_volumes_with_host performance setting is enabled. Volumes with the same
+                    volume_name have the same content, even across projects. As a constraint, the name of
+                    two volumes should only be the same, if the host path specified is also the same, to ensure
+                    the same behaviour regardless of if the performance setting is enabled.
 
         [driver]
             The database driver configuration, set this only if the role "db" is set.
@@ -322,7 +328,8 @@ class Service(YamlConfigDocument):
                         'host': str,
                         'container': str,
                         Optional('mode'): Or('rw', 'ro'),  # default: rw - can be rw/ro.
-                        Optional('type'): Or('directory', 'file')  # default: directory
+                        Optional('type'): Or('directory', 'file'),  # default: directory
+                        Optional('volume_name'): str
                     }
                 },
                 Optional('allow_full_memlock'): bool,

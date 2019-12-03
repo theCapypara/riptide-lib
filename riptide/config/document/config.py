@@ -56,6 +56,42 @@ class Config(YamlConfigDocument):
             If a project is loaded, Riptide inserts the project here. Do not manually insert a project
             into the actual system configuration file.
 
+        performance
+            Various performance optimizations that, when enabled, increase the performance
+            of containers, but might have some other drawbacks.
+
+            Values can be true/false/auto.
+            "auto" enables an optimization, if beneficial on your platform.
+
+            dont_sync_named_volumes_with_host: Or['auto',bool]
+                If enabled, volumes, that have a volume_name set, are not mounted to the host system
+                and are instead created as volumes with the volume_name. Otherwise they
+                are created as host path volumes only. Enabling this increases
+                performance on some platforms.
+
+                Please note, that Riptide does not delete named volume data for old projects.
+                Please consult the documentation of the engine, on how to do that.
+
+                "auto" enables this feature on Mac and Windows, when using the Docker
+                container backend.
+
+                Switching this setting on or off breaks existing volumes. They need to be
+                migrated manually.
+
+            dont_sync_unimportant_src: Or['auto', bool]
+                Normally all Commands and Services get access to the entire source
+                directory of a project as volume. If this setting is enabled,
+                ``unimportant_paths`` that are defined in the App are not updated
+                on the host system when changed by the volume. This means changes
+                to these files are not available, but file access speeds may be
+                drastically increased on some platforms.
+
+                "auto" enables this feature on Mac and Windows, when using the Docker
+                container backend.
+
+                This feature can be safely switched on or off. Projects need to be
+                restarted for this to take effect.
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -71,6 +107,9 @@ class Config(YamlConfigDocument):
               repos:
                 - https://github.com/Parakoopa/riptide-repo.git
               update_hosts_file: true
+              performance:
+                dont_sync_named_volumes_with_host: auto
+                dont_sync_unimportant_src: auto
 
         """
         return Schema(
@@ -87,7 +126,12 @@ class Config(YamlConfigDocument):
                 'update_hosts_file': bool,
                 'engine': str,
                 'repos': [str],
-                Optional('project'): DocReference(Project)  # Added and overwritten by system
+                Optional('project'): DocReference(Project),  # Added and overwritten by system
+                # Performance entries should be added by the system to the YAML file if missing:
+                Optional('performance'): {
+                    Optional('dont_sync_named_volumes_with_host'): Or(bool, 'auto'),
+                    Optional('dont_sync_unimportant_src'): Or(bool, 'auto')
+                }
             }
         )
 
