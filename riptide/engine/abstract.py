@@ -18,7 +18,10 @@ class ExecError(BaseException):
 
 class AbstractEngine(ABC):
     @abstractmethod
-    def start_project(self, project: 'Project', services: List[str]) -> MultiResultQueue[StartStopResultStep]:
+    def start_project(self,
+                      project: 'Project',
+                      services: List[str],
+                      unimportant_paths_unsynced=False) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project.
 
@@ -31,6 +34,11 @@ class AbstractEngine(ABC):
 
         :type project: 'Project'
         :param services: Names of the services to start
+        :param unimportant_paths_unsynced: If True, the engine should mount
+                                           unimportant_paths defined in the
+                                           project so, that changes in the
+                                           container are not stored on the host.
+                                           Only applicable for services with role 'src'.
         :return: MultiResultQueue[StartResult]
         """
         pass
@@ -92,7 +100,11 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, project: 'Project', command_name: str, arguments: List[str]) -> int:
+    def cmd(self,
+            project: 'Project',
+            command_name: str,
+            arguments: List[str],
+            unimportant_paths_unsynced=False) -> int:
         """
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
@@ -105,14 +117,49 @@ class AbstractEngine(ABC):
         The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
         routable to the host system.
 
+        The command must be a "normal" command. "In service" commands may be run with
+        cmd_in_service.
+
         :param project: 'Project'
         :param command_name: str
         :param arguments: List of arguments
+        :param unimportant_paths_unsynced: If True, the engine should mount
+                                           unimportant_paths defined in the
+                                           project so, that changes in the
+                                           container are not stored on the host.
         :return: exit code
         """
 
     @abstractmethod
-    def service_fg(self, project: 'Project', service_name: str, arguments: List[str]) -> None:
+    def cmd_in_service(self,
+                       project: 'Project',
+                       command_name: str,
+                       service_name: str,
+                       arguments: List[str]) -> int:
+        """
+        Execute the command identified by command_name in the service container identified
+        by service_name and attach command to stdout/stdin/stderr.
+        Returns when the command is finished. Returns the command exit code.
+
+        Accepts normal and "in service" style commands and does not validate the defined
+        service of the command.
+
+        :param project: 'Project'
+        :param command_name: str
+        :param service_name: str
+        :param arguments: List of arguments
+        :return: exit code
+        :todo exception type:
+        :raises: XyzException: If the service is not running.
+        """
+
+    @abstractmethod
+    def service_fg(self,
+                   project: 'Project',
+                   service_name: str,
+                   arguments: List[str],
+                   unimportant_paths_unsynced=False
+    ) -> None:
         """
         Execute a service and attach output to stdout/stdin/stderr.
         Returns when the service container is finished.
@@ -129,6 +176,10 @@ class AbstractEngine(ABC):
         :param project: 'Project'
         :param service_name: str
         :param arguments: List of arguments
+        :param unimportant_paths_unsynced: If True, the engine should mount
+                                           unimportant_paths defined in the
+                                           project so, that changes in the
+                                           container are not stored on the host.
         :return:
         """
 
@@ -189,8 +240,8 @@ class AbstractEngine(ABC):
     @abstractmethod
     def pull_images(self, project: 'Project', line_reset='\n', update_func=lambda msg: None) -> None:
         """
-        Open an interactive shell into service_name and attach stdout/stdin/stderr.
-        Returns when the shell is exited.
+        Pull new versions of images for commands and services described in project.
+
         Not fining an image should NOT raise an error and instead print a warning as status report.
 
         :param project:     The project to pull all images for. Applies to all commands and services in project.
@@ -247,8 +298,13 @@ class AbstractEngine(ABC):
             copy_tree(fromm, to)
 
     @abstractmethod
-    def supports_exec(self):
+    def performance_value_for_auto(self, key: str, platform: str) -> bool:
         """
-        Whether or not this engine supports exec.
+        Whether or not performance optimization for the provided key
+        should be activated for the provided platform, because they
+        drastically increase performance.
+
+        :param key: Optimization key, as found in the Config schema's "performance" entry.
+        :param platform: windows/mac/linux/unknown.
         """
         pass
