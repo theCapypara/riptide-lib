@@ -487,7 +487,7 @@ class ServiceTestCase(unittest.TestCase):
                              ):
         config1 = {'to': '/TO_1', 'from': '/FROM_1'}
         config2 = {'to': '/TO_2', 'from': '/FROM_2'}
-        config3 = {'to': '/TO_3', 'from': '/FROM_3'}
+        config3 = {'to': 'TO_3_RELATIVE', 'from': '/FROM_3'}
         service = module.Service({
             "roles": ["src"],
             "config": {
@@ -545,7 +545,7 @@ class ServiceTestCase(unittest.TestCase):
             # CONFIG
             'config1~/FROM_1~PROCESSED':                    {'bind': '/TO_1', 'mode': 'rw'},
             'config2~/FROM_2~PROCESSED':                    {'bind': '/TO_2', 'mode': 'rw'},
-            'config3~/FROM_3~PROCESSED':                    {'bind': '/TO_3', 'mode': 'rw'},
+            'config3~/FROM_3~PROCESSED':                    {'bind': '/src/TO_3_RELATIVE', 'mode': 'rw'},
             # LOGGING
             'stdout~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDOUT, 'mode': 'rw'},
             'stderr~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDERR, 'mode': 'rw'},

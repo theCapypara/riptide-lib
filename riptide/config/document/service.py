@@ -495,7 +495,9 @@ class Service(YamlConfigDocument):
         # config
         if "config" in self:
             for config_name, config in self["config"].items():
-                volumes[process_config(config_name, config, self)] = {'bind': config["to"], 'mode': 'rw'}
+                volumes[process_config(config_name, config, self)] = {
+                    'bind': str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"]))), 'mode': 'rw'
+                }
 
         # logging
         if "logging" in self:

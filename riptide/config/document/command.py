@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import os
+from pathlib import PurePosixPath
 
 from schema import Schema, Optional, Or
 from typing import TYPE_CHECKING
@@ -180,7 +181,9 @@ class Command(YamlConfigDocument):
                     if "config" in service and service not in services_already_checked:
                         services_already_checked.append(service)
                         for config_name, config in service["config"].items():
-                            volumes[process_config(config_name, config, service)] = {'bind': config["to"], 'mode': 'rw'}
+                            volumes[process_config(config_name, config, service)] = {
+                                'bind': str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"]))), 'mode': 'rw'
+                            }
 
         return volumes
 

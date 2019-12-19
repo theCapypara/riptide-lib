@@ -2,14 +2,19 @@
 Functions for processing ``config`` entries in :class:`riptide.config.document.service.Service` objects
 """
 import os
+from functools import partial
 from typing import TYPE_CHECKING
 
+from jinja2 import Environment
+
 from riptide.config.files import get_project_meta_folder, remove_all_special_chars
+from riptide.config.service.config_files_helper_functions import read_file
 
 if TYPE_CHECKING:
     from riptide.config.document.service import Service
 
 FOLDER_FOR_PROCESSED_CONFIG = 'processed_config'
+jinja2env = Environment()
 
 
 def process_config(config_name: str, config: dict, service: 'Service') -> str:
@@ -35,8 +40,14 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
 
     target_file = get_config_file_path(config_name, service)
 
+    # Additional helper functions
+    read_file_partial = partial(read_file, config["$source"])
+    read_file_partial.__name__ = read_file.__name__
+
     with open(config["$source"], 'r') as stream:
-        processed_file = service.process_vars_for(stream.read())
+        processed_file = service.process_vars_for(stream.read(), [
+            read_file_partial
+        ])
 
     # Weird Docker bug: The file has to exist in the actual code directory
     # as well, otherwise strange things happen. Create the file and add a notice
@@ -49,7 +60,8 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
             with open(config_in_project_src, 'w') as f:
                 f.writelines([
                     f'#!/bin/false -- This file was created by Riptide. It is not actually used. '
-                    f'In the service container the file {target_file} is mounted here instead.'
+                    f'In the service container the file {target_file} is mounted here instead. That file is auto-'
+                    f'generated based on the file {config["$source"]}.'
                 ])
 
     os.makedirs(os.path.dirname(target_file), exist_ok=True)

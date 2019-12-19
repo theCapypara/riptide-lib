@@ -2,8 +2,9 @@ from typing import List
 
 from schema import Schema, Optional, Or
 
-from configcrunch import YamlConfigDocument, DocReference
+from configcrunch import YamlConfigDocument, DocReference, variable_helper
 from riptide.config.document.project import Project
+from riptide.config.files import riptide_config_dir
 
 HEADER = 'riptide'
 
@@ -97,3 +98,19 @@ class Config(YamlConfigDocument):
 
     def error_str(self) -> str:
         return "System Configuration"
+
+    @variable_helper
+    def get_config_dir(self):
+        """
+        Returns the path to the Riptide system configuration directory
+
+        Example usage::
+
+            something: '{{ get_config_dir() }}'
+
+        Example result::
+
+            something: '/home/thomas/.config/riptide'
+
+        """
+        return riptide_config_dir()
