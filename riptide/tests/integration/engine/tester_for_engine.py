@@ -19,7 +19,7 @@ class AbstractEngineTester(abc.ABC):
     def reset(self, engine_obj):
         """
         For Docker:
-            Stop and delete all created containers and created networks. May also clean images
+            Stop and delete all created containers, networks and named volumes. May also clean images
             Raise a warning, if containers needed to be cleaned up,
             stating what needed to be done.
         For others:
@@ -72,4 +72,10 @@ class AbstractEngineTester(abc.ABC):
     def create_file(self, path, engine, project, service, as_user=0):
         """
         Try to create a file at the given path
+        """
+
+    @abc.abstractmethod
+    def assert_named_volume(self, engine, name):
+        """
+        Assert that the equivalent of a Docker named volume exists
         """

@@ -218,6 +218,7 @@ class EngineServiceTest(EngineTest):
                 host_in_volume_path_rw = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'in_volume_path_rw')
                 host_in_volume_path_rw_explicit = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'in_volume_path_rw_explicit')
                 host_in_volume_path_ro = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'in_volume_path_ro')
+                host_in_volume_path_named = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'named')
                 host_relative_to_project = os.path.join(loaded.temp_dir, 'relative_to_project')
                 host_test_auto_create = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'test_auto_create')
                 host_type_file = os.path.join(loaded.temp_dir, '_riptide', 'data', service_name, 'type_file')
@@ -226,6 +227,7 @@ class EngineServiceTest(EngineTest):
                 cnt_in_volume_path_rw = '/in_volume_path_rw'
                 cnt_in_volume_path_rw_explicit = '/in_volume_path_rw_explicit'
                 cnt_in_volume_path_ro = '/in_volume_path_ro'
+                cnt_in_volume_path_named = '/in_volume_path_named'
                 cnt_relative_to_project = str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('relative_to_src'))
                 cnt_test_auto_create = '/test_auto_create'
                 cnt_type_file = '/test_auto_create'
@@ -234,6 +236,7 @@ class EngineServiceTest(EngineTest):
                 os.makedirs(host_in_volume_path_rw)
                 os.makedirs(host_in_volume_path_rw_explicit)
                 os.makedirs(host_in_volume_path_ro)
+                os.makedirs(host_in_volume_path_named)
                 os.makedirs(host_relative_to_project)
 
                 # create 'src'
@@ -252,6 +255,8 @@ class EngineServiceTest(EngineTest):
                 open(os.path.join(host_relative_to_project, 'rtp2'), 'a').close()
                 open(os.path.join(host_relative_to_project, 'rtp3'), 'a').close()
 
+                open(os.path.join(host_in_volume_path_named, 'named'), 'a').close()
+
                 ###
 
                 # START
@@ -264,6 +269,7 @@ class EngineServiceTest(EngineTest):
                 self.assertTrue(os.path.isdir(host_relative_to_project))
                 self.assertTrue(os.path.isdir(host_test_auto_create))
                 self.assertTrue(os.path.isfile(host_type_file))
+                self.assertTrue(os.path.isdir(host_in_volume_path_named))
 
                 # Assert volume mounts in container there
                 loaded.engine_tester.assert_file_exists(cnt_in_volume_path_rw, loaded.engine, project, service)
@@ -272,6 +278,7 @@ class EngineServiceTest(EngineTest):
                 loaded.engine_tester.assert_file_exists(cnt_relative_to_project, loaded.engine, project, service)
                 loaded.engine_tester.assert_file_exists(cnt_test_auto_create, loaded.engine, project, service)
                 loaded.engine_tester.assert_file_exists(cnt_type_file, loaded.engine, project, service)
+                loaded.engine_tester.assert_file_exists(cnt_in_volume_path_named, loaded.engine, project, service)
 
                 # Assert files there in container
                 loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_in_volume_path_rw).joinpath('rw1'),
@@ -285,6 +292,8 @@ class EngineServiceTest(EngineTest):
                 loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_relative_to_project).joinpath('rtp2'),
                                                         loaded.engine, project, service)
                 loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_relative_to_project).joinpath('rtp3'),
+                                                        loaded.engine, project, service)
+                loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_in_volume_path_named).joinpath('named'),
                                                         loaded.engine, project, service)
 
                 # Assert relative_to_src diectory there on host
