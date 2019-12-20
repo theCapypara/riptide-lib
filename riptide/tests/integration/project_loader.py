@@ -29,7 +29,10 @@ class ProjectLoadResult(NamedTuple):
     temp_system_dir: str
 
 
-def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator[ContextManager[ProjectLoadResult], None, None]:
+def load(testsuite,
+         project_file_names: List[str],
+         srcs: List[str],
+         config_file_name='valid.yml') -> Generator[ContextManager[ProjectLoadResult], None, None]:
     """
     Generator that returns context managers
 
@@ -64,7 +67,7 @@ def load(testsuite, project_file_names: List[str], srcs: List[str]) -> Generator
                     with TemporaryDirectory() as config_directory:
                         with mock.patch("riptide.config.files.user_config_dir", return_value=config_directory):
                             # Copy system config file
-                            shutil.copy2(get_fixture_path('config' + os.sep + 'valid.yml'), os.path.join(config_directory, 'config.yml'))
+                            shutil.copy2(get_fixture_path('config' + os.sep + config_file_name), os.path.join(config_directory, 'config.yml'))
                             # Create temporary project directory
                             with TemporaryDirectory() as project_directory:
                                 # Copy project file

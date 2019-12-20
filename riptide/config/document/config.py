@@ -1,10 +1,15 @@
-from typing import List
+import platform
+from typing import List, TYPE_CHECKING
 
+import yaml
 from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument, DocReference, variable_helper
 from riptide.config.document.project import Project
-from riptide.config.files import riptide_config_dir
+from riptide.config.files import riptide_main_config_file, riptide_config_dir
+
+if TYPE_CHECKING:
+    from riptide.engine.abstract import AbstractEngine
 
 HEADER = 'riptide'
 
@@ -127,10 +132,10 @@ class Config(YamlConfigDocument):
                 'engine': str,
                 'repos': [str],
                 Optional('project'): DocReference(Project),  # Added and overwritten by system
-                # Performance entries should be added by the system to the YAML file if missing:
-                Optional('performance'): {
-                    Optional('dont_sync_named_volumes_with_host'): Or(bool, 'auto'),
-                    Optional('dont_sync_unimportant_src'): Or(bool, 'auto')
+                # Performance entries should be added by the system to the YAML file before validation if missing:
+                'performance': {
+                    'dont_sync_named_volumes_with_host': Or(bool, 'auto'),
+                    'dont_sync_unimportant_src': Or(bool, 'auto')
                 }
             }
         )
@@ -158,3 +163,26 @@ class Config(YamlConfigDocument):
 
         """
         return riptide_config_dir()
+
+    def upgrade(self):
+        """Update the system configuration file after Riptide version upgrades. To be run before validation."""
+        changed = False
+        if "performance" not in self.doc:
+            self.doc["performance"] = {}
+            changed = True
+        if "dont_sync_named_volumes_with_host" not in self.doc["performance"]:
+            self.doc["performance"]["dont_sync_named_volumes_with_host"] = "auto"
+            changed = True
+        if "dont_sync_unimportant_src" not in self.doc["performance"]:
+            self.doc["performance"]["dont_sync_unimportant_src"] = "auto"
+            changed = True
+
+        if changed:
+            with open(riptide_main_config_file(), "w") as f:
+                f.write(yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False))
+
+    def load_performance_options(self, engine: 'AbstractEngine'):
+        """Initializes performance options set to 'auto' based on the engine used."""
+        for key, val in self.doc["performance"].items():
+            if val == 'auto':
+                self.doc["performance"][key] = engine.performance_value_for_auto(key, platform.system().lower())

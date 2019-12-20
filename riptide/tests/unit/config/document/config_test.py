@@ -15,11 +15,17 @@ class ConfigTestCase(unittest.TestCase):
         config = module.Config({})
         self.assertEqual(module.HEADER, config.header())
 
-    def test_validate_valid(self):
-        config = module.Config.from_yaml(get_fixture_path(
-            FIXTURE_BASE_PATH + 'valid.yml'
-        ))
-        self.assertTrue(config.validate())
+    def test_validate_valids(self):
+        valid_names = [
+            'valid.yml', 'valid_auto_perf.yml', 'integration_perf_dont_sync_unimportant_src.yml',
+            'integration_perf_dont_sync_named_volumes_with_host.yml'
+        ]
+        for name in valid_names:
+            with self.subTest(name=name):
+                config = module.Config.from_yaml(get_fixture_path(
+                    FIXTURE_BASE_PATH + name
+                ))
+                self.assertTrue(config.validate())
 
     def test_validate_invalid_missing_engine(self):
         config = module.Config.from_yaml(get_fixture_path(

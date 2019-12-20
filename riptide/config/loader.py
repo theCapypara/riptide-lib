@@ -48,11 +48,13 @@ def load_config(project_file=None, skip_project_load=False) -> 'Config':
         project_path = discover_project_file()
 
     system_config = Config.from_yaml(config_path)
-    system_config.validate()
 
     # The user is not allowed to add a project entry to their main config file
     if "project" in system_config:
         del system_config["project"]
+
+    system_config.upgrade()
+    system_config.validate()
 
     repos = repositories.collect(system_config)
 
