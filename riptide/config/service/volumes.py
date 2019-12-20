@@ -45,4 +45,7 @@ def process_additional_volumes(volumes: List[dict], project_folder: str):
                 os.makedirs(vol["host"], exist_ok=True)
         except FileExistsError:
             pass
+        # If volume_name is specified, add it to the volume definition
+        if "volume_name" in vol:
+            out[vol["host"]]["name"] = vol["volume_name"]
     return out

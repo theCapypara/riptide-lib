@@ -24,8 +24,7 @@ class AbstractEngine(ABC):
     @abstractmethod
     def start_project(self,
                       project: 'Project',
-                      services: List[str],
-                      unimportant_paths_unsynced=False) -> MultiResultQueue[StartStopResultStep]:
+                      services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project.
 
@@ -36,13 +35,11 @@ class AbstractEngine(ABC):
         The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
         routable to the host system.
 
+        The engine must regard the performance settings in the system configuration (project.parent().performance).
+
         :type project: 'Project'
         :param services: Names of the services to start
-        :param unimportant_paths_unsynced: If True, the engine should mount
-                                           unimportant_paths defined in the
-                                           project so, that changes in the
-                                           container are not stored on the host.
-                                           Only applicable for services with role 'src'.
+
         :return: MultiResultQueue[StartResult]
         """
         pass
@@ -59,22 +56,20 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def status(self, project: 'Project', system_config: 'Config') -> Dict[str, bool]:
+    def status(self, project: 'Project') -> Dict[str, bool]:
         """
         Returns the status for the given project (whether services are started or not)
 
-        :param system_config: Main system config
         :param project: 'Project'
         :return: Dict[str, bool]
         """
         pass
 
     @abstractmethod
-    def service_status(self, project: 'Project', service_name: str, system_config: 'Config') -> bool:
+    def service_status(self, project: 'Project', service_name: str) -> bool:
         """
         Returns the status for a single service in a given project (whether service is started or not)
 
-        :param system_config: Main system config
         :param project: 'Project'
         :param service_name: str
         :return: bool
@@ -107,8 +102,7 @@ class AbstractEngine(ABC):
     def cmd(self,
             project: 'Project',
             command_name: str,
-            arguments: List[str],
-            unimportant_paths_unsynced=False) -> int:
+            arguments: List[str]) -> int:
         """
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
@@ -124,13 +118,12 @@ class AbstractEngine(ABC):
         The command must be a "normal" command. "In service" commands may be run with
         cmd_in_service.
 
+        The engine must regard the performance settings in the system configuration (project.parent().performance).
+
         :param project: 'Project'
         :param command_name: str
         :param arguments: List of arguments
-        :param unimportant_paths_unsynced: If True, the engine should mount
-                                           unimportant_paths defined in the
-                                           project so, that changes in the
-                                           container are not stored on the host.
+
         :return: exit code
         """
 
@@ -160,8 +153,7 @@ class AbstractEngine(ABC):
     def service_fg(self,
                    project: 'Project',
                    service_name: str,
-                   arguments: List[str],
-                   unimportant_paths_unsynced=False
+                   arguments: List[str]
     ) -> None:
         """
         Execute a service and attach output to stdout/stdin/stderr.
@@ -176,13 +168,11 @@ class AbstractEngine(ABC):
         * roles.src (is set)
         * working_directory (is set to current working directory)
 
+        The engine must regard the performance settings in the system configuration (project.parent().performance).
+
         :param project: 'Project'
         :param service_name: str
         :param arguments: List of arguments
-        :param unimportant_paths_unsynced: If True, the engine should mount
-                                           unimportant_paths defined in the
-                                           project so, that changes in the
-                                           container are not stored on the host.
         :return:
         """
 
@@ -308,6 +298,6 @@ class AbstractEngine(ABC):
         drastically increase performance.
 
         :param key: Optimization key, as found in the Config schema's "performance" entry.
-        :param platform: windows/mac/linux/unknown.
+        :param platform: windows/darwin/linux or something else (return value of platform.system() in lower case).
         """
         pass

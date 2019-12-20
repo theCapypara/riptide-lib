@@ -221,6 +221,8 @@ class Command(YamlConfigDocument):
 
         :return: dict. Return format is the docker container API volumes dict format.
                        See: https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
+                       The volume definitions may contain an additional key 'name', which should be used by the engine,
+                       instead of the host path if the dont_sync_named_volumes_with_host performance option is enabled.
         """
         project = self.get_project()
         volumes = OrderedDict({})

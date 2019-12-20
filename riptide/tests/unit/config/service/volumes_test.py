@@ -45,6 +45,10 @@ class VolumesTestCase(unittest.TestCase):
             }, {
                 "host": "/absolute_no_mode",
                 "container": "/vol5"
+            }, {
+                "host": "/absolute_named",
+                "container": "/vol6",
+                "volume_name": "I have a name"
             }
         ]
         expected = OrderedDict({
@@ -54,7 +58,8 @@ class VolumesTestCase(unittest.TestCase):
             os.path.join(ProjectStub.FOLDER, 'reltestc'):
                 {'bind': str(PurePosixPath(CONTAINER_SRC_PATH).joinpath('reltest_container')), 'mode': 'rw'},
             '/absolute_with_ro':                            { 'bind': '/vol4', 'mode': 'ro'},
-            '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'}
+            '/absolute_no_mode':                            {'bind': '/vol5', 'mode': 'rw'},
+            '/absolute_named':                              {'bind': '/vol6', 'mode': 'rw', 'name': 'I have a name'}
         })
 
         actual = process_additional_volumes(input, ProjectStub.FOLDER)
@@ -69,6 +74,7 @@ class VolumesTestCase(unittest.TestCase):
             call(os.path.join(ProjectStub.FOLDER, 'reltestc'), exist_ok=True),
             call(os.path.join('/absolute_with_ro'), exist_ok=True),
             call(os.path.join('/absolute_no_mode'), exist_ok=True),
+            call(os.path.join('/absolute_named'), exist_ok=True),
         ], any_order=True)
 
         # First volume had ~ in it:

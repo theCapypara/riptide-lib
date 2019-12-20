@@ -31,7 +31,7 @@ def status_for(project: Project, engine: AbstractEngine, system_config: Config) 
 
     status_dict = {}
 
-    for name, running in engine.status(project, system_config).items():
+    for name, running in engine.status(project).items():
         service = project["app"]["services"][name]
         if running:
             # Collect URL
