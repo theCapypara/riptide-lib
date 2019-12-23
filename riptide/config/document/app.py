@@ -63,6 +63,19 @@ class App(YamlConfigDocument):
             {key}: :class:`~riptide.config.document.command.Command`
                 Commands for this app.
 
+        [unimportant_paths]: List[str]
+            Normally all files inside containers are shared with the host (for commands and services with role 'src').
+            This list specifies files that don't need to be synced with the host. This means, that these files
+            will only be uploaded to the container on start and changes will not be visible on the host. Changes that
+            are made on the host file system may also not be visible inside the container. This increases performance
+            on non-native platforms (Mac and Windows).
+
+            This feature is only enabled if the system configuration performance setting ``dont_sync_unimportant_src``
+            is enabled. If the feature is disabled, all files are shared with the host. See the documentation for that
+            setting for more information.
+
+            All paths are relative to the src of the project. Only directories are supported.
+
 
         **Example Document:**
 
@@ -102,7 +115,8 @@ class App(YamlConfigDocument):
                 },
                 Optional('commands'): {
                     str: DocReference(Command)
-                }
+                },
+                Optional('unimportant_paths'): [str]
             }
         )
 
