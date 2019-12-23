@@ -48,6 +48,13 @@ class ConfigTestCase(unittest.TestCase):
         with self.assertRaisesRegex(SchemaError, "Missing key: 'repos'"):
             config.validate()
 
+    def test_validate_invalid_missing_performance(self):
+        config = module.Config.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_missing_performance.yml'
+        ))
+        with self.assertRaisesRegex(SchemaError, "Missing key: 'performance'"):
+            config.validate()
+
     def test_validate_invalid_proxy(self):
         config = module.Config.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_proxy.yml'

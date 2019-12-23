@@ -63,7 +63,7 @@ class PerfDontSyncNamedVolumesWithHostTest(EngineTest):
 
                 # Add files on host
                 open(os.path.join(host_in_volume_path_rw, 'rw_added'), 'a').close()
-                open(os.path.join(cnt_in_volume_path_named, 'named_added'), 'a').close()
+                open(os.path.join(host_in_volume_path_named, 'named_added'), 'a').close()
 
                 # Assert added file there in rw container
                 loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_in_volume_path_rw).joinpath('rw_added'),
@@ -98,7 +98,7 @@ class PerfDontSyncNamedVolumesWithHostTest(EngineTest):
                                     [service_name],
                                     loaded.engine_tester)
 
-                loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_in_volume_path_rw).joinpath('named_added_in_container'),
+                loaded.engine_tester.assert_file_exists(PurePosixPath(cnt_in_volume_path_named).joinpath('named_added_in_container'),
                                                         loaded.engine, project, service)
 
                 # STOP
