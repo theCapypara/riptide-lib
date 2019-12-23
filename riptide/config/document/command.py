@@ -123,7 +123,8 @@ class Command(YamlConfigDocument):
         """
         Command is run in a running service container.
 
-        The service container must be running, or the command can not be executed.
+        If the service container is not running, a new container is started based on the
+        definition of the service.
 
         [$name]: str
             Name as specified in the key of the parent app.
@@ -133,7 +134,7 @@ class Command(YamlConfigDocument):
         in_service_with_role: str
             Runs the command in the first service which has this role.
 
-            May result in unexpected results, if multiple services match the role.
+            May lead to unexpected results, if multiple services match the role.
 
         command: str
             Command to run inside of the container.
