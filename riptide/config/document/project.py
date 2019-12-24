@@ -37,6 +37,17 @@ class Project(YamlConfigDocument):
         app: :class:`~riptide.config.document.app.App`
             App that this project uses.
 
+        [links]: List[str]
+            Links to other projects (list of project names).
+
+            Riptide will add all service containers in this project in the TCP/IP networks of all
+            projects specified here. This way services in your project can communicate
+            with services from other projects and vice-versa.
+            If a project in this list does not exist, Riptide will ignore it.
+
+            Please make sure, that service names are not re-used across projects that are linked this way, this could
+            lead to unexpected results during service host name resolution.
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -54,7 +65,8 @@ class Project(YamlConfigDocument):
                 Optional('$path'): str,  # Path to the project file, added by system after loading.
                 'name': str,
                 'src': str,
-                'app': DocReference(App)
+                'app': DocReference(App),
+                Optional('links'): [str]
             }
         )
 
@@ -65,6 +77,10 @@ class Project(YamlConfigDocument):
                 raise ConfigcrunchError("Error loading App for Project: "
                                         "The app needs to be an object in the source document.")
         return self
+
+    def _initialize_data_after_merge(self):
+        if 'links' not in self.doc:
+            self.doc['links'] = []
 
     def folder(self):
         """Returns the project folder if the special internal field "$path" if set or None otherwise"""

@@ -20,7 +20,11 @@ class AbstractEngine(ABC):
     @abstractmethod
     def start_project(self, project: 'Project', services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         """
-        Starts all services in the project
+        Starts all services in the project.
+
+        All containers started for a project must be in the same isolated container network and service
+        containers must be reachable by name as hostname. In addition the services started must also be added
+        to the container networks of all projects within the 'links' list of the project.
 
         :type project: 'Project'
         :param services: Names of the services to start
@@ -91,6 +95,10 @@ class AbstractEngine(ABC):
         attach command to stdout/stdin/stderr.
         Returns when the command is finished. Returns the command exit code.
 
+        All containers started for a project must be in the same isolated container network and service
+        containers must be reachable by name as hostname. In addition the command started must also be added
+        to the container networks of all projects within the 'links' list of the project.
+
         :param project: 'Project'
         :param command_name: str
         :param arguments: List of arguments
@@ -125,6 +133,10 @@ class AbstractEngine(ABC):
         return the exit code (int), stdout/stderr of the command (str).
         Src/Current working directory is not mounted.
         Returns when finished.
+
+        All containers started for a project must be in the same isolated container network and service
+        containers must be reachable by name as hostname. In addition the command started must also be added
+        to the container networks of all projects within the 'links' list of the project.
 
         :param run_as_root: Force execution of the command container with the highest possible permissions
         :param project: 'Project'
