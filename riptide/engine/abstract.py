@@ -26,6 +26,9 @@ class AbstractEngine(ABC):
         containers must be reachable by name as hostname. In addition the services started must also be added
         to the container networks of all projects within the 'links' list of the project.
 
+        The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
+        routable to the host system.
+
         :type project: 'Project'
         :param services: Names of the services to start
         :return: MultiResultQueue[StartResult]
@@ -99,6 +102,9 @@ class AbstractEngine(ABC):
         containers must be reachable by name as hostname. In addition the command started must also be added
         to the container networks of all projects within the 'links' list of the project.
 
+        The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
+        routable to the host system.
+
         :param project: 'Project'
         :param command_name: str
         :param arguments: List of arguments
@@ -137,6 +143,9 @@ class AbstractEngine(ABC):
         All containers started for a project must be in the same isolated container network and service
         containers must be reachable by name as hostname. In addition the command started must also be added
         to the container networks of all projects within the 'links' list of the project.
+
+        The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
+        routable to the host system.
 
         :param run_as_root: Force execution of the command container with the highest possible permissions
         :param project: 'Project'

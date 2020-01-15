@@ -3,6 +3,12 @@ from python_hosts import Hosts, HostsEntry
 from python_hosts.exception import UnableToWriteHosts
 
 from riptide.config.document.config import Config
+from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
+
+
+IGNORE_LOCAL_HOSTNAMES = [
+    "localhost", "localhost.localdomain"
+]
 
 
 def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
@@ -44,3 +50,20 @@ def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
                                      f"> Give your user permission to edit this file, to remove this warning.\n"
                                      f"> If you wish to manually add the entries instead, "
                                      f"add the following entries to {hosts.hosts_path}:\n{entries}\n")
+
+
+def get_localhost_hosts():
+    """
+    Returns a list of hostnames from the hosts /etc/host that point to 127.0.0.1, as well as RIPTIDE_HOST_HOSTNAME
+
+    The constant IGNORE_LOCAL_HOSTNAMES contains names are exceptions, that are not returned.
+    """
+    names = [RIPTIDE_HOST_HOSTNAME]
+
+    hosts = Hosts()
+    host: HostsEntry = None
+    for host in hosts.entries:
+        if host.address == '127.0.0.1':
+            names += host.names
+
+    return [name for name in names if name not in IGNORE_LOCAL_HOSTNAMES]
