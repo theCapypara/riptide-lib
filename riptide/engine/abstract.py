@@ -35,7 +35,9 @@ class AbstractEngine(ABC):
         The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
         routable to the host system.
 
-        The engine must regard the performance settings in the system configuration (project.parent().performance).
+        The engine must regard the performance settings in the system configuration (project.parent().performance):
+        - dont_sync_named_volumes_with_host: Use named volumes instead of host path bindings
+        - dont_sync_unimportant_src:         Do not synchronize sub-paths 'unimportant_paths' of apps with the host.
 
         :type project: 'Project'
         :param services: Names of the services to start
@@ -299,5 +301,55 @@ class AbstractEngine(ABC):
 
         :param key: Optimization key, as found in the Config schema's "performance" entry.
         :param platform: windows/darwin/linux or something else (return value of platform.system() in lower case).
+        """
+        pass
+
+    @abstractmethod
+    def list_named_volumes(self) -> List[str]:
+        """
+        List all named volumes created by the engine.
+        The returned list contains the names of the volumes without any internal prefixes/suffixes (as defined
+        in the 'name' field of service or command 'additional_volumes'.
+
+        These volumes may be originally created by the engine, because of the 'dont_sync_named_volumes_with_host'
+        performance option, but they may also be created for different reasons.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+        """
+        pass
+
+    @abstractmethod
+    def delete_named_volume(self, name: str) -> None:
+        """
+        Deletes the named volume with the name 'name'. The name parameter does not include internal engine prefixes
+        or suffixes for volume names.
+
+        If the volume does not exist, silently does nothing.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+        """
+        pass
+
+    @abstractmethod
+    def exists_named_volume(self, name: str) -> bool:
+        """
+        Returns whether or not a name volume with the name 'name' exists.
+        The name parameter does not include internal engine prefixes
+        or suffixes for volume names.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+        """
+        pass
+
+    @abstractmethod
+    def copy_named_volume(self, from_name: str, target_name: str) -> None:
+        """
+        Copy all contents from the named volume 'from_name' to a new named volume named 'target_name'.
+
+        Names do not include internal engine prefixes or suffixes for volume names.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+
+        :raises: FileExistsError: If 'target_name' already exists.
         """
         pass

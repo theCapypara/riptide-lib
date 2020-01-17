@@ -1,9 +1,15 @@
 """Functions for switching the current database environment"""
 import json
 import os
+from typing import TYPE_CHECKING
 
 from riptide.config.files import get_project_meta_folder, remove_all_special_chars
-from riptide.db.driver import db_driver_for_service
+from riptide.db.impl.data_directory import DataDirectoryDbEnvImpl
+from riptide.db.impl.named_volume import NamedVolumeDbEnvImpl
+
+if TYPE_CHECKING:
+    from riptide.config.document.project import Project
+    from riptide.config.document.service import Service
 
 CONFIG_DBENV = 'env'
 CONFIG_DBENV__DEFAULT = 'default'
@@ -27,18 +33,29 @@ class DbEnvironments:
         self.config = self._read_configuration()
         self.engine = engine
 
+        if project.parent()["performance"]["dont_sync_named_volumes_with_host"]:
+            self.impl = NamedVolumeDbEnvImpl(self)
+        else:
+            self.impl = DataDirectoryDbEnvImpl(self)
+
     @staticmethod
     def has_db(project: 'Project'):
         """Returns whether or not this project has a database to manage"""
         return DbEnvironments(project, None).db_service is not None
 
     @staticmethod
-    def path_for_db_data(service: 'Service'):
-        """Path to the current database data directory for the currently active environment. If folder does not exist, create."""
+    def get_volume_configuration_for_driver(container_bind_path: str, service: 'Service'):
+        """
+        Returns the volume configuration (collect_volumes format) for use by a DB driver, to collect service volume for data.
+        """
         instance = DbEnvironments(service.get_project(), None)
-        path = instance._path_to_env(instance.currently_selected_name())
-        os.makedirs(path, exist_ok=True)
-        return path
+        host_path = DataDirectoryDbEnvImpl.path_for_db_data(instance)
+        named_volume = NamedVolumeDbEnvImpl.named_volume_for_db_data(instance, instance.currently_selected_name())
+        return {host_path: {
+            'bind': container_bind_path,
+            'mode': 'rw',
+            'name': named_volume
+        }}
 
     def currently_selected_name(self):
         """Returns the name of the currently selected environment."""
@@ -47,13 +64,8 @@ class DbEnvironments:
     def list(self):
         """
         Lists all environments
-        :return:
         """
-        dir = os.path.join(self.db_service.volume_path(), 'env')
-        if not os.path.exists(dir):
-            return [CONFIG_DBENV__DEFAULT]
-
-        return next(os.walk(dir))[1]
+        return self.impl.list()
 
     def switch(self, environment):
         """
@@ -61,8 +73,7 @@ class DbEnvironments:
         Make sure that the database service is not current running.
         :raises: FileNotFoundError if the database environment doesn't exist yet.
         """
-        new_env_path = self._path_to_env(environment)
-        if not os.path.exists(new_env_path):
+        if not self.impl.exists(environment):
             raise FileNotFoundError("Database environment not found")
 
         self.config[CONFIG_DBENV] = environment
@@ -75,19 +86,18 @@ class DbEnvironments:
         :raises: FileNotFoundError if the database environment to copy from does not exist.
         :raises:
         """
-        new_env_path = self._path_to_env(environment)
-        if os.path.exists(new_env_path):
-            raise FileExistsError("Database environment already exists")
+        if self.impl.exists(environment):
+            raise FileNotFoundError("Database environment already exists")
 
         if environment != remove_all_special_chars(environment):
             raise NameError("Invalid name")
 
-        os.makedirs(new_env_path, exist_ok=True)
+        if copy_from and not self.impl.exists(copy_from):
+            raise FileNotFoundError("Database environment to copy from not found")
+
+        self.impl.create(environment)
         if copy_from:
-            old_env_path = self._path_to_env(copy_from)
-            if not os.path.exists(old_env_path):
-                raise FileNotFoundError("Database environment to copy from not found")
-            self.engine.path_copy(old_env_path, new_env_path, self.project)
+            self.impl.copy(copy_from, environment)
 
     def drop(self, environment):
         """
@@ -95,16 +105,12 @@ class DbEnvironments:
         :raises: FileNotFoundError if the database environment doesn't exist.
         :raises: EnvironmentError if the environment to drop is the one currently in use
         """
-        new_env_path = self._path_to_env(environment)
         if self.config[CONFIG_DBENV] == environment:
             raise OSError("Can not delete currently used environment")
-        if not os.path.exists(new_env_path):
+        if not self.impl.exists(environment):
             raise FileNotFoundError("Database environment not found")
-        self.engine.path_rm(new_env_path, self.project)
 
-    def _path_to_env(self, name):
-        """Path to the database data directory for environment 'name'."""
-        return os.path.join(self.db_service.volume_path(), 'env', name)
+        self.impl.delete(environment)
 
     def _get_configuration_path(self):
         return os.path.join(get_project_meta_folder(self.project.folder()), DB_DRIVER_CONFIG_NAME)
