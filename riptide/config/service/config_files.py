@@ -17,7 +17,7 @@ FOLDER_FOR_PROCESSED_CONFIG = 'processed_config'
 jinja2env = Environment()
 
 
-def process_config(config_name: str, config: dict, service: 'Service') -> str:
+def process_config(config_name: str, config: dict, service: 'Service', regenerate=True) -> str:
     """
     Processes the config file for the given project.
 
@@ -25,6 +25,8 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
 
     The resulting file is written to the project's meta folder (_riptide) and this file is then mounted
     to the requested path inside the container
+
+    If regenerate is False, and the generated config file already exists, it is not regenerated.
 
     :param service: The service that the config entry comes from.
     :param config: The actual config entry as specified in the Service schema.
@@ -39,6 +41,8 @@ def process_config(config_name: str, config: dict, service: 'Service') -> str:
         )
 
     target_file = get_config_file_path(config_name, service)
+    if not regenerate and os.path.exists(target_file):
+        return target_file
 
     # Additional helper functions
     read_file_partial = partial(read_file, config["$source"])

@@ -181,7 +181,7 @@ class Command(YamlConfigDocument):
                     if "config" in service and service not in services_already_checked:
                         services_already_checked.append(service)
                         for config_name, config in service["config"].items():
-                            volumes[process_config(config_name, config, service)] = {
+                            volumes[process_config(config_name, config, service, regenerate=False)] = {
                                 'bind': str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"]))), 'mode': 'rw'
                             }
 
