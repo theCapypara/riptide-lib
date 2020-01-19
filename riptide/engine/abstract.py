@@ -24,7 +24,8 @@ class AbstractEngine(ABC):
     @abstractmethod
     def start_project(self,
                       project: 'Project',
-                      services: List[str]) -> MultiResultQueue[StartStopResultStep]:
+                      services: List[str],
+                      quick=False) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project.
 
@@ -41,6 +42,7 @@ class AbstractEngine(ABC):
 
         :type project: 'Project'
         :param services: Names of the services to start
+        :param quick: If True: Skip pre_start and post_start commands.
 
         :return: MultiResultQueue[StartResult]
         """
