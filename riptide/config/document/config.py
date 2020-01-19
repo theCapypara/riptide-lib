@@ -7,6 +7,7 @@ from schema import Schema, Optional, Or
 from configcrunch import YamlConfigDocument, DocReference, variable_helper
 from riptide.config.document.project import Project
 from riptide.config.files import riptide_main_config_file, riptide_config_dir
+from riptide.plugin.loader import load_plugins
 
 if TYPE_CHECKING:
     from riptide.engine.abstract import AbstractEngine
@@ -163,6 +164,21 @@ class Config(YamlConfigDocument):
 
         """
         return riptide_config_dir()
+
+    @variable_helper
+    def get_plugin_flag(self, inp: str) -> bool:
+        """
+        Returns the value (true/false) of a flag set by a Riptide plugin.
+
+        If the flag or plugin is not found, false is returned.
+
+        :param inp: plugin-name.flag-name
+        """
+        plugin_name_and_flag_name = inp.split('.', 1)
+        all_plugins = load_plugins()
+        if plugin_name_and_flag_name[0] in all_plugins:
+            return load_plugins()[plugin_name_and_flag_name[0]].get_flag_value(self, plugin_name_and_flag_name[1])
+        return False
 
     def upgrade(self):
         """Update the system configuration file after Riptide version upgrades. To be run before validation."""
