@@ -27,6 +27,7 @@ DOMAIN_PROJECT_SERVICE_SEP = "--"
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
     from riptide.config.document.app import App
+    from riptide.config.document.config import Config
 
 HEADER = 'service'
 
@@ -174,6 +175,12 @@ class Service(YamlConfigDocument):
                 to: str
                     Path to store the configuration file at, relative to working directory of container or absolute.
 
+                [force_recreate: bool]
+                    False by default. If false, command containers that use this config file will not try to recreate
+                    the processed file if it already exists.
+                    If true command containers will also recreate the file every time they are started.
+                    Started services always recreate the processed file on start, regardless of this setting.
+
         [additional_ports]
             Additional TCP and/or UDP ports that will be made available on the host system.
             For details see section in
@@ -304,7 +311,8 @@ class Service(YamlConfigDocument):
                     str: {
                         'from': str,
                         '$source': str,  # Path to the document that "from" references. Is added durinng loading of service
-                        'to': str
+                        'to': str,
+                        Optional('force_recreate'): bool
                     }
                 },
                 # Whether to run as the user using riptide (True) or image default (False). Default: True
@@ -591,6 +599,23 @@ class Service(YamlConfigDocument):
         """
         # noinspection PyTypeChecker
         return super().parent()
+
+    @variable_helper
+    def system_config(self) -> 'Config':
+        """
+        Returns the system configuration.
+
+        Example usage::
+
+            something: '{{ system_config().proxy.ports.http }}'
+
+        Example result::
+
+            something: '80'
+        """
+        # noinspection PyTypeChecker
+        #              => App.  Project. Config
+        return super().parent().parent().parent()
 
     @variable_helper
     def volume_path(self) -> str:
