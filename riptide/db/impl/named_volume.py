@@ -32,8 +32,7 @@ class NamedVolumeDbEnvImpl(AbstractDbEnvImpl):
 
     def create(self, name: str):
         """Creates the target database environment."""
-        # The engine will auto create volumes when needed.
-        pass
+        self.env.engine.create_named_volume(self.named_volume_for_db_data(self.env, name))
 
     def copy(self, env1: str, env2: str):
         """Copy all data from env1 to env2."""

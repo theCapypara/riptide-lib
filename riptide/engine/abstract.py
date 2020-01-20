@@ -355,3 +355,16 @@ class AbstractEngine(ABC):
         :raises: FileExistsError: If 'target_name' already exists.
         """
         pass
+
+    @abstractmethod
+    def create_named_volume(self, name: str) -> None:
+        """
+        Create the new database environment 'name'.
+
+        Names do not include internal engine prefixes or suffixes for volume names.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+
+        :raises: FileExistsError: If 'name' already exists.
+        """
+        pass
