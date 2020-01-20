@@ -16,7 +16,11 @@ class NamedVolumeDbEnvImpl(AbstractDbEnvImpl):
     def list(self):
         """Lists the names of all available database environments."""
         prefix = self.named_volume_prefix_for(self.env)
-        return [nv for nv in self.env.engine.list_named_volumes() if nv.startswith(prefix)]
+        list = [nv[len(prefix):] for nv in self.env.engine.list_named_volumes() if nv.startswith(prefix)]
+        # if the list is empty, still add default.
+        if len(list) < 1:
+            return ['default']
+        return list
 
     def delete(self, name: str):
         """Deletes the target database environment."""
