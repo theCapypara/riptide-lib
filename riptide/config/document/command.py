@@ -251,9 +251,8 @@ class Command(YamlConfigDocument):
                             force_recreate = False
                             if "force_recreate" in service["config"][config_name] and service["config"][config_name]["force_recreate"]:
                                 force_recreate = True
-                            volumes[process_config(config_name, config, service, regenerate=force_recreate)] = {
-                                'bind': str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"]))), 'mode': 'rw'
-                            }
+                            bind_path = str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"])))
+                            process_config(volumes, config_name, config, service, bind_path, regenerate=force_recreate)
 
         return volumes
 
