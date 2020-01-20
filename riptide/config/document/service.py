@@ -154,6 +154,11 @@ class Service(YamlConfigDocument):
 
             All variables and variable helpers inside the configuration file are processed.
 
+            Processed config files are either written to _riptide/processed_config and mounted
+            to containers or (if they are under the source tree of the project and the service has the role 'src')
+            copied to the path in the project and mounted with the rest of the source tree. A '.riptide_info.txt' is
+            added then to explain the origin of this file.
+
             Example configuration file (demo.ini)::
 
                 [demo]
