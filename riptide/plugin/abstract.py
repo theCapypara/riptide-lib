@@ -12,6 +12,7 @@ class AbstractPlugin(ABC):
     A Riptide plugin extends the functionality of Riptide.
 
     For this it can:
+    
     - Add new CLI commands to riptide-cli.
     - Set flags, which can be retrieved from the configuration using a variable helper
     - Directly read and modify all parts of the configuration entities loaded.
