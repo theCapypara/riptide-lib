@@ -27,6 +27,7 @@ DOMAIN_PROJECT_SERVICE_SEP = "--"
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
     from riptide.config.document.app import App
+    from riptide.config.document.config import Config
 
 HEADER = 'service'
 
@@ -153,6 +154,11 @@ class Service(YamlConfigDocument):
 
             All variables and variable helpers inside the configuration file are processed.
 
+            Processed config files are either written to _riptide/processed_config and mounted
+            to containers or (if they are under the source tree of the project and the service has the role 'src')
+            copied to the path in the project and mounted with the rest of the source tree. A '.riptide_info.txt' is
+            added then to explain the origin of this file.
+
             Example configuration file (demo.ini)::
 
                 [demo]
@@ -173,6 +179,12 @@ class Service(YamlConfigDocument):
 
                 to: str
                     Path to store the configuration file at, relative to working directory of container or absolute.
+
+                [force_recreate: bool]
+                    False by default. If false, command containers that use this config file will not try to recreate
+                    the processed file if it already exists.
+                    If true command containers will also recreate the file every time they are started.
+                    Started services always recreate the processed file on start, regardless of this setting.
 
         [additional_ports]
             Additional TCP and/or UDP ports that will be made available on the host system.
@@ -204,6 +216,12 @@ class Service(YamlConfigDocument):
                 [type]: str
                     Whether this volume is a "directory" (default) or a "file". Only checked if the file/dir does
                     not exist yet on the host system. Riptide will then create it with the appropriate type.
+                [volume_name]: str
+                    Name of a named volume for this additional volume. Used instead of "host" if present and
+                    the dont_sync_named_volumes_with_host performance setting is enabled. Volumes with the same
+                    volume_name have the same content, even across projects. As a constraint, the name of
+                    two volumes should only be the same, if the host path specified is also the same, to ensure
+                    the same behaviour regardless of if the performance setting is enabled.
 
         [driver]
             The database driver configuration, set this only if the role "db" is set.
@@ -298,7 +316,8 @@ class Service(YamlConfigDocument):
                     str: {
                         'from': str,
                         '$source': str,  # Path to the document that "from" references. Is added durinng loading of service
-                        'to': str
+                        'to': str,
+                        Optional('force_recreate'): bool
                     }
                 },
                 # Whether to run as the user using riptide (True) or image default (False). Default: True
@@ -322,7 +341,8 @@ class Service(YamlConfigDocument):
                         'host': str,
                         'container': str,
                         Optional('mode'): Or('rw', 'ro'),  # default: rw - can be rw/ro.
-                        Optional('type'): Or('directory', 'file')  # default: directory
+                        Optional('type'): Or('directory', 'file'),  # default: directory
+                        Optional('volume_name'): str
                     }
                 },
                 Optional('allow_full_memlock'): bool,
@@ -484,6 +504,8 @@ class Service(YamlConfigDocument):
 
         :return: dict. Return format is the docker container API volumes dict format.
                        See: https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
+                       The volume definitions may contain an additional key 'name', which should be used by the engine,
+                       instead of the host path if the dont_sync_named_volumes_with_host performance option is enabled.
         """
         project = self.get_project()
         volumes = OrderedDict({})
@@ -495,9 +517,8 @@ class Service(YamlConfigDocument):
         # config
         if "config" in self:
             for config_name, config in self["config"].items():
-                volumes[process_config(config_name, config, self)] = {
-                    'bind': str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"]))), 'mode': 'rw'
-                }
+                bind_path = str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"])))
+                process_config(volumes, config_name, config, self, bind_path)
 
         # logging
         if "logging" in self:
@@ -582,6 +603,23 @@ class Service(YamlConfigDocument):
         """
         # noinspection PyTypeChecker
         return super().parent()
+
+    @variable_helper
+    def system_config(self) -> 'Config':
+        """
+        Returns the system configuration.
+
+        Example usage::
+
+            something: '{{ system_config().proxy.ports.http }}'
+
+        Example result::
+
+            something: '80'
+        """
+        # noinspection PyTypeChecker
+        #              => App.  Project. Config
+        return super().parent().parent().parent()
 
     @variable_helper
     def volume_path(self) -> str:

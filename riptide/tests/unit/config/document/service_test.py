@@ -14,7 +14,7 @@ from configcrunch.tests.test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.tests.helpers import patch_mock_db_driver, get_fixture_path
-from riptide.tests.stubs import ProjectStub
+from riptide.tests.stubs import ProjectStub, process_config_stub
 from riptide.tests.unit.config.service.volumes_test import STUB_PAV__KEY, STUB_PAV__VAL
 
 FIXTURE_BASE_PATH = 'service' + os.sep
@@ -477,8 +477,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("riptide.config.document.service.get_logging_path_for",
                 side_effect=lambda _, name: name + "~PROCESSED2")
     @mock.patch("os.makedirs")
-    @mock.patch("riptide.config.document.service.process_config",
-                side_effect=lambda config_name, config, _: config_name + "~" + config["from"] + "~PROCESSED")
+    @mock.patch("riptide.config.document.service.process_config", side_effect=process_config_stub)
     @mock.patch("riptide.config.document.service.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})
     def test_collect_volumes(self,
                              process_additional_volumes_mock: Mock, process_config_mock: Mock, makedirs_mock: Mock,
@@ -543,9 +542,9 @@ class ServiceTestCase(unittest.TestCase):
             # SRC
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
             # CONFIG
-            'config1~/FROM_1~PROCESSED':                    {'bind': '/TO_1', 'mode': 'rw'},
-            'config2~/FROM_2~PROCESSED':                    {'bind': '/TO_2', 'mode': 'rw'},
-            'config3~/FROM_3~PROCESSED':                    {'bind': '/src/TO_3_RELATIVE', 'mode': 'rw'},
+            'config1~/FROM_1~~True':                        {'bind': '/TO_1', 'mode': 'STUB'},
+            'config2~/FROM_2~~True':                        {'bind': '/TO_2', 'mode': 'STUB'},
+            'config3~/FROM_3~~True':                        {'bind': '/src/TO_3_RELATIVE', 'mode': 'STUB'},
             # LOGGING
             'stdout~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDOUT, 'mode': 'rw'},
             'stderr~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDERR, 'mode': 'rw'},
@@ -573,13 +572,6 @@ class ServiceTestCase(unittest.TestCase):
         actual = service.collect_volumes()
         self.assertEqual(expected, actual)
         self.assertIsInstance(actual, OrderedDict)
-
-        ## CONFIG ASSERTIONS
-        process_config_mock.assert_has_calls([
-            call("config1", config1, service),
-            call("config2", config2, service),
-            call("config3", config3, service),
-        ], any_order=True)
 
         ## LOGGING ASSERTIONS
         get_logging_path_for_mock.assert_has_calls([

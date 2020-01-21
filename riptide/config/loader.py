@@ -9,6 +9,7 @@ from riptide.config import repositories
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
 from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file
+from riptide.plugin.loader import load_plugins
 
 if TYPE_CHECKING:
     from riptide.config.document.config import Config
@@ -33,6 +34,8 @@ def load_config(project_file=None, skip_project_load=False) -> 'Config':
     The loaded project is placed in the ``project`` field of the config.
     The path to the project is place in the ``$path`` field of the project.
 
+    Also propagates the loaded config to all loaded plugins.
+
     :param project_file: Project file to load or None for auto-discovery
     :param skip_project_load: Skip project loading. If True, the project_file setting will be ignored
     :return: :class:`riptide.config.document.config.Config` object.
@@ -48,11 +51,13 @@ def load_config(project_file=None, skip_project_load=False) -> 'Config':
         project_path = discover_project_file()
 
     system_config = Config.from_yaml(config_path)
-    system_config.validate()
 
     # The user is not allowed to add a project entry to their main config file
     if "project" in system_config:
         del system_config["project"]
+
+    system_config.upgrade()
+    system_config.validate()
 
     repos = repositories.collect(system_config)
 
@@ -72,6 +77,9 @@ def load_config(project_file=None, skip_project_load=False) -> 'Config':
     system_config.process_vars()
 
     system_config.validate()
+
+    for plugin in load_plugins().values():
+        plugin.after_reload_config(system_config)
 
     return system_config
 

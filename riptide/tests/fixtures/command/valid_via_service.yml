@@ -1,0 +1,3 @@
+command:
+  in_service_with_role: rolename
+  command: command in service

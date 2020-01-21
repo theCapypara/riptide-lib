@@ -16,9 +16,16 @@ class ExecError(BaseException):
     pass
 
 
+class ServiceStoppedException(BaseException):
+    pass
+
+
 class AbstractEngine(ABC):
     @abstractmethod
-    def start_project(self, project: 'Project', services: List[str]) -> MultiResultQueue[StartStopResultStep]:
+    def start_project(self,
+                      project: 'Project',
+                      services: List[str],
+                      quick=False) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project.
 
@@ -29,8 +36,14 @@ class AbstractEngine(ABC):
         The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
         routable to the host system.
 
+        The engine must regard the performance settings in the system configuration (project.parent().performance):
+        - dont_sync_named_volumes_with_host: Use named volumes instead of host path bindings
+        - dont_sync_unimportant_src:         Do not synchronize sub-paths 'unimportant_paths' of apps with the host.
+
         :type project: 'Project'
         :param services: Names of the services to start
+        :param quick: If True: Skip pre_start and post_start commands.
+
         :return: MultiResultQueue[StartResult]
         """
         pass
@@ -47,22 +60,20 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def status(self, project: 'Project', system_config: 'Config') -> Dict[str, bool]:
+    def status(self, project: 'Project') -> Dict[str, bool]:
         """
         Returns the status for the given project (whether services are started or not)
 
-        :param system_config: Main system config
         :param project: 'Project'
         :return: Dict[str, bool]
         """
         pass
 
     @abstractmethod
-    def service_status(self, project: 'Project', service_name: str, system_config: 'Config') -> bool:
+    def service_status(self, project: 'Project', service_name: str) -> bool:
         """
         Returns the status for a single service in a given project (whether service is started or not)
 
-        :param system_config: Main system config
         :param project: 'Project'
         :param service_name: str
         :return: bool
@@ -92,7 +103,10 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, project: 'Project', command_name: str, arguments: List[str]) -> int:
+    def cmd(self,
+            project: 'Project',
+            command_name: str,
+            arguments: List[str]) -> int:
         """
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
@@ -105,14 +119,46 @@ class AbstractEngine(ABC):
         The container must also have all hostnames returned by riptide.config.hosts.get_localhost_hosts()
         routable to the host system.
 
+        The command must be a "normal" command. "In service" commands may be run with
+        cmd_in_service.
+
+        The engine must regard the performance settings in the system configuration (project.parent().performance).
+
         :param project: 'Project'
         :param command_name: str
         :param arguments: List of arguments
+
         :return: exit code
         """
 
     @abstractmethod
-    def service_fg(self, project: 'Project', service_name: str, arguments: List[str]) -> None:
+    def cmd_in_service(self,
+                       project: 'Project',
+                       command_name: str,
+                       service_name: str,
+                       arguments: List[str]) -> int:
+        """
+        Execute the command identified by command_name in the service container identified
+        by service_name and attach command to stdout/stdin/stderr.
+        Returns when the command is finished. Returns the command exit code.
+
+        Accepts normal and "in service" style commands and does not validate the defined
+        service of the command.
+
+        :param project: 'Project'
+        :param command_name: str
+        :param service_name: str
+        :param arguments: List of arguments
+        :return: exit code
+        :raises: ServiceStoppedException: If the service is not running.
+        """
+
+    @abstractmethod
+    def service_fg(self,
+                   project: 'Project',
+                   service_name: str,
+                   arguments: List[str]
+    ) -> None:
         """
         Execute a service and attach output to stdout/stdin/stderr.
         Returns when the service container is finished.
@@ -125,6 +171,8 @@ class AbstractEngine(ABC):
         * post_start (is empty)
         * roles.src (is set)
         * working_directory (is set to current working directory)
+
+        The engine must regard the performance settings in the system configuration (project.parent().performance).
 
         :param project: 'Project'
         :param service_name: str
@@ -189,8 +237,8 @@ class AbstractEngine(ABC):
     @abstractmethod
     def pull_images(self, project: 'Project', line_reset='\n', update_func=lambda msg: None) -> None:
         """
-        Open an interactive shell into service_name and attach stdout/stdin/stderr.
-        Returns when the shell is exited.
+        Pull new versions of images for commands and services described in project.
+
         Not fining an image should NOT raise an error and instead print a warning as status report.
 
         :param project:     The project to pull all images for. Applies to all commands and services in project.
@@ -247,8 +295,76 @@ class AbstractEngine(ABC):
             copy_tree(fromm, to)
 
     @abstractmethod
-    def supports_exec(self):
+    def performance_value_for_auto(self, key: str, platform: str) -> bool:
         """
-        Whether or not this engine supports exec.
+        Whether or not performance optimization for the provided key
+        should be activated for the provided platform, because they
+        drastically increase performance.
+
+        :param key: Optimization key, as found in the Config schema's "performance" entry.
+        :param platform: windows/darwin/linux or something else (return value of platform.system() in lower case).
+        """
+        pass
+
+    @abstractmethod
+    def list_named_volumes(self) -> List[str]:
+        """
+        List all named volumes created by the engine.
+        The returned list contains the names of the volumes without any internal prefixes/suffixes (as defined
+        in the 'name' field of service or command 'additional_volumes'.
+
+        These volumes may be originally created by the engine, because of the 'dont_sync_named_volumes_with_host'
+        performance option, but they may also be created for different reasons.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+        """
+        pass
+
+    @abstractmethod
+    def delete_named_volume(self, name: str) -> None:
+        """
+        Deletes the named volume with the name 'name'. The name parameter does not include internal engine prefixes
+        or suffixes for volume names.
+
+        If the volume does not exist, silently does nothing.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+        """
+        pass
+
+    @abstractmethod
+    def exists_named_volume(self, name: str) -> bool:
+        """
+        Returns whether or not a name volume with the name 'name' exists.
+        The name parameter does not include internal engine prefixes
+        or suffixes for volume names.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+        """
+        pass
+
+    @abstractmethod
+    def copy_named_volume(self, from_name: str, target_name: str) -> None:
+        """
+        Copy all contents from the named volume 'from_name' to a new named volume named 'target_name'.
+
+        Names do not include internal engine prefixes or suffixes for volume names.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+
+        :raises: FileExistsError: If 'target_name' already exists.
+        """
+        pass
+
+    @abstractmethod
+    def create_named_volume(self, name: str) -> None:
+        """
+        Create the new database environment 'name'.
+
+        Names do not include internal engine prefixes or suffixes for volume names.
+
+        Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
+
+        :raises: FileExistsError: If 'name' already exists.
         """
         pass

@@ -4,7 +4,7 @@ import os
 from pathlib import PurePosixPath
 
 from schema import Schema, Optional, Or
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 
 HEADER = 'command'
+KEY_IDENTIFIER_IN_SERVICE_COMMAND = 'in_service_with_role'
 
 
 class Command(YamlConfigDocument):
@@ -35,15 +36,18 @@ class Command(YamlConfigDocument):
     @classmethod
     def schema(cls) -> Schema:
         """
-        Can be either a normal command or an alias command.
+        Can be either a normal command, a command in a service, or an alias command.
         """
         return Schema(
-            Or(cls.schema_alias(), cls.schema_normal())
+            Or(cls.schema_alias(), cls.schema_normal(), cls.schema_in_service())
         )
 
     @classmethod
     def schema_normal(cls):
         """
+        Normal commands are executed in seperate containers, that are running
+        in the same container network as the services.
+
         [$name]: str
             Name as specified in the key of the parent app.
 
@@ -70,6 +74,12 @@ class Command(YamlConfigDocument):
                 [type]: str
                     Whether this volume is a "directory" (default) or a "file". Only checked if the file/dir does
                     not exist yet on the host system. Riptide will then create it with the appropriate type.
+                [volume_name]: str
+                    Name of a named volume for this additional volume. Used instead of "host" if present and
+                    the dont_sync_named_volumes_with_host performance setting is enabled. Volumes with the same
+                    volume_name have the same content, even across projects. As a constraint, the name of
+                    two volumes should only be the same, if the host path specified is also the same, to ensure
+                    the same behaviour regardless of if the performance setting is enabled.
 
         [environment]
             Additional environment variables
@@ -100,7 +110,8 @@ class Command(YamlConfigDocument):
                     'host': str,
                     'container': str,
                     Optional('mode'): str,  # default: rw - can be rw/ro.
-                    Optional('type'): Or('directory', 'file')  # default: directory
+                    Optional('type'): Or('directory', 'file'),  # default: directory
+                    Optional('volume_name'): str
                 }
             },
             Optional('environment'): {str: str},
@@ -108,8 +119,60 @@ class Command(YamlConfigDocument):
         })
 
     @classmethod
+    def schema_in_service(cls):
+        """
+        Command is run in a running service container.
+
+        If the service container is not running, a new container is started based on the
+        definition of the service.
+
+        [$name]: str
+            Name as specified in the key of the parent app.
+
+            Added by system. DO NOT specify this yourself in the YAML files.
+
+        in_service_with_role: str
+            Runs the command in the first service which has this role.
+
+            May lead to unexpected results, if multiple services match the role.
+
+        command: str
+            Command to run inside of the container.
+
+            .. warning:: Avoid quotes (", ') inside of the command, as those may lead to strange side effects.
+
+        [environment]
+            Additional environment variables. The container also has access
+            to the environment of the service.
+            Variables in the current user's env will override those values and
+            variables defined here, will override all other.
+
+            {key}: str
+                Key is the name of the variable, value is the value.
+
+        **Example Document:**
+
+        .. code-block:: yaml
+
+            command:
+              in_service_with_role: php
+              command: 'php index.php'
+        """
+        return Schema({
+            Optional('$ref'): str,  # reference to other Service documents
+            Optional('$name'): str,  # Added by system during processing parent app.
+
+            KEY_IDENTIFIER_IN_SERVICE_COMMAND: str,
+            'command': str,
+            Optional('environment'): {str: str},
+        })
+
+
+    @classmethod
     def schema_alias(cls):
         """
+        Aliases another command.
+
         [$name]: str
             Name as specified in the key of the parent app.
 
@@ -146,6 +209,8 @@ class Command(YamlConfigDocument):
         """
         Collect volume mappings that this command should be getting when running.
 
+        Only applicable to commands matching the "normal" schema.
+
         Volumes are built from following sources:
 
         * Source code is mounted as volume if role "src" is set
@@ -157,6 +222,8 @@ class Command(YamlConfigDocument):
 
         :return: dict. Return format is the docker container API volumes dict format.
                        See: https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
+                       The volume definitions may contain an additional key 'name', which should be used by the engine,
+                       instead of the host path if the dont_sync_named_volumes_with_host performance option is enabled.
         """
         project = self.get_project()
         volumes = OrderedDict({})
@@ -181,9 +248,11 @@ class Command(YamlConfigDocument):
                     if "config" in service and service not in services_already_checked:
                         services_already_checked.append(service)
                         for config_name, config in service["config"].items():
-                            volumes[process_config(config_name, config, service, regenerate=False)] = {
-                                'bind': str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"]))), 'mode': 'rw'
-                            }
+                            force_recreate = False
+                            if "force_recreate" in service["config"][config_name] and service["config"][config_name]["force_recreate"]:
+                                force_recreate = True
+                            bind_path = str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"])))
+                            process_config(volumes, config_name, config, service, bind_path, regenerate=force_recreate)
 
         return volumes
 
@@ -224,6 +293,29 @@ class Command(YamlConfigDocument):
             pass
 
         return env
+
+    def get_service(self, app: 'App') -> Union[str, None]:
+        """
+        Only applicable to "in service" commands.
+
+        Returns the name of the service in app.
+
+        Returns None if the service does not exist in app or if not applicable.
+
+        :param app: The app to search in
+        :return: Name of the service (key) in app.
+        """
+        if KEY_IDENTIFIER_IN_SERVICE_COMMAND not in self.doc:
+            raise TypeError('get_service can only be used on "in service" commands.')
+
+        if 'services' not in app:
+            return None
+
+        for service_name, service in app['services'].items():
+            if 'roles' in service and self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND] in service['roles']:
+                return service_name
+
+        return None
 
     def error_str(self) -> str:
         return f"{self.__class__.__name__}<{(self['$name'] if '$name' in self else '???')}>"

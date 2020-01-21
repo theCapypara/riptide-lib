@@ -13,7 +13,7 @@ import riptide.config.document.command as module
 from configcrunch.tests.test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.tests.helpers import get_fixture_path
-from riptide.tests.stubs import ProjectStub
+from riptide.tests.stubs import ProjectStub, process_config_stub
 from riptide.tests.unit.config.service.volumes_test import STUB_PAV__KEY, STUB_PAV__VAL
 
 FIXTURE_BASE_PATH = 'command' + os.sep
@@ -63,7 +63,8 @@ class CommandTestCase(unittest.TestCase):
 
     def test_validate_valids(self):
         valid_names = ['valid_regular.yml', 'valid_alias.yml',
-                       'valid_regular_with_some_optionals.yml']
+                       'valid_regular_with_some_optionals.yml',
+                       'valid_via_service.yml', 'valid_regular_with_volumes_named.yml']
         for name in valid_names:
             with self.subTest(name=name):
                 command = module.Command.from_yaml(get_fixture_path(
@@ -75,22 +76,75 @@ class CommandTestCase(unittest.TestCase):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_alias_no_aliases.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing key:"):
+        with self.assertRaises(SchemaError):
             command.validate()
 
     def test_validate_invalid_regular_no_image(self):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_regular_no_image.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Missing key:"):
+        with self.assertRaises(SchemaError):
             command.validate()
 
     def test_validate_invalid_weird_mixup(self):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'invalid_weird_mixup.yml'
         ))
-        with self.assertRaisesRegex(SchemaError, "Wrong key"):
+        with self.assertRaises(SchemaError):
             command.validate()
+
+    def test_validate_via_service_no_command(self):
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'invalid_via_service_no_command.yml'
+        ))
+        with self.assertRaises(SchemaError):
+            command.validate()
+
+    def test_get_service_valid(self):
+        test_service = YamlConfigDocumentStub({
+            'roles': ['rolename']
+        })
+        app = YamlConfigDocumentStub({
+            'services': {
+                'test': test_service
+            }
+        })
+
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_via_service.yml'
+        ))
+        self.assertEqual('test', command.get_service(app))
+
+    def test_get_service_not_via_service(self):
+        test_service = YamlConfigDocumentStub({
+            'roles': ['rolename']
+        })
+        app = YamlConfigDocumentStub({
+            'services': {
+                'test': test_service
+            }
+        })
+
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_regular.yml'
+        ))
+        with self.assertRaisesRegex(TypeError, 'get_service can only be used on "in service" commands.'):
+            command.get_service(app)
+
+    def test_get_service_no_service_with_role(self):
+        test_service = YamlConfigDocumentStub({
+            'roles': []
+        })
+        app = YamlConfigDocumentStub({
+            'services': {
+                'test': test_service
+            }
+        })
+
+        command = module.Command.from_yaml(get_fixture_path(
+            FIXTURE_BASE_PATH + 'valid_via_service.yml'
+        ))
+        self.assertEqual(None, command.get_service(app))
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):
@@ -143,8 +197,7 @@ class CommandTestCase(unittest.TestCase):
 
     @mock.patch("os.environ")
     @mock.patch("riptide.config.document.command.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})
-    @mock.patch("riptide.config.document.command.process_config",
-                side_effect=lambda config_name, config, service: f"{config_name}~{config['from']}~{service['__UNIT_TEST_NAME']}")
+    @mock.patch("riptide.config.document.command.process_config", side_effect=process_config_stub)
     def test_collect_volumes(self, process_config_mock: Mock, process_additional_volumes_mock: Mock, os_environ_mock: Mock):
         env = {}
         os_environ_mock.__getitem__.side_effect = env.__getitem__
@@ -160,17 +213,17 @@ class CommandTestCase(unittest.TestCase):
             # process_additional_volumes has to be called
             STUB_PAV__KEY: STUB_PAV__VAL,
             # config_from_roles :
-            'config1~/FROM_1~serviceRoleA1':                {'bind': '/TO_1', 'mode': 'rw'},
-            'config2~/FROM_2~serviceRoleA1':                {'bind': '/TO_2', 'mode': 'rw'},
-            'config2~/FROM_2~serviceRoleA2B1':              {'bind': '/TO_2', 'mode': 'rw'},
-            'config3~/FROM_3~serviceRoleA2B1':              {'bind': '/TO_3', 'mode': 'rw'},
-            'config3~/FROM_3~serviceRoleB2':                {'bind': '/TO_3', 'mode': 'rw'},
+            'config1~/FROM_1~serviceRoleA1~False':          {'bind': '/TO_1', 'mode': 'STUB'},
+            'config2~/FROM_2~serviceRoleA1~False':          {'bind': '/TO_2', 'mode': 'STUB'},
+            'config2~/FROM_2~serviceRoleA2B1~False':        {'bind': '/TO_2', 'mode': 'STUB'},
+            'config3~/FROM_3~serviceRoleA2B1~True':         {'bind': '/TO_3', 'mode': 'STUB'},
+            'config3~/FROM_3~serviceRoleB2~True':           {'bind': '/TO_3', 'mode': 'STUB'},
         })
 
         # Config entries
         config1 = {'to': '/TO_1', 'from': '/FROM_1'}
         config2 = {'to': '/TO_2', 'from': '/FROM_2'}
-        config3 = {'to': '/TO_3', 'from': '/FROM_3'}
+        config3 = {'to': '/TO_3', 'from': '/FROM_3', 'force_recreate': True}
 
         # Services
         serviceRoleA1 = {
@@ -235,15 +288,6 @@ class CommandTestCase(unittest.TestCase):
             list(self.fix_with_volumes['additional_volumes'].values()),
             ProjectStub.FOLDER
         )
-
-        ## CONFIG ASSERTIONS
-        process_config_mock.assert_has_calls([
-            call("config1", config1, serviceRoleA1),
-            call("config2", config2, serviceRoleA1),
-            call("config2", config2, serviceRoleA2B1),
-            call("config3", config3, serviceRoleA2B1),
-            call("config3", config3, serviceRoleB2)
-        ], any_order=True)
 
     @mock.patch("os.environ")
     @mock.patch("riptide.config.document.command.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL})

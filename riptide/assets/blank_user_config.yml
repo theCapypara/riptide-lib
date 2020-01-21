@@ -23,3 +23,11 @@ riptide:
 
   # Riptide container backend name. Needs to be installed. Default is 'docker' (riptide_engine_docker).
   engine: docker
+
+  # Performance optimizations.
+  # Please see documentation (Configuration -> Entitites -> System Configuration) for more info.
+  # Values can be true/false/auto.
+  # auto enables them, if beneficial on your platform.
+  performance:
+    dont_sync_named_volumes_with_host:  auto # auto = true on Mac/Windows with Docker
+    dont_sync_unimportant_src:    auto # auto = true on Mac/Windows with Docker

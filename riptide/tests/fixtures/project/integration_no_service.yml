@@ -4,3 +4,4 @@ project:
   app:
     $ref: app/integration_app
     services: $remove
+    unimportant_paths: $remove

@@ -52,7 +52,7 @@ if platform.system().lower().startswith('win'):
         return process.exitstatus()
 else:
     # linux and mac
-    import pty
+    import riptide.lib.cross_platform.stdlib_pty_fork as pty
 
     def spawn(argv, **kwargs):
         return pty.spawn(argv)

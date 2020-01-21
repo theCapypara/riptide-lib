@@ -4,6 +4,10 @@ app:
     import_test:
       target: import_subdir/subdir2
       name: import test
+  unimportant_paths:
+    # unimportant_paths feature. To be tested with service simple_with_src and src_working_directory
+    - '{{ services.simple_with_src.working_directory }}/unimportant_paths_test'
+    - '{{ services.src_working_directory.working_directory }}/unimportant_paths_test'
   services:
     simple:
       $ref: service/integration_simple

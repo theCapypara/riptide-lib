@@ -26,3 +26,7 @@ service:
       host: "{{volume_path()}}/type_file"
       container: /type_file
       type: file
+    named:
+      host: "{{volume_path()}}/named"
+      container: /in_volume_path_named
+      volume_name: namedvolume-integrationtest
