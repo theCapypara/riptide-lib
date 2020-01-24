@@ -710,13 +710,13 @@ class ServiceTestCase(unittest.TestCase):
 
         self.assertEqual('TEST-PROJECT.TEST-URL', service.domain())
 
-    @mock.patch("riptide.config.document.service.getuid", return_value=1234)
+    @mock.patch("riptide.config.document.common_service_command.getuid", return_value=1234)
     def test_os_user(self, getuid_mock: Mock):
         service = module.Service({})
         self.assertEqual("1234", service.os_user())
         getuid_mock.assert_called_once()
 
-    @mock.patch("riptide.config.document.service.getgid", return_value=1234)
+    @mock.patch("riptide.config.document.common_service_command.getgid", return_value=1234)
     def test_os_group(self, getgid_mock: Mock):
         service = module.Service({})
         self.assertEqual("1234", service.os_group())

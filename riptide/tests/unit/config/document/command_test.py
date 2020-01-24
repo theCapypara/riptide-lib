@@ -11,7 +11,7 @@ from schema import SchemaError
 
 import riptide.config.document.command as module
 from configcrunch.tests.test_utils import YamlConfigDocumentStub
-from riptide.config.files import CONTAINER_SRC_PATH
+from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.tests.helpers import get_fixture_path
 from riptide.tests.stubs import ProjectStub, process_config_stub
 from riptide.tests.unit.config.service.volumes_test import STUB_PAV__KEY, STUB_PAV__VAL
@@ -393,4 +393,4 @@ class CommandTestCase(unittest.TestCase):
 
     def test_home_path(self):
         cmd = module.Command({})
-        self.assertEqual(module.CONTAINER_HOME_PATH, cmd.home_path())
+        self.assertEqual(CONTAINER_HOME_PATH, cmd.home_path())
