@@ -6,9 +6,9 @@ from pathlib import PurePosixPath
 from schema import Schema, Optional, Or
 from typing import TYPE_CHECKING, Union
 
-from configcrunch import YamlConfigDocument
 from configcrunch.abstract import variable_helper
-from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
+from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
+from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH
 from riptide.config.service.config_files import process_config
 from riptide.config.service.volumes import process_additional_volumes
 from riptide.lib.cross_platform import cppath
@@ -22,7 +22,7 @@ HEADER = 'command'
 KEY_IDENTIFIER_IN_SERVICE_COMMAND = 'in_service_with_role'
 
 
-class Command(YamlConfigDocument):
+class Command(ContainerDefinitionYamlConfigDocument):
     """
     A command document. Specifies a CLI command to be executable by the user.
 
@@ -358,18 +358,3 @@ class Command(YamlConfigDocument):
         path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data', self["$name"])
         os.makedirs(path, exist_ok=True)
         return path
-
-    @variable_helper
-    def home_path(self) -> str:
-        """
-        Returns the path to the home directory inside the container.
-
-        Example usage::
-
-            something: '{{ home_path() }}'
-
-        Example result::
-
-            something: '/home/riptide'
-        """
-        return CONTAINER_HOME_PATH
