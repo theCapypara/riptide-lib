@@ -48,6 +48,10 @@ class Project(YamlConfigDocument):
             Please make sure, that service names are not re-used across projects that are linked this way, this could
             lead to unexpected results during service host name resolution.
 
+        [default_services]: List[str]
+            List of services to start when running `riptide start`. If not set, all services are started. You can also
+            control which services to start using flags. See `riptide start --help` for more information.
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -66,7 +70,8 @@ class Project(YamlConfigDocument):
                 'name': str,
                 'src': str,
                 'app': DocReference(App),
-                Optional('links'): [str]
+                Optional('links'): [str],
+                Optional('default_services'): [str]
             }
         )
 
