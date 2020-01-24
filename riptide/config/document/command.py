@@ -309,13 +309,18 @@ class Command(ContainerDefinitionYamlConfigDocument):
             raise TypeError('get_service can only be used on "in service" commands.')
 
         if 'services' not in app:
-            return None
+            raise ValueError(
+                f"Command {(self['$name'] if '$name' in self else '???')} can not run in service with role "
+                f"{self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND]}: "
+                f"The app has no services.")
 
         for service_name, service in app['services'].items():
             if 'roles' in service and self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND] in service['roles']:
                 return service_name
 
-        return None
+        raise ValueError(f"Command {(self['$name'] if '$name' in self else '???')} can not run in service with role "
+                         f"{self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND]}: "
+                         f"No service with this role found in the app.")
 
     def error_str(self) -> str:
         return f"{self.__class__.__name__}<{(self['$name'] if '$name' in self else '???')}>"
