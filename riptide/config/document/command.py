@@ -300,7 +300,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         Returns the name of the service in app.
 
-        Returns None if the service does not exist in app or if not applicable.
+        Raises ValueError if the service does not exist in app or if not applicable.
 
         :param app: The app to search in
         :return: Name of the service (key) in app.

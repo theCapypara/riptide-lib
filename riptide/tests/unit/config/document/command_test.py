@@ -144,7 +144,8 @@ class CommandTestCase(unittest.TestCase):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'valid_via_service.yml'
         ))
-        self.assertEqual(None, command.get_service(app))
+        with self.assertRaisesRegex(ValueError, 'Command .* can not run in service with role rolename: No service with this role found in the app.'):
+            command.get_service(app)
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):
