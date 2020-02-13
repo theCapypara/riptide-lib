@@ -3,6 +3,7 @@ Functions to load the system configuration and/or projects.
 """
 import json
 import os
+from collections import OrderedDict
 from typing import TYPE_CHECKING
 
 from riptide.config import repositories
@@ -84,13 +85,18 @@ def load_config(project_file=None, skip_project_load=False) -> 'Config':
     return system_config
 
 
-def load_projects() -> dict:
-    """Loads the contents of the projects.json file and returns them."""
+def load_projects(sort=False) -> dict:
+    """
+    Loads the contents of the projects.json file and returns them.
+    If sort is True, they are ordered alphabetically.
+    """
     projects = {}
     if os.path.exists(riptide_projects_file()):
         with open(riptide_projects_file(), mode='r') as file:
             projects = json.load(file)
-    return projects
+    if not sort:
+        return projects
+    return OrderedDict(sorted(projects.items()))
 
 
 def load_config_by_project_name(name: str) -> 'Config':
