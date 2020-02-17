@@ -47,6 +47,12 @@ class Config(YamlConfigDocument):
                 Whether or not the proxy server should auto-start all services for a project
                 if a user enters the URL for a service.
 
+            [autostart_restrict]: List[str]
+                If set, only the IPv4 ip addresses specified by the netmasks in this list are allowed
+                to trigger the auto-start process via the proxy server. For other clients, projects
+                are not automatically started. Useful if you share a network with co-workers and don't
+                want them to start your projects.
+
         engine: str
             Engine to use, the Python package for the engine must be installed.
 
@@ -109,6 +115,8 @@ class Config(YamlConfigDocument):
                   http: 80
                   https: 443
                 autostart: true
+                autostart_restrict:
+                  - 127.0.0.1/32
               engine: docker
               repos:
                 - https://github.com/Parakoopa/riptide-repo.git
@@ -127,6 +135,7 @@ class Config(YamlConfigDocument):
                         'https': Or(int, False)  # False disables HTTPS
                     },
                     'autostart': bool,
+                    Optional('autostart_restrict'): [str],
                     Optional('autoexit'): int  # TODO: Not used, deprecated.
                 },
                 'update_hosts_file': bool,
