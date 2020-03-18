@@ -53,6 +53,10 @@ class Config(YamlConfigDocument):
                 are not automatically started. Useful if you share a network with co-workers and don't
                 want them to start your projects.
 
+            [compression]: bool
+                If true, the proxy server doesn't decompress any data, and instead passes the compressed
+                data of the backend server (if compressed). Experimental.
+
         engine: str
             Engine to use, the Python package for the engine must be installed.
 
@@ -136,6 +140,7 @@ class Config(YamlConfigDocument):
                     },
                     'autostart': bool,
                     Optional('autostart_restrict'): [str],
+                    Optional('compression'): bool,
                     Optional('autoexit'): int  # TODO: Not used, deprecated.
                 },
                 'update_hosts_file': bool,
