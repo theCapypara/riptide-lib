@@ -1,4 +1,6 @@
 import asyncio
+import traceback
+
 import janus
 from typing import Dict, NamedTuple, Union, TypeVar, Generic
 
@@ -25,6 +27,9 @@ class ResultError(EndResultQueue):
         self.message = message
         self.details = details
         self.cause = cause
+        self.traceback_string = "Unknown reason."
+        if cause:
+            self.traceback_string = "".join(traceback.format_exception(etype=type(cause), value=cause, tb=cause.__traceback__))
         super().__init__(*args, **kwargs)
 
     def __str__(self):
