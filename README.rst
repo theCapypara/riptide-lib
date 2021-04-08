@@ -9,7 +9,7 @@
     ======================  ===================  ===================  ===================
     *Main packages:*        **lib**              proxy_               cli_
     *Container-Backends:*   engine_docker_
-    *Database Drivers:*     db_mysql_
+    *Database Drivers:*     db_mysql_            db_mongo_
     *Plugins:*              php_xdebug_
     *Related Projects:*     configcrunch_
     *More:*                 docs_                repo_                docker_images_
@@ -21,6 +21,7 @@
 .. _configcrunch:   https://github.com/Parakoopa/configcrunch
 .. _engine_docker:  https://github.com/Parakoopa/riptide-engine-docker
 .. _db_mysql:       https://github.com/Parakoopa/riptide-db-mysql
+.. _db_mongo:       https://github.com/Parakoopa/riptide-db-mongo
 .. _docs:           https://github.com/Parakoopa/riptide-docs
 .. _repo:           https://github.com/Parakoopa/riptide-repo
 .. _docker_images:  https://github.com/Parakoopa/riptide-docker-images
