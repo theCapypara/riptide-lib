@@ -11,6 +11,7 @@
     *Container-Backends:*   engine_docker_
     *Database Drivers:*     db_mysql_            db_mongo_
     *Plugins:*              php_xdebug_
+    *Kubernetes:*           k8s_client_          k8s_controller_
     *Related Projects:*     configcrunch_
     *More:*                 docs_                repo_                docker_images_
     ======================  ===================  ===================  ===================
@@ -26,11 +27,13 @@
 .. _repo:           https://github.com/Parakoopa/riptide-repo
 .. _docker_images:  https://github.com/Parakoopa/riptide-docker-images
 .. _php_xdebug:     https://github.com/Parakoopa/riptide-plugin-php-xdebug
+.. _k8s_client:     https://github.com/Parakoopa/riptide-k8s-client
+.. _k8s_controller: https://github.com/Parakoopa/riptide-k8s-controller
 
 |build| |docs| |pypi-version| |pypi-downloads| |pypi-license| |pypi-pyversions| |slack|
 
-.. |build| image:: https://jenkins.riptide.parakoopa.de/buildStatus/icon?job=riptide-lib%2Fmaster
-    :target: https://jenkins.riptide.parakoopa.de/blue/organizations/jenkins/riptide-lib/activity
+.. |build| image:: https://img.shields.io/github/workflow/status/Parakoopa/riptide-lib/Build,%20test%20and%20publish
+    :target: https://github.com/Parakoopa/riptide-lib/actions
     :alt: Build Status
 
 .. |docs| image:: https://readthedocs.org/projects/riptide-docs/badge/?version=latest
