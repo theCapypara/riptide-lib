@@ -242,6 +242,17 @@ class Service(ContainerDefinitionYamlConfigDocument):
             Please note that, if you set this to false and also specify the role 'src', you may run
             into permission issues.
 
+        [run_pre_start_as_current_user]: 'auto' or bool
+            Whether to run pre start commands the user using riptide
+            or image default. Default is 'auto' which means the value of `run_as_current_user`
+            will be used.
+
+        [run_post_start_as_current_user]: 'auto' or bool
+            Whether to run post start commands the user using riptide
+            or image default. Default is 'auto' which means the value of `run_as_current_user`
+            will be used.
+
+
         [allow_full_memlock]: bool
             Whether to set memlock ulimit to -1:-1 (soft:hard).
             This is required for some database services, such as Elasticsearch.
@@ -320,6 +331,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 # Limitation: If false and the image USER is not root,
                 #             then a user with the id of the image USER must exist in /etc/passwd of the image.
                 Optional('run_as_current_user'): bool,
+                Optional('run_pre_start_as_current_user'): Or('auto', bool),
+                Optional('run_post_start_as_current_user'): Or('auto', bool),
                 # DEPRECATED. Inverse of run_as_current_user if set
                 Optional('run_as_root'): bool,
                 # Whether to create the riptide user and group, mapped to current user. Default: False
@@ -364,6 +377,10 @@ class Service(ContainerDefinitionYamlConfigDocument):
             self.doc["run_as_current_user"] = not self.doc["run_as_root"]
         if "run_as_current_user" not in self:
             self.doc["run_as_current_user"] = True
+        if "run_pre_start_as_current_user" not in self or self.doc["run_pre_start_as_current_user"] == "auto":
+            self.doc["run_pre_start_as_current_user"] = self.doc["run_as_current_user"]
+        if "run_post_start_as_current_user" not in self or self.doc["run_post_start_as_current_user"] == "auto":
+            self.doc["run_post_start_as_current_user"] = self.doc["run_as_current_user"]
 
         if "dont_create_user" not in self:
             self.doc["dont_create_user"] = False

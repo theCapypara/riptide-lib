@@ -33,7 +33,10 @@ class DbEnvironments:
         self.config = self._read_configuration()
         self.engine = engine
 
-        if project.parent()["performance"]["dont_sync_named_volumes_with_host"]:
+        if project.parent()["performance"]["dont_sync_named_volumes_with_host"] == "auto":
+            # TODO: This is obviously not ideal.
+            self.impl = DataDirectoryDbEnvImpl(self)
+        elif project.parent()["performance"]["dont_sync_named_volumes_with_host"]:
             self.impl = NamedVolumeDbEnvImpl(self)
         else:
             self.impl = DataDirectoryDbEnvImpl(self)
