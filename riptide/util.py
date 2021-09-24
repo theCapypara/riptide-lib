@@ -2,6 +2,12 @@
 import pkg_resources
 
 
+class SystemFlag:
+    """Useful runtime-dependant global system flags."""
+    # Whether or not Riptide is currently run via CLI.
+    IS_CLI = 0
+
+
 def get_riptide_version():
     """Returns the current version of Riptide (lib) as a tuple (major, minor, patch).
     3.0.1 would return (3, 0, 1).

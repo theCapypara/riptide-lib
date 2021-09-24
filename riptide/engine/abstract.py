@@ -1,7 +1,7 @@
 import os
 import shutil
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Union, List
+from typing import Tuple, Dict, Union, List, Optional
 
 from distutils.dir_util import copy_tree
 
@@ -366,5 +366,13 @@ class AbstractEngine(ABC):
         Named volumes refers to the Docker concept. For other engines it refers to something equivalent.
 
         :raises: FileExistsError: If 'name' already exists.
+        """
+        pass
+
+    @abstractmethod
+    def get_service_or_command_image_labels(self, obj: Tuple['Service', 'Command']) -> Optional[Dict[str, str]]:
+        """
+        Returns the labels for the images assigned to the provided service or object as a dict.
+        Returns None if the service or command does not have an image or the image was not pulled yet.
         """
         pass
