@@ -180,9 +180,9 @@ class Config(YamlConfigDocument):
         return riptide_config_dir()
 
     @variable_helper
-    def get_plugin_flag(self, inp: str) -> bool:
+    def get_plugin_flag(self, inp: str) -> any:
         """
-        Returns the value (true/false) of a flag set by a Riptide plugin.
+        Returns the value (usually true/false, but can also be other data) of a flag set by a Riptide plugin.
 
         If the flag or plugin is not found, false is returned.
 

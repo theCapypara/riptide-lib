@@ -35,7 +35,7 @@ class AbstractPlugin(ABC):
         """Called whenever a project is loaded or if the initial configuration is loaded without a project."""
 
     @abstractmethod
-    def get_flag_value(self, config: 'Config', flag_name: str) -> bool:
+    def get_flag_value(self, config: 'Config', flag_name: str) -> any:
         """
         Return the value of a requested plugin flag. Return False if not defined.
         The current config is passed, to give a context about the calling project.
