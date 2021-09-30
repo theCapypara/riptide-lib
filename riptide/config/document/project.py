@@ -75,6 +75,12 @@ class Project(YamlConfigDocument):
             }
         )
 
+    def validate(self) -> bool:
+        r = super().validate()
+        if '_' in self['name']:
+            raise ValueError("Project name is invalid: Must not contain underscores (_).")
+        return r
+
     def _load_subdocuments(self, lookup_paths: List[str]):
         if "app" in self and self["app"] != REMOVE:
             self["app"] = load_subdocument(self["app"], self, App, lookup_paths)
