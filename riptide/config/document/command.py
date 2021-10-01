@@ -3,6 +3,7 @@ from collections import OrderedDict
 import os
 from pathlib import PurePosixPath
 
+from dotenv import dotenv_values
 from schema import Schema, Optional, Or
 from typing import TYPE_CHECKING, Union
 
@@ -91,6 +92,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
             List of role names. All files defined under "config" for services matching the roles are mounted
             into the command container.
 
+        [read_env_file]: bool
+            If enabled, read the environment variables in the ``.env`` file. Default: True
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -115,7 +119,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
                 }
             },
             Optional('environment'): {str: str},
-            Optional('config_from_roles'): [str]
+            Optional('config_from_roles'): [str],
+            Optional('read_env_file'): bool
         })
 
     @classmethod
@@ -150,6 +155,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
             {key}: str
                 Key is the name of the variable, value is the value.
 
+        [read_env_file]: bool
+            If enabled, read the environment variables in the ``.env`` file. Default: True
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -165,8 +173,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
             KEY_IDENTIFIER_IN_SERVICE_COMMAND: str,
             'command': str,
             Optional('environment'): {str: str},
+            Optional('read_env_file'): bool,
         })
-
 
     @classmethod
     def schema_alias(cls):
@@ -193,6 +201,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
         if "additional_volumes" in self:
             for obj in self.doc["additional_volumes"].values():
                 obj["host"] = cppath.normalize(obj["host"])
+
+        if "read_env_file" not in self:
+            self.doc["read_env_file"] = True
 
     def get_project(self) -> 'Project':
         """
@@ -269,10 +280,17 @@ class Command(ContainerDefinitionYamlConfigDocument):
         The passed environment is simple all of the riptide's process environment,
         minus some important meta-variables such as USERNAME and PATH.
 
-        Adds HOME to be /home_cmd.
-
         Also collects all environment variables defined in command
         and sets LINES and COLUMNS based on terminal size.
+
+        Additionally, all configurations in the ``.env`` file in the project folder are also
+        passed to the container (if ``read_env_file``) is True).
+
+        Environment priority:
+        - Current shell environment variables.
+        - Environment variables defined in the ``environment`` of the command.
+        - Environment variables of the ``.env`` file.
+        - LINES and COLUMNS from current terminal size.
 
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
@@ -284,6 +302,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
         if "environment" in self:
             for key, value in self['environment'].items():
                 env[key] = value
+
+        if "read_env_file" not in self or self["read_env_file"]:
+            env.update(dotenv_values(os.path.join(self.get_project().folder(), '.env')))
 
         try:
             cols, lines = os.get_terminal_size()

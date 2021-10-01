@@ -28,7 +28,8 @@ setup(
         'psutil >= 5.6',
         'GitPython >= 3.0',
         'pywinpty >= 0.5.5; sys_platform == "win32"',
-        'python-hosts >= 0.4'
+        'python-hosts >= 0.4',
+        'python-dotenv >= 0.19.0'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
