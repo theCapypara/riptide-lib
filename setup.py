@@ -1,4 +1,4 @@
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 from setuptools import setup, find_packages
 
 # README read-in
@@ -20,7 +20,7 @@ setup(
     install_requires=[
         # TEMPORARY, see #2:
         'idna <= 2.8',
-        'configcrunch >= 0.3.4',
+        'configcrunch >= 0.3.7',
         'schema >= 0.6',
         'pyyaml >= 5.1',
         'appdirs >= 1.4',
