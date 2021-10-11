@@ -6,6 +6,7 @@ import os
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 
+from configcrunch.advanced_loader import load_multiple_yml
 from riptide.config import repositories
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
@@ -20,13 +21,18 @@ if TYPE_CHECKING:
 RESERVED_NAMES = [
     "control"  # Riptide Mission Control endpoint on Proxy Server
 ]
+LOCAL_PROJECT_FILENAME = 'riptide.local.yml'
 
 
-def load_config(project_file=None, skip_project_load=False) -> 'Config':
+def load_config(project_file=None, skip_project_load=False, enable_local_project_config=True) -> 'Config':
     """
     Loads the specified project file and the system user configuration.
     If no project file is specified, it is auto-detected. Project loading can be
     disabled by setting skip_project_load to False.
+
+    If in the directory of the project file a ``riptide.local.yml`` exists, this file
+    is also loaded and merged into the project (last). This can be disabled by setting
+    ``enable_local_project_config`` to False.
 
     If the project config could not be found, the project key in the system
     config will not exist. If the system config itself could not be found,
@@ -64,8 +70,12 @@ def load_config(project_file=None, skip_project_load=False) -> 'Config':
 
     if project_path is not None and not skip_project_load:
         project_path = os.path.abspath(project_path)
+        local_project_path = os.path.join(os.path.dirname(project_path), LOCAL_PROJECT_FILENAME)
         try:
-            project_config = Project.from_yaml(project_path)
+            if enable_local_project_config and os.path.exists(local_project_path):
+                project_config = load_multiple_yml(Project, project_path, local_project_path)
+            else:
+                project_config = load_multiple_yml(Project, project_path)
             project_config["$path"] = project_path
 
             project_config.resolve_and_merge_references(repos)

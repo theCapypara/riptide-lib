@@ -1,4 +1,4 @@
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 from setuptools import setup, find_packages
 
 # README read-in
@@ -20,7 +20,7 @@ setup(
     install_requires=[
         # TEMPORARY, see #2:
         'idna <= 2.8',
-        'configcrunch >= 0.3.4',
+        'configcrunch >= 0.3.7',
         'schema >= 0.6',
         'pyyaml >= 5.1',
         'appdirs >= 1.4',
@@ -28,7 +28,8 @@ setup(
         'psutil >= 5.6',
         'GitPython >= 3.0',
         'pywinpty >= 0.5.5; sys_platform == "win32"',
-        'python-hosts >= 0.4'
+        'python-hosts >= 0.4',
+        'python-dotenv >= 0.19.0'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

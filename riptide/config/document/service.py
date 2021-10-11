@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from typing import List
 
+from dotenv import dotenv_values
 from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument, ConfigcrunchError
@@ -260,6 +261,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
             Default: False
 
+        [read_env_file]: bool
+            If enabled, read the environment variables in the ``.env`` file. Default: True
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -359,7 +363,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 Optional('driver'): {
                     'name': str,
                     'config': any  # defined by driver
-                }
+                },
+                Optional('read_env_file'): bool
             }
         )
 
@@ -396,6 +401,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         if "working_directory" not in self:
             self.doc["working_directory"] = "."
+
+        if "read_env_file" not in self:
+            self.doc["read_env_file"] = True
 
         if "db" in self["roles"]:
             self._db_driver = db_driver_for_service.get(self)
@@ -569,12 +577,23 @@ class Service(ContainerDefinitionYamlConfigDocument):
         Collect environment variables from the "environment" entry in the service
         configuration.
 
+        Additionally, all configurations in the ``.env`` file in the project folder are also
+        passed to the container (if ``read_env_file``) is True).
+
+        Environment priority:
+        - Environment variables defined in the ``environment`` of the command.
+        - Environment variables of the ``.env`` file.
+        - If database: Environment variables provided by the database driver.
+
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
         env = {}
         if "environment" in self:
             for name, value in self["environment"].items():
                 env[name] = value
+
+        if "read_env_file" not in self or self["read_env_file"]:
+            env.update(dotenv_values(os.path.join(self.get_project().folder(), '.env')))
 
         # db driver
         if self._db_driver:
