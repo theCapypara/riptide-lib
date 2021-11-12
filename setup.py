@@ -18,8 +18,6 @@ setup(
     long_description_content_type='text/x-rst',
     url='https://github.com/Parakoopa/riptide-lib/',
     install_requires=[
-        # TEMPORARY, see #2:
-        'idna <= 2.8',
         'configcrunch >= 0.3.7',
         'schema >= 0.6',
         'pyyaml >= 5.1',
@@ -40,5 +38,6 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
 )
