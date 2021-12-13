@@ -155,10 +155,11 @@ class Config(YamlConfigDocument):
             }
         )
 
-    def _load_subdocuments(self, lookup_paths: List[str]):
+    @classmethod
+    def subdocuments(cls):
         # Can not contain references to other documents other than
         # the "project" reference which is added by the system.
-        return self
+        return []
 
     def error_str(self) -> str:
         return "System Configuration"
@@ -197,19 +198,20 @@ class Config(YamlConfigDocument):
     def upgrade(self):
         """Update the system configuration file after Riptide version upgrades. To be run before validation."""
         changed = False
-        if "performance" not in self.doc:
-            self.doc["performance"] = {}
-            changed = True
-        if "dont_sync_named_volumes_with_host" not in self.doc["performance"]:
-            self.doc["performance"]["dont_sync_named_volumes_with_host"] = "auto"
-            changed = True
-        if "dont_sync_unimportant_src" not in self.doc["performance"]:
-            self.doc["performance"]["dont_sync_unimportant_src"] = "auto"
-            changed = True
+        with self.internal_access():
+            if "performance" not in self.doc:
+                self.doc["performance"] = {}
+                changed = True
+            if "dont_sync_named_volumes_with_host" not in self.doc["performance"]:
+                self.doc["performance"]["dont_sync_named_volumes_with_host"] = "auto"
+                changed = True
+            if "dont_sync_unimportant_src" not in self.doc["performance"]:
+                self.doc["performance"]["dont_sync_unimportant_src"] = "auto"
+                changed = True
 
-        if changed:
-            with open(riptide_main_config_file(), "w") as f:
-                f.write(yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False))
+            if changed:
+                with open(riptide_main_config_file(), "w") as f:
+                    f.write(yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False))
 
     def load_performance_options(self, engine: 'AbstractEngine'):
         """Initializes performance options set to 'auto' based on the engine used."""

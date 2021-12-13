@@ -13,6 +13,10 @@ if TYPE_CHECKING:
 
 
 class ContainerDefinitionYamlConfigDocument(YamlConfigDocument, ABC):
+    @classmethod
+    def subdocuments(cls):
+        return []
+
     @variable_helper
     def system_config(self) -> 'Config':
         """

@@ -1,6 +1,6 @@
 schema==0.7.5
 pyyaml==5.4
-configcrunch==0.3.7
+configcrunch==1.0.0
 appdirs==1.4.4
 janus==0.7.0
 psutil==5.8.0

@@ -53,36 +53,34 @@ def process_config(
     is_in_source_path = bind_path.startswith('/src/') and 'roles' in service and 'src' in service['roles']
 
     target_file = get_config_file_path(config_name, service, is_in_source_path, bind_path)
-    if not regenerate and os.path.exists(target_file):
-        return
+    if regenerate or not os.path.exists(target_file):
+        # Additional helper functions
+        read_file_partial = partial(read_file, config["$source"])
+        read_file_partial.__name__ = read_file.__name__
 
-    # Additional helper functions
-    read_file_partial = partial(read_file, config["$source"])
-    read_file_partial.__name__ = read_file.__name__
+        with open(config["$source"], 'r') as stream:
+            processed_file = service.process_vars_for(stream.read(), [
+                read_file_partial
+            ])
 
-    with open(config["$source"], 'r') as stream:
-        processed_file = service.process_vars_for(stream.read(), [
-            read_file_partial
-        ])
+        if is_in_source_path:
+            notice_file = target_file + '.riptide_info.txt'
+            if not os.path.isfile(notice_file):
+                with open(notice_file, 'w') as f:
+                    f.writelines([
+                        f'The file {os.path.basename(target_file)} was created by Riptide. Do not modify it.\n'
+                        f'It will automatically be re-generated if you restart the project.\n'
+                        f'Please add this file and {os.path.basename(target_file)} to the ignore file of your VCS.\n\n'
+                        f'The {os.path.basename(target_file)} is based on a template file, which you can find here:\n'
+                        f'   {config["$source"]}\n\n'
+                        f'Please have a look at the documentation if you want to use a different template file (Schema for '
+                        f'Services, entry "config").'
+                    ])
 
-    if is_in_source_path:
-        notice_file = target_file + '.riptide_info.txt'
-        if not os.path.isfile(notice_file):
-            with open(notice_file, 'w') as f:
-                f.writelines([
-                    f'The file {os.path.basename(target_file)} was created by Riptide. Do not modify it.\n'
-                    f'It will automatically be re-generated if you restart the project.\n'
-                    f'Please add this file and {os.path.basename(target_file)} to the ignore file of your VCS.\n\n'
-                    f'The {os.path.basename(target_file)} is based on a template file, which you can find here:\n'
-                    f'   {config["$source"]}\n\n'
-                    f'Please have a look at the documentation if you want to use a different template file (Schema for '
-                    f'Services, entry "config").'
-                ])
+        os.makedirs(os.path.dirname(target_file), exist_ok=True)
 
-    os.makedirs(os.path.dirname(target_file), exist_ok=True)
-
-    with open(target_file, 'w') as f:
-        f.write(processed_file)
+        with open(target_file, 'w') as f:
+            f.write(processed_file)
 
     # Only add a volume if needed
     if not is_in_source_path:

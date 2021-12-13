@@ -3,7 +3,6 @@
 # To be tagged as: riptide_docker_tox
 
 FROM ubuntu:18.04
-MAINTAINER devteam@level12.io
 
 RUN apt-get clean && apt-get update && apt-get install -y gnupg2 locales && locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
@@ -19,15 +18,15 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 \
     && apt-get update -q \
     && apt-get install -y curl git mercurial \
-        python3.6 python3.6-dev libpython3.6-dev libpython3.6-stdlib \
         python3.7 python3.7-dev libpython3.7-dev libpython3.7-stdlib \
         python3.8 python3.8-dev libpython3.8-dev libpython3.8-stdlib python3.8-distutils \
         python3.9 python3.9-dev libpython3.9-dev libpython3.9-stdlib python3.9-distutils \
+        python3.10 python3.10-dev libpython3.10-dev libpython3.10-stdlib python3.10-distutils \
     && curl -fSL "https://bootstrap.pypa.io/get-pip.py" -o get-pip.py \
-    && python3.6 get-pip.py \
     && python3.7 get-pip.py \
     && python3.8 get-pip.py \
     && python3.9 get-pip.py \
+    && python3.10 get-pip.py \
     && rm get-pip.py \
     && rm -rf /var/lib/apt/lists/*
 

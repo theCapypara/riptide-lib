@@ -18,7 +18,7 @@ setup(
     long_description_content_type='text/x-rst',
     url='https://github.com/Parakoopa/riptide-lib/',
     install_requires=[
-        'configcrunch >= 0.3.7',
+        'configcrunch >= 1.0.0',
         'schema >= 0.6',
         'pyyaml >= 5.1',
         'appdirs >= 1.4',
