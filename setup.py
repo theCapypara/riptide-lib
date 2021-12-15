@@ -22,7 +22,7 @@ setup(
         'schema >= 0.6',
         'pyyaml >= 5.1',
         'appdirs >= 1.4',
-        'janus >= 0.4.0',
+        'janus >= 0.7.0',
         'psutil >= 5.6',
         'GitPython >= 3.0',
         'pywinpty >= 0.5.5; sys_platform == "win32"',
