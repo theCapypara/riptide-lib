@@ -5,8 +5,6 @@ import os
 from functools import partial
 from typing import TYPE_CHECKING, Dict
 
-from jinja2 import Environment
-
 from riptide.config.files import get_project_meta_folder, remove_all_special_chars
 from riptide.config.service.config_files_helper_functions import read_file
 
@@ -14,7 +12,6 @@ if TYPE_CHECKING:
     from riptide.config.document.service import Service
 
 FOLDER_FOR_PROCESSED_CONFIG = 'processed_config'
-jinja2env = Environment()
 
 
 def process_config(
