@@ -1,4 +1,4 @@
-__version__ = '0.6.1'
+__version__ = '0.7.0'
 from setuptools import setup, find_packages
 
 # README read-in
@@ -19,12 +19,12 @@ setup(
     url='https://github.com/Parakoopa/riptide-lib/',
     install_requires=[
         'configcrunch >= 1.0.0',
-        'schema >= 0.6',
-        'pyyaml >= 5.1',
+        'schema >= 0.7',
+        'pyyaml >= 5.4',
         'appdirs >= 1.4',
-        'janus >= 0.7.0',
-        'psutil >= 5.6',
-        'GitPython >= 3.0',
+        'janus >= 0.7',
+        'psutil >= 5.8',
+        'GitPython >= 3.1',
         'pywinpty >= 0.5.5; sys_platform == "win32"',
         'python-hosts >= 0.4',
         'python-dotenv >= 0.19.0'
