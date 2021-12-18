@@ -5,7 +5,6 @@ from typing import List, TYPE_CHECKING
 from schema import Schema, Optional
 
 from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, variable_helper, REMOVE
-from configcrunch import load_subdocument
 from riptide.config.document.app import App
 
 HEADER = 'project'
@@ -75,38 +74,37 @@ class Project(YamlConfigDocument):
             }
         )
 
+    @classmethod
+    def subdocuments(cls):
+        return [
+            ("app", App)
+        ]
+
     def validate(self) -> bool:
         r = super().validate()
-        if '_' in self['name']:
+        if '_' in self.internal_get('name'):
             raise ValueError("Project name is invalid: Must not contain underscores (_).")
         return r
 
-    def _load_subdocuments(self, lookup_paths: List[str]):
-        if "app" in self and self["app"] != REMOVE:
-            self["app"] = load_subdocument(self["app"], self, App, lookup_paths)
-            if not isinstance(self["app"].doc, dict):
-                raise ConfigcrunchError("Error loading App for Project: "
-                                        "The app needs to be an object in the source document.")
-        return self
-
-    def _initialize_data_after_merge(self):
-        if 'links' not in self.doc:
-            self.doc['links'] = []
+    def _initialize_data_after_merge(self, data):
+        if 'links' not in data:
+            data['links'] = []
+        return data
 
     def folder(self):
         """Returns the project folder if the special internal field "$path" if set or None otherwise"""
-        if "$path" in self:
-            return os.path.dirname(self["$path"])
+        if self.internal_contains("$path"):
+            return os.path.dirname(self.internal_get("$path"))
         return None
 
     def src_folder(self):
         """Returns the absolute path to the folder specified by self['src']. Requires "$path" to be set."""
-        if "$path" not in self:
+        if not self.internal_contains("$path"):
             return None
-        return os.path.join(self.folder(), self["src"])
+        return os.path.join(self.folder(), self.internal_get("src"))
 
     def error_str(self) -> str:
-        return f"{self.__class__.__name__}<{(self['name'] if 'name' in self else '???')}>"
+        return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
     def parent(self) -> 'Config':

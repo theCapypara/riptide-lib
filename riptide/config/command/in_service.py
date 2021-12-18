@@ -19,14 +19,16 @@ def convert_in_service_to_normal(app: App, command_name: str) -> Command:
     env = {}
     env.update(service['environment'] if 'environment' in service else {})
     env.update(old_cmd['environment'] if 'environment' in old_cmd else {})
-    new_cmd = Command({
+    new_cmd = Command.from_dict({
         '$name': command_name,
         'image': service['image'],
         'command': old_cmd['command'],
         'additional_volumes': service['additional_volumes'] if 'additional_volumes' in service else {},
         'environment': env,
         'config_from_roles': [old_cmd['in_service_with_role']]
-    }, parent=app)
+    })
+    new_cmd.parent_doc = app
+    new_cmd.freeze()
     return new_cmd
 
 

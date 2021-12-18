@@ -6,7 +6,7 @@ import os
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 
-from configcrunch.advanced_loader import load_multiple_yml
+from configcrunch import load_multiple_yml
 from riptide.config import repositories
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
@@ -60,8 +60,8 @@ def load_config(project_file=None, skip_project_load=False, enable_local_project
     system_config = Config.from_yaml(config_path)
 
     # The user is not allowed to add a project entry to their main config file
-    if "project" in system_config:
-        del system_config["project"]
+    if system_config.internal_contains("project"):
+        system_config.internal_delete("project")
 
     system_config.upgrade()
     system_config.validate()
@@ -76,11 +76,11 @@ def load_config(project_file=None, skip_project_load=False, enable_local_project
                 project_config = load_multiple_yml(Project, project_path, local_project_path)
             else:
                 project_config = load_multiple_yml(Project, project_path)
-            project_config["$path"] = project_path
+            project_config.internal_set("$path", project_path)
 
             project_config.resolve_and_merge_references(repos)
 
-            system_config["project"] = project_config
+            system_config.internal_set("project", project_config)
             project_config.parent_doc = system_config
         except FileNotFoundError:
             pass
@@ -88,6 +88,7 @@ def load_config(project_file=None, skip_project_load=False, enable_local_project
     system_config.process_vars()
 
     system_config.validate()
+    system_config.freeze()
 
     for plugin in load_plugins().values():
         plugin.after_reload_config(system_config)
@@ -139,9 +140,9 @@ def write_project(project: 'Project', rename=False):
     """
 
     # Check reserved names
-    if project['name'] in RESERVED_NAMES:
+    if project.internal_get('name') in RESERVED_NAMES:
         raise FileExistsError(
-            f'The project name {project["name"]} is reserved by Riptide. '
+            f'The project name {project.internal_get("name")} is reserved by Riptide. '
             f'Please use a different name for your project.'
         )
 
@@ -152,25 +153,25 @@ def write_project(project: 'Project', rename=False):
     #      need to do anything. If not and rename is not passed, thrown an error, if
     #      rename is passed or if the path for the project didn't exist yet: Write it to the file.
     changed = True
-    if project['name'] in projects:
+    if project.internal_get('name') in projects:
         changed = False
-        if projects[project['name']] != project['$path']:
+        if projects[project.internal_get('name')] != project.internal_get('$path'):
             changed = True
             if not rename:
                 raise FileExistsError(
-                    f'The Riptide project named {project["name"]} is already located at '
-                    f'{projects[project["name"]]} but your current project file is at {project["$path"]}.\n'
-                    f'Each project name can only be mapped to one path. If you want to "rename" {project["name"]} to use '
+                    f'The Riptide project named {project.internal_get("name")} is already located at '
+                    f'{projects[project.internal_get("name")]} but your current project file is at {project.internal_get("$path")}.\n'
+                    f'Each project name can only be mapped to one path. If you want to "rename" {project.internal_get("name")} to use '
                     f'this new path, pass the --rename flag, otherwise rename the project in the riptide.yml file.\n'
                     f'If you want to edit these mappings manually, have a look at the file {riptide_projects_file()}.'
                 )
     if changed:
-        projects[project['name']] = project['$path']
+        projects[project.internal_get("name")] = project.internal_get("$path")
         with open(riptide_projects_file(), mode='w') as file:
             json.dump(projects, file)
     if rename:
         print("Project reference renamed.")
-        print(f"{project['name']} -> {projects[project['name']]}")
+        print(f"{project.internal_get('name')} -> {projects[project.internal_get('name')]}")
         exit(0)
 
 

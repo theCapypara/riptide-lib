@@ -1,9 +1,8 @@
 from schema import Optional, Schema, Or
-from typing import List, Union, TYPE_CHECKING
+from typing import List, Union, TYPE_CHECKING, Tuple, Type
 
 from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, REMOVE
-from configcrunch import load_subdocument
-from configcrunch.abstract import variable_helper
+from configcrunch import variable_helper
 from riptide.config.document.command import Command
 from riptide.config.document.service import Service
 
@@ -120,6 +119,13 @@ class App(YamlConfigDocument):
             }
         )
 
+    @classmethod
+    def subdocuments(cls) -> List[Tuple[str, Type[YamlConfigDocument]]]:
+        return [
+            ("services[]", Service),
+            ("commands[]", Command),
+        ]
+
     def validate(self):
         """
         Initialise the optional services and command dicts.
@@ -127,38 +133,14 @@ class App(YamlConfigDocument):
         """
         ret_val = super().validate()
         if ret_val:
-            if "services" not in self:
-                self.doc["services"] = {}
-
-            if "commands" not in self:
-                self.doc["commands"] = {}
+            if not self.internal_contains("services"):
+                self.internal_set("services", {})
+            if not self.internal_contains("commands"):
+                self.internal_set("commands", {})
         return ret_val
 
-    def _load_subdocuments(self, lookup_paths: List[str]):
-        if "services" in self and self["services"] != REMOVE:
-            for key, servicedoc in self["services"].items():
-                if servicedoc != REMOVE:
-                    self["services"][key] = load_subdocument(servicedoc, self, Service, lookup_paths)
-                    if not isinstance(self["services"][key].doc, dict):
-                        raise ConfigcrunchError(
-                            f"Error loading Service for App: The service with the name {key} needs to be an object in the source document."
-                        )
-                    self["services"][key]["$name"] = key
-
-        if "commands" in self and self["commands"] != REMOVE:
-            for key, commanddoc in self["commands"].items():
-                if commanddoc != REMOVE:
-                    self["commands"][key] = load_subdocument(commanddoc, self, Command, lookup_paths)
-                    if not isinstance(self["commands"][key].doc, dict):
-                        raise ConfigcrunchError(
-                            f"Error loading Command for App: The command with the name {key} needs to be an object in the source document."
-                        )
-                    self["commands"][key]["$name"] = key
-
-        return self
-
     def error_str(self) -> str:
-        return f"{self.__class__.__name__}<{(self['name'] if 'name' in self else '???')}>"
+        return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
     def parent(self) -> 'Project':
@@ -191,8 +173,8 @@ class App(YamlConfigDocument):
 
         :param role_name: Role to search for
         """
-        for service in self["services"].values():
-            if "roles" in service and role_name in service["roles"]:
+        for service in self.internal_get("services").values():
+            if service.internal_contains("roles") and role_name in service.internal_get("roles"):
                 return service
         raise ValueError(f"No service with role {role_name} found in the app.")
 
@@ -204,7 +186,7 @@ class App(YamlConfigDocument):
         :param role_name: Role to search for
         """
         services = []
-        for service in self["services"].values():
-            if "roles" in service and role_name in service["roles"]:
+        for service in self.internal_get("services").values():
+            if service.internal_contains("roles") and role_name in service.internal_get("roles"):
                 services.append(service)
         return services
