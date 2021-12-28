@@ -251,7 +251,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
             Default: False
 
         [read_env_file]: bool
-            If enabled, read the environment variables in the ``.env`` file. Default: True
+            If enabled, read the environment variables in the env-files defined in the project (``env_files``).
+            Default: True
 
         **Example Document:**
 
@@ -588,7 +589,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 env[name] = value
 
         if "read_env_file" not in self or self["read_env_file"]:
-            env.update(dotenv_values(os.path.join(self.get_project().folder(), '.env')))
+            for env_file_path in self.get_project()['env_files']:
+                env.update(dotenv_values(os.path.join(self.get_project().folder(), env_file_path)))
 
         # db driver
         if self._db_driver:

@@ -51,6 +51,13 @@ class Project(YamlConfigDocument):
             List of services to start when running `riptide start`. If not set, all services are started. You can also
             control which services to start using flags. See `riptide start --help` for more information.
 
+        [env_files]: List[str]
+            A list of paths to env-files, relative to the project path, that should be read-in by services and command
+            when starting. See the ``read_env_file`` flag at :class:`~riptide.config.document.service.Service` and
+            :class:`~riptide.config.document.command.Command` for more information.
+
+            Defaults to ["./.env"].
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -70,7 +77,8 @@ class Project(YamlConfigDocument):
                 'src': str,
                 'app': DocReference(App),
                 Optional('links'): [str],
-                Optional('default_services'): [str]
+                Optional('default_services'): [str],
+                Optional('env_files'): [str]
             }
         )
 
@@ -89,6 +97,8 @@ class Project(YamlConfigDocument):
     def _initialize_data_after_merge(self, data):
         if 'links' not in data:
             data['links'] = []
+        if 'env_files' not in data:
+            data['env_files'] = ["./.env"]
         return data
 
     def folder(self):
