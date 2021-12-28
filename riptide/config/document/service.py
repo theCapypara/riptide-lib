@@ -78,10 +78,27 @@ class Service(ContainerDefinitionYamlConfigDocument):
         image: str
             Docker Image to use
 
-        [command]: str
-            Command to run inside of the container. Default's to command defined in image.
+        [command]: str or map
+            If this is not set:
+                The default command in the image is used and considered in the "default" command group (see below).
 
-            .. warning:: Avoid quotes (", ') inside of the command, as those may lead to strange side effects.
+            If it is a string:
+                Command to run inside of the container. Default's to command defined in image. This command will be in
+                the "default" command group (see below).
+
+            If it is a map:
+                A list of commands that this service supports. Keys are the "command group", values the commands to run.
+                Each service must have a command defined for the "default" command group. You can speficy a command group
+                to use when using `riptide start`. Default is the "default" command group, this one is also used by the
+                Riptide Proxy autostart feature. For more information on this see the `--cmd` flag of `riptide start`.
+
+                Example::
+
+                    comamnd:
+                      default: "npm run default"
+                      debug: "npm run debug"
+
+            .. warning:: Avoid quotes (", ') inside of commands, as those may lead to strange side effects.
 
         [port]: int
             HTTP port that the web service is accessible under. This port will be used by the proxy server to redirect
@@ -301,7 +318,12 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 Optional('$name'): str,  # Added by system during processing parent app.
                 Optional('roles'): [str],
                 'image': str,
-                Optional('command'): str,
+                Optional('command'): Or(
+                    str, {
+                        "default": str,
+                        str: str
+                    }
+                ),
                 Optional('port'): int,
                 Optional('logging'): {
                     Optional('stdout'): bool,
@@ -491,6 +513,17 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 self.get_project()["src"],
                 self["working_directory"]
             ), exist_ok=True)
+
+    def get_command(self, group: str = "default"):
+        """Returns the command to use for the given group. 'command' must be set in self"""
+        if "command" not in self:
+            raise ValueError("No command defined.")
+        if isinstance(self["command"], dict):
+            if group in self["command"]:
+                return self["command"][group]
+            return self["command"]["default"]
+        else:
+            return self["command"]
 
     def get_project(self) -> 'Project':
         """

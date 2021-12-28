@@ -29,7 +29,7 @@ class ResultError(EndResultQueue):
         self.cause = cause
         self.traceback_string = "Unknown reason."
         if cause:
-            self.traceback_string = "".join(traceback.format_exception(etype=type(cause), value=cause, tb=cause.__traceback__))
+            self.traceback_string = "".join(traceback.format_exception(type(cause), value=cause, tb=cause.__traceback__))
         super().__init__(*args, **kwargs)
 
     def __str__(self):
