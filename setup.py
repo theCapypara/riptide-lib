@@ -16,7 +16,7 @@ setup(
     description='Tool to manage development environments for web applications using containers - Library Package',
     long_description=long_description,
     long_description_content_type='text/x-rst',
-    url='https://github.com/Parakoopa/riptide-lib/',
+    url='https://github.com/theCapypara/riptide-lib/',
     install_requires=[
         'configcrunch >= 1.0.0',
         'schema >= 0.7',

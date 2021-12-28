@@ -123,7 +123,7 @@ class Config(YamlConfigDocument):
                   - 127.0.0.1/32
               engine: docker
               repos:
-                - https://github.com/Parakoopa/riptide-repo.git
+                - https://github.com/theCapypara/riptide-repo.git
               update_hosts_file: true
               performance:
                 dont_sync_named_volumes_with_host: auto

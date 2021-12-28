@@ -16,7 +16,7 @@ riptide:
   # List of Riptide repositories.
   repos:
     # Public Riptide repo by the community
-    - https://github.com/Parakoopa/riptide-repo.git
+    - https://github.com/theCapypara/riptide-repo.git
 
   # Add all project hostnames to the /etc/hosts file automatically, see documentation.
   update_hosts_file: true
