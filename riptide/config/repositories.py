@@ -67,7 +67,7 @@ def collect(system_config):
     # Get all repos that are downloaded
     repos = set(next(os.walk(base_dir))[1])
     # Get all expected repositories, clean up the names to match the directory names
-    repos_in_system_config = [remove_all_special_chars(repo) for repo in system_config["repos"]]
+    repos_in_system_config = [remove_all_special_chars(repo) for repo in system_config.internal_get("repos")]
 
     # Get all repos that are downloaded, but not in the system config
     to_remove = repos - set(repos_in_system_config)

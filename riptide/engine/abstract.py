@@ -25,7 +25,8 @@ class AbstractEngine(ABC):
     def start_project(self,
                       project: 'Project',
                       services: List[str],
-                      quick=False) -> MultiResultQueue[StartStopResultStep]:
+                      quick=False,
+                      command_group: str = "default") -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project.
 
@@ -43,6 +44,7 @@ class AbstractEngine(ABC):
         :type project: 'Project'
         :param services: Names of the services to start
         :param quick: If True: Skip pre_start and post_start commands.
+        :param command_group: The command group of all services that should be used for the started containers.
 
         :return: MultiResultQueue[StartResult]
         """
@@ -157,7 +159,8 @@ class AbstractEngine(ABC):
     def service_fg(self,
                    project: 'Project',
                    service_name: str,
-                   arguments: List[str]
+                   arguments: List[str],
+                   command_group: str = "default"
     ) -> None:
         """
         Execute a service and attach output to stdout/stdin/stderr.
@@ -177,6 +180,7 @@ class AbstractEngine(ABC):
         :param project: 'Project'
         :param service_name: str
         :param arguments: List of arguments
+        :param command_group: The command group of all services that should be used for the fg service container
         :return:
         """
 

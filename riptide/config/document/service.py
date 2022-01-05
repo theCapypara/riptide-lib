@@ -7,7 +7,7 @@ from dotenv import dotenv_values
 from schema import Schema, Optional, Or
 
 from configcrunch import YamlConfigDocument, ConfigcrunchError
-from configcrunch.abstract import variable_helper
+from configcrunch import variable_helper
 from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
 from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.files import CONTAINER_SRC_PATH
@@ -39,17 +39,6 @@ class Service(ContainerDefinitionYamlConfigDocument):
     the service with the ``$name`` entry during runtime.
 
     """
-    def __init__(
-            self,
-            document: dict,
-            path: str = None,
-            parent: 'YamlConfigDocument' = None,
-            already_loaded_docs: List[str] = None,
-            absolute_paths=None
-    ):
-        self._db_driver = None
-        self._loaded_port_mappings = None
-        super().__init__(document, path, parent, already_loaded_docs, absolute_paths)
 
     @classmethod
     def header(cls) -> str:
@@ -89,10 +78,27 @@ class Service(ContainerDefinitionYamlConfigDocument):
         image: str
             Docker Image to use
 
-        [command]: str
-            Command to run inside of the container. Default's to command defined in image.
+        [command]: str or map
+            If this is not set:
+                The default command in the image is used and considered in the "default" command group (see below).
 
-            .. warning:: Avoid quotes (", ') inside of the command, as those may lead to strange side effects.
+            If it is a string:
+                Command to run inside of the container. Default's to command defined in image. This command will be in
+                the "default" command group (see below).
+
+            If it is a map:
+                A list of commands that this service supports. Keys are the "command group", values the commands to run.
+                Each service must have a command defined for the "default" command group. You can speficy a command group
+                to use when using `riptide start`. Default is the "default" command group, this one is also used by the
+                Riptide Proxy autostart feature. For more information on this see the `--cmd` flag of `riptide start`.
+
+                Example::
+
+                    comamnd:
+                      default: "npm run default"
+                      debug: "npm run debug"
+
+            .. warning:: Avoid quotes (", ') inside of commands, as those may lead to strange side effects.
 
         [port]: int
             HTTP port that the web service is accessible under. This port will be used by the proxy server to redirect
@@ -262,7 +268,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
             Default: False
 
         [read_env_file]: bool
-            If enabled, read the environment variables in the ``.env`` file. Default: True
+            If enabled, read the environment variables in the env-files defined in the project (``env_files``).
+            Default: True
 
         **Example Document:**
 
@@ -312,7 +319,12 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 Optional('$name'): str,  # Added by system during processing parent app.
                 Optional('roles'): [str],
                 'image': str,
-                Optional('command'): str,
+                Optional('command'): Or(
+                    str, {
+                        "default": str,
+                        str: str
+                    }
+                ),
                 Optional('port'): int,
                 Optional('logging'): {
                     Optional('stdout'): bool,
@@ -368,51 +380,54 @@ class Service(ContainerDefinitionYamlConfigDocument):
             }
         )
 
-    def _initialize_data_after_merge(self):
+    def _initialize_data_after_merge(self, data):
         """
         Initializes non-set fields, initiliazes the database
         driver and creates all files for ``config`` entries.
         """
-        if "run_as_root" in self:
+        self._db_driver = None
+        self._loaded_port_mappings = None
+
+        if "run_as_root" in data:
             warnings.warn(
                 "Deprecated key run_as_root = %r in a service found. Please replace with run_as_current_user = %r." %
-                (self.doc["run_as_root"], not self.doc["run_as_root"]),
+                (data["run_as_root"], not data["run_as_root"]),
                 RiptideDeprecationWarning
             )
-            self.doc["run_as_current_user"] = not self.doc["run_as_root"]
-        if "run_as_current_user" not in self:
-            self.doc["run_as_current_user"] = True
-        if "run_pre_start_as_current_user" not in self or self.doc["run_pre_start_as_current_user"] == "auto":
-            self.doc["run_pre_start_as_current_user"] = self.doc["run_as_current_user"]
-        if "run_post_start_as_current_user" not in self or self.doc["run_post_start_as_current_user"] == "auto":
-            self.doc["run_post_start_as_current_user"] = self.doc["run_as_current_user"]
+            data["run_as_current_user"] = not data["run_as_root"]
+        if "run_as_current_user" not in data:
+            data["run_as_current_user"] = True
+        if "run_pre_start_as_current_user" not in data or data["run_pre_start_as_current_user"] == "auto":
+            data["run_pre_start_as_current_user"] = data["run_as_current_user"]
+        if "run_post_start_as_current_user" not in data or data["run_post_start_as_current_user"] == "auto":
+            data["run_post_start_as_current_user"] = data["run_as_current_user"]
 
-        if "dont_create_user" not in self:
-            self.doc["dont_create_user"] = False
+        if "dont_create_user" not in data:
+            data["dont_create_user"] = False
 
-        if "pre_start" not in self:
-            self.doc["pre_start"] = []
+        if "pre_start" not in data:
+            data["pre_start"] = []
 
-        if "post_start" not in self:
-            self.doc["post_start"] = []
+        if "post_start" not in data:
+            data["post_start"] = []
 
-        if "roles" not in self:
-            self.doc["roles"] = []
+        if "roles" not in data:
+            data["roles"] = []
 
-        if "working_directory" not in self:
-            self.doc["working_directory"] = "."
+        if "working_directory" not in data:
+            data["working_directory"] = "."
 
-        if "read_env_file" not in self:
-            self.doc["read_env_file"] = True
+        if "read_env_file" not in data:
+            data["read_env_file"] = True
 
-        if "db" in self["roles"]:
-            self._db_driver = db_driver_for_service.get(self)
+        if "db" in data["roles"]:
+            self._db_driver = db_driver_for_service.get(data, self)
             if self._db_driver:
                 # Collect additional ports for the db driver
-                my_original_ports = self["additional_ports"] if "additional_ports" in self else {}
+                my_original_ports = data["additional_ports"] if "additional_ports" in data else {}
                 db_ports = self._db_driver.collect_additional_ports()
-                self["additional_ports"] = db_ports.copy()
-                self["additional_ports"].update(my_original_ports)
+                data["additional_ports"] = db_ports.copy()
+                data["additional_ports"].update(my_original_ports)
 
         # Load the absolute path of the config documents specified in config[]["from"]
         if self.absolute_paths:
@@ -424,8 +439,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 # Fallback: Assume cwd
                 folders_to_search = [os.getcwd()]
 
-        if "config" in self and isinstance(self["config"], dict):
-            for config in self["config"].values():
+        if "config" in data and isinstance(data["config"], dict):
+            for config in data["config"].values():
                 # sanity check if from and to are in this config entry, if not it's invalid.
                 # the validation will catch this later
                 if "from" not in config or "to" not in config:
@@ -450,17 +465,19 @@ class Service(ContainerDefinitionYamlConfigDocument):
                         f"entries. Based on how the configuration was merged, the following places were searched: "
                         f"{str(folders_to_search)}"
                     )
+        return data
 
-    def _initialize_data_after_variables(self):
+    def _initialize_data_after_variables(self, data):
         """
         Normalizes all host-paths to only use the system-type directory separator.
         """
-        if "additional_volumes" in self:
-            for obj in self.doc["additional_volumes"].values():
+        if "additional_volumes" in data:
+            for obj in data["additional_volumes"].values():
                 obj["host"] = cppath.normalize(obj["host"])
-        if "config" in self:
-            for obj in self.doc["config"].values():
+        if "config" in data:
+            for obj in data["config"].values():
                 obj["$source"] = cppath.normalize(obj["$source"])
+        return data
 
     def validate(self) -> bool:
         """ Validates the Schema and if a database driver is defined, validates that the driver is installed. """
@@ -468,14 +485,15 @@ class Service(ContainerDefinitionYamlConfigDocument):
             return False
 
         # Db Driver constraints. If role db is set, a "driver" has to be set and code has to exist for it.
-        if "roles" in self and "db" in self["roles"]:
-            if "driver" not in self or self._db_driver is None:
+        if self.internal_contains("roles") and "db" in self.internal_get("roles"):
+            if not self.internal_contains("driver") or self._db_driver is None:
                 raise ConfigcrunchError(
-                    f"Service {self['$name']} validation: "
+                    f"Service {self.internal_get('$name')} validation: "
                     f"If a service has the role 'db' it has to have a valid "
                     f"'driver' entry with a driver that is available."
                 )
-            self._db_driver.validate_service()
+            with self.internal_access():
+                self._db_driver.validate_service()
         return True
 
     def before_start(self):
@@ -496,6 +514,17 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 self.get_project()["src"],
                 self["working_directory"]
             ), exist_ok=True)
+
+    def get_command(self, group: str = "default"):
+        """Returns the command to use for the given group. 'command' must be set in self"""
+        if "command" not in self:
+            raise ValueError("No command defined.")
+        if isinstance(self["command"], dict):
+            if group in self["command"]:
+                return self["command"][group]
+            return self["command"]["default"]
+        else:
+            return self["command"]
 
     def get_project(self) -> 'Project':
         """
@@ -593,7 +622,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 env[name] = value
 
         if "read_env_file" not in self or self["read_env_file"]:
-            env.update(dotenv_values(os.path.join(self.get_project().folder(), '.env')))
+            for env_file_path in self.get_project()['env_files']:
+                env.update(dotenv_values(os.path.join(self.get_project().folder(), env_file_path)))
 
         # db driver
         if self._db_driver:
@@ -618,7 +648,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         return self._loaded_port_mappings
 
     def error_str(self) -> str:
-        return f"{self.__class__.__name__}<{(self['$name'] if '$name' in self else '???')}>"
+        return f"{self.__class__.__name__}<{(self.internal_get('$name') if self.internal_contains('$name') else '???')}>"
 
     @variable_helper
     def parent(self) -> 'App':
@@ -655,7 +685,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
                     host: '/home/peter/my_projects/project1/_riptide/data/service_name/cache'
                     container: '/foo/bar/cache'
         """
-        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self["$name"])
+        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self.internal_get("$name"))
         return path
 
     @variable_helper
@@ -673,12 +703,12 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
             something: '/src/working_dir'
         """
-        workdir = None if "src" not in self["roles"] else CONTAINER_SRC_PATH
-        if "working_directory" in self:
-            if PurePosixPath(self["working_directory"]).is_absolute():
-                return self["working_directory"]
+        workdir = None if "src" not in self.internal_get("roles") else CONTAINER_SRC_PATH
+        if self.internal_contains("working_directory"):
+            if PurePosixPath(self.internal_get("working_directory")).is_absolute():
+                return self.internal_get("working_directory")
             elif workdir is not None:
-                return str(PurePosixPath(workdir).joinpath(self["working_directory"]))
+                return str(PurePosixPath(workdir).joinpath(self.internal_get("working_directory")))
         return workdir
 
     @variable_helper
@@ -695,6 +725,6 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
             something: 'https://project--service.riptide.local'
         """
-        if "main" in self["roles"]:
-            return self.get_project()["name"] + "." + self.parent_doc.parent_doc.parent_doc["proxy"]["url"]
-        return self.get_project()["name"] + DOMAIN_PROJECT_SERVICE_SEP + self["$name"] + "." + self.parent_doc.parent_doc.parent_doc["proxy"]["url"]
+        if "main" in self.internal_get("roles"):
+            return self.get_project().internal_get("name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
+        return self.get_project().internal_get("name") + DOMAIN_PROJECT_SERVICE_SEP + self.internal_get("$name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]

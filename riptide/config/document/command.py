@@ -7,7 +7,7 @@ from dotenv import dotenv_values
 from schema import Schema, Optional, Or
 from typing import TYPE_CHECKING, Union
 
-from configcrunch.abstract import variable_helper
+from configcrunch import variable_helper
 from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
 from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH
 from riptide.config.service.config_files import process_config
@@ -93,7 +93,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
             into the command container.
 
         [read_env_file]: bool
-            If enabled, read the environment variables in the ``.env`` file. Default: True
+            If enabled, read the environment variables in the env-files defined in the project (``env_files``).
+            Default: True
 
         **Example Document:**
 
@@ -156,7 +157,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
                 Key is the name of the variable, value is the value.
 
         [read_env_file]: bool
-            If enabled, read the environment variables in the ``.env`` file. Default: True
+            If enabled, read the environment variables in the env-files defined in the project (``env_files``).
+            Default: True
 
         **Example Document:**
 
@@ -196,14 +198,15 @@ class Command(ContainerDefinitionYamlConfigDocument):
             'aliases': str
         })
 
-    def _initialize_data_after_variables(self):
+    def _initialize_data_after_variables(self, data: dict) -> dict:
         """ Normalize all host-paths to only use the system-type directory separator """
-        if "additional_volumes" in self:
-            for obj in self.doc["additional_volumes"].values():
+        if "additional_volumes" in data:
+            for obj in data["additional_volumes"].values():
                 obj["host"] = cppath.normalize(obj["host"])
 
         if "read_env_file" not in self:
-            self.doc["read_env_file"] = True
+            data["read_env_file"] = True
+        return data
 
     def get_project(self) -> 'Project':
         """
@@ -304,7 +307,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
                 env[key] = value
 
         if "read_env_file" not in self or self["read_env_file"]:
-            env.update(dotenv_values(os.path.join(self.get_project().folder(), '.env')))
+            for env_file_path in self.get_project()['env_files']:
+                env.update(dotenv_values(os.path.join(self.get_project().folder(), env_file_path)))
 
         try:
             cols, lines = os.get_terminal_size()
@@ -344,7 +348,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
                          f"No service with this role found in the app.")
 
     def error_str(self) -> str:
-        return f"{self.__class__.__name__}<{(self['$name'] if '$name' in self else '???')}>"
+        return f"{self.__class__.__name__}<{(self.internal_get('$name') if self.internal_contains('$name') else '???')}>"
 
     @variable_helper
     def parent(self) -> 'App':
@@ -381,6 +385,6 @@ class Command(ContainerDefinitionYamlConfigDocument):
                     host: '/home/peter/my_projects/project1/_riptide/cmd_data/command_name/command_cache'
                     container: '/foo/bar/cache'
         """
-        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data', self["$name"])
+        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data', self.internal_get("$name"))
         os.makedirs(path, exist_ok=True)
         return path
