@@ -62,8 +62,8 @@ class ResultQueue(Generic[T]):
         Asynchronously (asyncio).
         Can be read by (async.) iterating over it or by using get().
 
-    All ResultQueues can be poisoned by calling position(). After calling this
-    class mehtod reading and writing for all existing and future queues will cause
+    All ResultQueues can be poisoned by calling poison(). After calling this
+    class method reading and writing for all existing and future queues will cause
     an ResultPoisoned to be raised.
     This is meant for system shutdowns operations.
 
