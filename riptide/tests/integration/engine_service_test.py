@@ -193,10 +193,10 @@ class EngineServiceTest(EngineTest):
                     elif service_name == 'working_directory_absolute':
                         # We didn't put an index.html at /a_folder, so we expect
                         # a directory listing of the three files we put in the image
-                        self.assert_response_matches_regex(re.compile('<title>Index of /</title>.*'
-                                                                      '<a href="/file1">file1</a>.*'
-                                                                      '<a href="/file2">file2</a>.*'
-                                                                      '<a href="/file3">file3</a>'
+                        self.assert_response_matches_regex(re.compile(r'.*<title>Index of /</title>.*'
+                                                                      r'<a href="\./file1">file1</a>.*'
+                                                                      r'<a href="\./file2">file2</a>.*'
+                                                                      r'<a href="\./file3">file3</a>.*'
                                                            , re.MULTILINE | re.DOTALL),
                                                            loaded.engine, project, service_name)
                     else:
@@ -461,7 +461,7 @@ class EngineServiceTest(EngineTest):
 
     @unittest.skipIf(platform.system().lower().startswith('win'),
                      "Skipped on Windows. "
-                     "This tets does work on Windows, because of cpuser, but since with root and "
+                     "This test does work on Windows, because of cpuser, but since with root and "
                      "without root makes no difference, it's pointless.")
     def test_run_as_current_user_false(self):
         for project_ctx in load(self,

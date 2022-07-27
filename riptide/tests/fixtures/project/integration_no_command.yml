@@ -1,5 +1,5 @@
 project:
-  name: integration_no_command
+  name: integration-no-command
   src: .  # is also replace by src in tests
   app:
     $ref: app/integration_app

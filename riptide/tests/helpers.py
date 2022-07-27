@@ -4,7 +4,7 @@ from unittest import mock
 
 from unittest.mock import Mock
 
-from configcrunch.tests.test_utils import YamlConfigDocumentStub
+from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.db.driver.abstract import AbstractDbDriver
 
 

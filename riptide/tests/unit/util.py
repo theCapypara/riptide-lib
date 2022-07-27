@@ -5,7 +5,7 @@ from unittest import mock
 
 from unittest.mock import Mock, MagicMock
 
-from configcrunch.tests.test_utils import YamlConfigDocumentStub
+from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.config.document.service import FOLDER_FOR_LOGGING, create_logging_path, get_logging_path_for
 from riptide.tests.stubs import ProjectStub
 from riptide.util import get_riptide_version

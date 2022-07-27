@@ -8,7 +8,7 @@ from schema import SchemaError
 
 import riptide.config.document.project as module
 from configcrunch import ConfigcrunchError
-from configcrunch.tests.test_utils import YamlConfigDocumentStub
+from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.tests.helpers import side_effect_for_load_subdocument, get_fixture_path
 
 FIXTURE_BASE_PATH = 'project' + os.sep

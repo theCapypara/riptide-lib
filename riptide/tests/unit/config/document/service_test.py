@@ -10,7 +10,7 @@ from schema import SchemaError
 
 import riptide.config.document.service as module
 from configcrunch import ConfigcrunchError
-from configcrunch.tests.test_utils import YamlConfigDocumentStub
+from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.tests.helpers import patch_mock_db_driver, get_fixture_path

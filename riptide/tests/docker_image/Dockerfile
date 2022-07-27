@@ -1,7 +1,7 @@
 # Tag this as riptide_integration_test
 # Simple flexible docker http server image for basic intergation tests
 
-FROM node:10
+FROM node:12
 RUN yarn global add http-server
 RUN mkdir -p /default_workdir && \
     echo "hello riptide" > /default_workdir/index.html && \
