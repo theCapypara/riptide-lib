@@ -25,7 +25,8 @@ def convert_in_service_to_normal(app: App, command_name: str) -> Command:
         'command': old_cmd['command'],
         'additional_volumes': service['additional_volumes'] if 'additional_volumes' in service else {},
         'environment': env,
-        'config_from_roles': [old_cmd['in_service_with_role']]
+        'config_from_roles': [old_cmd['in_service_with_role']],
+        'use_host_network': old_cmd['use_host_network'] if 'use_host_network' in old_cmd else False
     })
     new_cmd.parent_doc = app
     new_cmd.freeze()
