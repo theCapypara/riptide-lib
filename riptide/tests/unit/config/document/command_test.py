@@ -10,7 +10,7 @@ from unittest.mock import Mock, MagicMock, call
 from schema import SchemaError
 
 import riptide.config.document.command as module
-from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
+from configcrunch import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.tests.helpers import get_fixture_path
 from riptide.tests.stubs import ProjectStub, process_config_stub

@@ -7,8 +7,7 @@ from unittest.mock import call, Mock
 from schema import SchemaError
 
 import riptide.config.document.project as module
-from configcrunch import ConfigcrunchError
-from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
+from configcrunch import ConfigcrunchError, YamlConfigDocumentStub
 from riptide.tests.helpers import side_effect_for_load_subdocument, get_fixture_path
 
 FIXTURE_BASE_PATH = 'project' + os.sep
