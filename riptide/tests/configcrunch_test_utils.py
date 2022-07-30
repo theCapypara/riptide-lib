@@ -16,9 +16,11 @@ class YamlConfigDocumentStub(YamlConfigDocument):
         slf = cls.from_dict(document)
         slf.path = path
         slf.parent_doc = parent
-        slf.absolute_paths = absolute_paths
+        if absolute_paths is not None:
+            slf.absolute_paths = absolute_paths
         if set_parent_to_self:
             slf.parent_doc = slf
+        return slf
 
     @classmethod
     def header(cls) -> str:
