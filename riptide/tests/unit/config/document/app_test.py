@@ -15,7 +15,7 @@ FIXTURE_BASE_PATH = 'app' + os.sep
 class AppTestCase(unittest.TestCase):
 
     def test_header(self):
-        app = module.App({})
+        app = module.App.from_dict({})
         self.assertEqual(module.HEADER, app.header())
 
     def test_validate_valids(self):

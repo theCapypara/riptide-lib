@@ -1,4 +1,4 @@
-from configcrunch import YamlConfigDocumentStub
+from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 
 
 class ProjectStub(YamlConfigDocumentStub):

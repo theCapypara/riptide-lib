@@ -16,7 +16,7 @@ FIXTURE_BASE_PATH = 'project' + os.sep
 class ProjectTestCase(unittest.TestCase):
 
     def test_header(self):
-        cmd = module.Project({})
+        cmd = module.Project.from_dict({})
         self.assertEqual(module.HEADER, cmd.header())
 
     def test_validate_valids(self):
@@ -102,21 +102,21 @@ class ProjectTestCase(unittest.TestCase):
                 project.resolve_and_merge_references(paths)
 
     def test_folder_no_path(self):
-        project = module.Project({})
+        project = module.Project.from_dict({})
         self.assertIsNone(project.folder())
 
     @mock.patch('os.path.dirname', return_value='$%%DIRNAME%%$')
     def test_folder(self, dirname_mock: Mock):
-        project = module.Project({'$path': '$%%PATH%%$'})
+        project = module.Project.from_dict({'$path': '$%%PATH%%$'})
         self.assertEqual('$%%DIRNAME%%$', project.folder())
         dirname_mock.assert_called_once_with('$%%PATH%%$')
 
     def test_src_folder_no_path(self):
-        project = module.Project({})
+        project = module.Project.from_dict({})
         self.assertIsNone(project.src_folder())
 
     @mock.patch('os.path.dirname', return_value='$DIRNAME')
     def test_src_folder(self, dirname_mock: Mock):
-        project = module.Project({'$path': '$PATH', 'src': '$SRC'})
+        project = module.Project.from_dict({'$path': '$PATH', 'src': '$SRC'})
         self.assertEqual(os.path.join('$DIRNAME', '$SRC'), project.src_folder())
         dirname_mock.assert_called_once_with('$PATH')
