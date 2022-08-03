@@ -1,4 +1,4 @@
-__version__ = '0.7.1'
+__version__ = '0.7.6'
 from setuptools import setup, find_packages
 
 # README read-in
@@ -18,7 +18,7 @@ setup(
     long_description_content_type='text/x-rst',
     url='https://github.com/theCapypara/riptide-lib/',
     install_requires=[
-        'configcrunch == 1.0.0',
+        'configcrunch >= 1.0.3',
         'schema >= 0.7',
         'pyyaml >= 5.4',
         'appdirs >= 1.4',
@@ -34,8 +34,6 @@ setup(
         'Programming Language :: Python',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',

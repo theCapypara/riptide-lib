@@ -25,10 +25,11 @@ class ConfigTest(unittest.TestCase):
     def test_service_initialize_data_correct_config_file_exists_in_both(self):
         """Tests that Services load the correct config file for a document based on merging hierarchy"""
         base_path = get_fixture_path(os.path.join('service', 'test_config_paths'))
-        doc = Service({
+        doc = Service.from_dict({
             '$ref': 'one/config'
         })
         doc.resolve_and_merge_references([base_path])
+        doc.freeze()
 
         self.assertEqual({
             "test": {
@@ -41,10 +42,11 @@ class ConfigTest(unittest.TestCase):
     def test_service_initialize_data_correct_config_file_exists_in_referenced_only(self):
         """Tests that Services load the correct config file for a document based on merging hierarchy"""
         base_path = get_fixture_path(os.path.join('service', 'test_config_paths'))
-        doc = Service({
+        doc = Service.from_dict({
             '$ref': 'not_exist_one/config'
         })
         doc.resolve_and_merge_references([base_path])
+        doc.freeze()
 
         self.assertEqual(os.path.realpath(os.path.join(base_path, 'two', 'config.txt')),
                          os.path.realpath(doc['config']["test"]["$source"]))

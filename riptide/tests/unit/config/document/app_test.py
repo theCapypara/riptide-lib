@@ -7,8 +7,7 @@ from schema import SchemaError
 
 import riptide.config.document.app as module
 from configcrunch import ConfigcrunchError
-from configcrunch.tests.test_utils import YamlConfigDocumentStub
-from riptide.tests.helpers import side_effect_for_load_subdocument, get_fixture_path
+from riptide.tests.helpers import get_fixture_path
 
 FIXTURE_BASE_PATH = 'app' + os.sep
 
@@ -16,7 +15,7 @@ FIXTURE_BASE_PATH = 'app' + os.sep
 class AppTestCase(unittest.TestCase):
 
     def test_header(self):
-        app = module.App({})
+        app = module.App.from_dict({})
         self.assertEqual(module.HEADER, app.header())
 
     def test_validate_valids(self):

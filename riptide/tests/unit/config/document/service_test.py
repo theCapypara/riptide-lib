@@ -10,7 +10,7 @@ from schema import SchemaError
 
 import riptide.config.document.service as module
 from configcrunch import ConfigcrunchError
-from configcrunch.tests.test_utils import YamlConfigDocumentStub
+from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.tests.helpers import patch_mock_db_driver, get_fixture_path
@@ -22,7 +22,7 @@ FIXTURE_BASE_PATH = 'service' + os.sep
 class ServiceTestCase(unittest.TestCase):
 
     def test_header(self):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         self.assertEqual(module.HEADER, service.header())
 
     def test_validate_valids(self):
@@ -118,7 +118,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("os.path.exists", side_effect=lambda path: path.startswith('FIRST~DIRNAME'))
     @mock.patch("os.path.dirname", side_effect=lambda path: path + '~DIRNAME')
     def test_init_data_after_merge_config_has_paths_found_at_first(self, dirname_mock: Mock, exists_mock: Mock):
-        service = module.Service({
+        service = module.Service.from_dict({
             "config": {
                 "one": {
                     "from": "config1/path",
@@ -150,7 +150,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("os.path.exists", side_effect=lambda path: path.startswith('SECOND~DIRNAME'))
     @mock.patch("os.path.dirname", side_effect=lambda path: path + '~DIRNAME')
     def test_init_data_after_merge_config_has_paths_found_at_second(self, dirname_mock: Mock, exists_mock: Mock):
-        service = module.Service({
+        service = module.Service.from_dict({
             "config": {
                 "one": {
                     "from": "config1/path",
@@ -182,7 +182,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("os.path.exists", return_value=False)
     @mock.patch("os.path.dirname", side_effect=lambda path: path + '~DIRNAME')
     def test_init_data_after_merge_config_has_paths_not_found(self, dirname_mock: Mock, exist_mock: Mock):
-        service = module.Service({
+        service = module.Service.from_dict({
             "config": {
                 "one": {
                     "from": "config1/path",
@@ -199,7 +199,7 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch("os.path.exists", return_value=True)
     def test_init_data_after_merge_config_has_project(self, exist_mock: Mock):
-        service = module.Service({
+        service = module.Service.from_dict({
             "config": {
                 "one": {
                     "from": "config1/path",
@@ -233,7 +233,7 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch("os.path.exists", return_value=True)
     def test_init_data_after_merge_config_has_no_path_no_project(self, exist_mock: Mock):
-        service = module.Service({
+        service = module.Service.from_dict({
             "config": {
                 "one": {
                     "from": "config1/path",
@@ -304,7 +304,7 @@ class ServiceTestCase(unittest.TestCase):
         self.assertDictEqual(doc["config"], service["config"])
 
     def test_initialize_data_after_merge_set_defaults(self):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         service._initialize_data_after_merge()
         self.assertEqual({
             "run_as_current_user": True,
@@ -316,7 +316,7 @@ class ServiceTestCase(unittest.TestCase):
         }, service.doc)
 
     def test_initialize_data_after_merge_values_already_set(self):
-        service = module.Service({
+        service = module.Service.from_dict({
             "run_as_current_user": 'SET',
             "dont_create_user": 'SET',
             "pre_start": 'SET',
@@ -350,7 +350,7 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch('riptide.config.document.service.cppath.normalize', return_value='NORMALIZED')
     def test_initialize_data_after_variables(self, normalize_mock: Mock):
-        service = module.Service({
+        service = module.Service.from_dict({
             "additional_volumes": {
                 "one": {
                     "host": "TEST1",
@@ -403,7 +403,7 @@ class ServiceTestCase(unittest.TestCase):
                 side_effect=lambda p, s, host_start: host_start + 10)
     def test_before_start(self, get_additional_port_mock: Mock, makedirs_mock: Mock):
         project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
-        service = module.Service({
+        service = module.Service.from_dict({
             "working_directory": "WORKDIR",
             "additional_ports": {
                 "one": {
@@ -441,7 +441,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("os.makedirs")
     def test_before_start_absolute_workdir(self, makedirs_mock: Mock):
         project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
-        service = module.Service({
+        service = module.Service.from_dict({
             "working_directory": "/WORKDIR"
         }, parent=project_stub)
 
@@ -453,7 +453,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("os.makedirs")
     def test_before_start_absolute_workdir_no_workdir(self, makedirs_mock: Mock):
         project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
-        service = module.Service({}, parent=project_stub)
+        service = module.Service.from_dict({}, parent=project_stub)
 
         service.before_start()
 
@@ -461,13 +461,13 @@ class ServiceTestCase(unittest.TestCase):
         makedirs_mock.assert_not_called()
 
     def test_get_project(self):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         project = ProjectStub({}, set_parent_to_self=True)
         service.parent_doc = project
         self.assertEqual(project, service.get_project())
 
     def test_get_project_no_parent(self):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         with self.assertRaises(IndexError):
             service.get_project()
 
@@ -487,7 +487,7 @@ class ServiceTestCase(unittest.TestCase):
         config1 = {'to': '/TO_1', 'from': '/FROM_1'}
         config2 = {'to': '/TO_2', 'from': '/FROM_2'}
         config3 = {'to': 'TO_3_RELATIVE', 'from': '/FROM_3'}
-        service = module.Service({
+        service = module.Service.from_dict({
             "roles": ["src"],
             "config": {
                 "config1": config1,
@@ -600,7 +600,7 @@ class ServiceTestCase(unittest.TestCase):
         ], any_order=True)
 
     def test_collect_volumes_no_src(self):
-        service = module.Service({"roles": ["something"]})
+        service = module.Service.from_dict({"roles": ["something"]})
         expected = {}
 
         service.parent_doc = ProjectStub({}, set_parent_to_self=True)
@@ -627,7 +627,7 @@ class ServiceTestCase(unittest.TestCase):
         create_logging_path_mock.assert_called_once()
 
     def test_collect_environment(self):
-        service = module.Service({
+        service = module.Service.from_dict({
                 "environment": {
                     "key1": "value1",
                     "key2": "value2"
@@ -647,7 +647,7 @@ class ServiceTestCase(unittest.TestCase):
         }, service.collect_environment())
 
     def test_collect_ports(self):
-        service = module.Service({})
+        service = module.Service.from_dict({})
 
         service._loaded_port_mappings = [1, 3, 4]
 
@@ -656,76 +656,76 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("riptide.config.document.service.get_project_meta_folder",
                 side_effect=lambda name: name + '~PROCESSED')
     def test_volume_path(self, get_project_meta_folder_mock: Mock):
-        service = module.Service({'$name': 'TEST'},
+        service = module.Service.from_dict({'$name': 'TEST'},
                                  parent=ProjectStub({}, set_parent_to_self=True))
 
         self.assertEqual(os.path.join(ProjectStub.FOLDER + '~PROCESSED', 'data', 'TEST'),
                          service.volume_path())
 
     def test_get_working_directory_no_wd_set_and_src_set(self):
-        service = module.Service({'roles': ['src']})
+        service = module.Service.from_dict({'roles': ['src']})
 
         self.assertEqual(CONTAINER_SRC_PATH, service.get_working_directory())
 
     def test_get_working_directory_relative_wd_set_and_src_set(self):
-        service = module.Service({'working_directory': 'relative_path/in/test', 'roles': ['src']})
+        service = module.Service.from_dict({'working_directory': 'relative_path/in/test', 'roles': ['src']})
 
         self.assertEqual(CONTAINER_SRC_PATH + '/relative_path/in/test', service.get_working_directory())
 
     def test_get_working_directory_absolute_wd_set_and_src_set(self):
-        service = module.Service({'working_directory': '/path/in/test', 'roles': ['?']})
+        service = module.Service.from_dict({'working_directory': '/path/in/test', 'roles': ['?']})
 
         self.assertEqual('/path/in/test', service.get_working_directory())
 
     def test_get_working_directory_no_wd_set_and_src_not_set(self):
-        service = module.Service({'roles': ['?']})
+        service = module.Service.from_dict({'roles': ['?']})
 
         self.assertEqual(None, service.get_working_directory())
 
     def test_get_working_directory_relative_wd_set_and_src_not_set(self):
-        service = module.Service({'working_directory': 'relative_path/in/test', 'roles': ['?']})
+        service = module.Service.from_dict({'working_directory': 'relative_path/in/test', 'roles': ['?']})
 
         self.assertEqual(None, service.get_working_directory())
 
     def test_get_working_directory_absolute_wd_set_and_src_not_set(self):
-        service = module.Service({'working_directory': '/path/in/test', 'roles': ['?']})
+        service = module.Service.from_dict({'working_directory': '/path/in/test', 'roles': ['?']})
 
         self.assertEqual('/path/in/test', service.get_working_directory())
 
     def test_domain_not_main(self):
-        system = YamlConfigDocumentStub({'proxy': {'url': 'TEST-URL'}})
+        system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
         project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
-        app = YamlConfigDocumentStub({}, parent=project)
-        service = module.Service({'$name': 'TEST-SERVICE', 'roles': ['?']},
+        app = YamlConfigDocumentStub.make({}, parent=project)
+        service = module.Service.from_dict({'$name': 'TEST-SERVICE', 'roles': ['?']},
                                  parent=app)
 
         self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
 
     def test_domain_main(self):
-        system = YamlConfigDocumentStub({'proxy': {'url': 'TEST-URL'}})
+        system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
         project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
-        app = YamlConfigDocumentStub({}, parent=project)
-        service = module.Service({'$name': 'TEST-SERVICE', 'roles': ['main']},
+        app = YamlConfigDocumentStub.make({}, parent=project)
+        service = module.Service.from_dict({'$name': 'TEST-SERVICE', 'roles': ['main']},
                                  parent=app)
 
         self.assertEqual('TEST-PROJECT.TEST-URL', service.domain())
 
     @mock.patch("riptide.config.document.common_service_command.getuid", return_value=1234)
     def test_os_user(self, getuid_mock: Mock):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         self.assertEqual("1234", service.os_user())
         getuid_mock.assert_called_once()
 
     @mock.patch("riptide.config.document.common_service_command.getgid", return_value=1234)
     def test_os_group(self, getgid_mock: Mock):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         self.assertEqual("1234", service.os_group())
         getgid_mock.assert_called_once()
 
     def test_host_address(self):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         self.assertEqual(RIPTIDE_HOST_HOSTNAME, service.host_address())
 
     def test_home_path(self):
-        service = module.Service({})
+        service = module.Service.from_dict({})
         self.assertEqual(CONTAINER_HOME_PATH, service.home_path())

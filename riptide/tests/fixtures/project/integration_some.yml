@@ -1,5 +1,5 @@
 project:
-  name: integration_some
+  name: integration-some
   src: .  # is also replace by src in tests
   app:
     name: some
