@@ -96,6 +96,10 @@ class Command(ContainerDefinitionYamlConfigDocument):
             If enabled, read the environment variables in the env-files defined in the project (``env_files``).
             Default: True
 
+        [use_host_network]: bool
+            If enabled, the container uses network mode `host`. Overrides network and port settings
+            Default: False
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -121,7 +125,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
             },
             Optional('environment'): {str: str},
             Optional('config_from_roles'): [str],
-            Optional('read_env_file'): bool
+            Optional('read_env_file'): bool,
+            Optional('use_host_network'): bool,
         })
 
     @classmethod
@@ -160,6 +165,10 @@ class Command(ContainerDefinitionYamlConfigDocument):
             If enabled, read the environment variables in the env-files defined in the project (``env_files``).
             Default: True
 
+        [use_host_network]: bool
+            If enabled, the container uses network mode `host`. Overrides network and port settings
+            Default: False
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -176,6 +185,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
             'command': str,
             Optional('environment'): {str: str},
             Optional('read_env_file'): bool,
+            Optional('use_host_network'): bool,
         })
 
     @classmethod
