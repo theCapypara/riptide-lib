@@ -710,6 +710,36 @@ class ServiceTestCase(unittest.TestCase):
 
         self.assertEqual('TEST-PROJECT.TEST-URL', service.domain())
 
+    def test_additional_domains_not_main(self):
+        system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
+        project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
+        app = YamlConfigDocumentStub.make({}, parent=project)
+        service = module.Service.from_dict({
+            '$name': 'TEST-SERVICE',
+            'roles': ['?'],
+            'additional_subdomains': ['first', 'second']
+        }, parent=app)
+
+        self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
+        self.assertEqual(2, len(service.additional_domains()))
+        self.assertEqual('first.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[0])
+        self.assertEqual('second.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[1])
+
+    def test_additional_domains_main(self):
+        system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
+        project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
+        app = YamlConfigDocumentStub.make({}, parent=project)
+        service = module.Service.from_dict({
+            '$name': 'TEST-SERVICE',
+            'roles': ['main'],
+            'additional_subdomains': ['first', 'second']
+        }, parent=app)
+
+        self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
+        self.assertEqual(2, len(service.additional_domains()))
+        self.assertEqual('first.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[0])
+        self.assertEqual('second.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[1])
+
     @mock.patch("riptide.config.document.common_service_command.getuid", return_value=1234)
     def test_os_user(self, getuid_mock: Mock):
         service = module.Service.from_dict({})
