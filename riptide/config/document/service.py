@@ -305,6 +305,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
                   from: ci/config.yml
                   to: app_config/config.yml
               working_directory: www
+              additional_subdomains:
+                - something
+                - foo
               additional_ports:
                 one:
                   title: MySQL Port
@@ -737,26 +740,27 @@ class Service(ContainerDefinitionYamlConfigDocument):
         return self.get_project().internal_get("name") + DOMAIN_PROJECT_SERVICE_SEP + self.internal_get("$name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
 
     @variable_helper
-    def additional_domains(self) -> [str]:
+    def additional_domains(self) -> dict[str, str]:
         """
-        Returns the full domain names that this service should be available under in addition to the main domain.
+        Takes additional_subdomains and returns subdomain/full domain name mappings
+        that this service should be available under in addition to the main domain.
         These are the same domains as used for the proxy server.
 
         Example usage::
 
             something:
-              {{%- for additional_domain in dditional_domains() %}}
-              - {{ additional_domain }}
-              {{%- endfor %}}
+              {% for subdomain, additional_domain in additional_domains().items() %}
+              {{ subdomain }}: {{ additional_domain }}
+              {% endfor %}
 
         Example result::
 
             something:
-              - 'https://first.project--service.riptide.local'
-              - 'https://seccond.project--service.riptide.local'
+              first: 'https://first.project--service.riptide.local'
+              second: 'https://seccond.project--service.riptide.local'
         """
         if "main" in self.internal_get("roles"):
-            return [f'{subdomain}.{self.get_project().internal_get("name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
-                    for subdomain in self.internal_get("additional_subdomains")]
-        return [f'{subdomain}.{self.get_project().internal_get("name")}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get("$name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
-                for subdomain in self.internal_get("additional_subdomains")]
+            return {subdomain: f'{subdomain}.{self.get_project().internal_get("name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
+                    for subdomain in self.internal_get("additional_subdomains")}
+        return {subdomain: f'{subdomain}.{self.get_project().internal_get("name")}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get("$name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
+                for subdomain in self.internal_get("additional_subdomains")}

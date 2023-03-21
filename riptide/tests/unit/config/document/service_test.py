@@ -722,8 +722,8 @@ class ServiceTestCase(unittest.TestCase):
 
         self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
         self.assertEqual(2, len(service.additional_domains()))
-        self.assertEqual('first.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[0])
-        self.assertEqual('second.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[1])
+        self.assertEqual('first.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()["first"])
+        self.assertEqual('second.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()["second"])
 
     def test_additional_domains_main(self):
         system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
