@@ -38,10 +38,12 @@ def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
                 for service in system_config["project"]["app"]["services"].values():
                     domain_list = [service.domain()]
                     if len(service.additional_domains()) > 0:
-                        domain_list.extend(service.additional_domains())
-                    if not hosts.exists(names=domain_list):
-                        changes = True
-                        new_entries.append(HostsEntry(entry_type='ipv4', address='127.0.0.1', names=domain_list))
+                        domain_list.extend(service.additional_domains().values())
+                    for domain in domain_list:
+                        # We need to do this one-by-one because otherwise exists returns True even if we add new domains.
+                        if not hosts.exists(names=[domain]):
+                            changes = True
+                            new_entries.append(HostsEntry(entry_type='ipv4', address='127.0.0.1', names=[domain]))
             hosts.add(new_entries)
             if changes:
                 try:
