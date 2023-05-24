@@ -189,6 +189,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
                     If true command containers will also recreate the file every time they are started.
                     Started services always recreate the processed file on start, regardless of this setting.
 
+        [additional_subdomains]: List[str]
+            List of additional subdomains that will be made available on the host system.
+
         [additional_ports]
             Additional TCP and/or UDP ports that will be made available on the host system.
             For details see section in
@@ -302,6 +305,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
                   from: ci/config.yml
                   to: app_config/config.yml
               working_directory: www
+              additional_subdomains:
+                - something
+                - foo
               additional_ports:
                 one:
                   title: MySQL Port
@@ -354,6 +360,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 # Whether to create the riptide user and group, mapped to current user. Default: False
                 Optional('dont_create_user'): bool,
                 Optional('working_directory'): str,
+                Optional('additional_subdomains'): [str],
                 Optional('additional_ports'): {
                     str: {
                         'title': str,
@@ -419,6 +426,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         if "read_env_file" not in data:
             data["read_env_file"] = True
+
+        if "additional_subdomains" not in data:
+            data["additional_subdomains"] = []
 
         if "db" in data["roles"]:
             self._db_driver = db_driver_for_service.get(data, self)
@@ -728,3 +738,29 @@ class Service(ContainerDefinitionYamlConfigDocument):
         if "main" in self.internal_get("roles"):
             return self.get_project().internal_get("name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
         return self.get_project().internal_get("name") + DOMAIN_PROJECT_SERVICE_SEP + self.internal_get("$name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
+
+    @variable_helper
+    def additional_domains(self) -> dict[str, str]:
+        """
+        Takes additional_subdomains and returns subdomain/full domain name mappings
+        that this service should be available under in addition to the main domain.
+        These are the same domains as used for the proxy server.
+
+        Example usage::
+
+            something:
+              {% for subdomain, additional_domain in additional_domains().items() %}
+              {{ subdomain }}: {{ additional_domain }}
+              {% endfor %}
+
+        Example result::
+
+            something:
+              first: 'https://first.project--service.riptide.local'
+              second: 'https://seccond.project--service.riptide.local'
+        """
+        if "main" in self.internal_get("roles"):
+            return {subdomain: f'{subdomain}.{self.get_project().internal_get("name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
+                    for subdomain in self.internal_get("additional_subdomains")}
+        return {subdomain: f'{subdomain}.{self.get_project().internal_get("name")}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get("$name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
+                for subdomain in self.internal_get("additional_subdomains")}
