@@ -740,7 +740,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         return self.get_project().internal_get("name") + DOMAIN_PROJECT_SERVICE_SEP + self.internal_get("$name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
 
     @variable_helper
-    def additional_domains(self) -> dict[str, str]:
+    def additional_domains(self) -> Dict[str, str]:
         """
         Takes additional_subdomains and returns subdomain/full domain name mappings
         that this service should be available under in addition to the main domain.
