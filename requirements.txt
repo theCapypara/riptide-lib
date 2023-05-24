@@ -1,5 +1,5 @@
 schema==0.7.5
-pyyaml==5.4
+pyyaml==6.0
 configcrunch==1.0.3
 appdirs==1.4.4
 janus==0.7.0
