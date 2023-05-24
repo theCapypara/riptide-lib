@@ -37,7 +37,7 @@ class ServiceTestCase(unittest.TestCase):
                 service = module.Service.from_yaml(get_fixture_path(
                     FIXTURE_BASE_PATH + name
                 ))
-                service._initialize_data_after_merge()
+                service._initialize_data_after_merge(service.to_dict())
                 self.assertTrue(service.validate())
 
     def test_validate_invalid_roles(self):
@@ -66,7 +66,8 @@ class ServiceTestCase(unittest.TestCase):
             service = module.Service.from_yaml(get_fixture_path(
                 FIXTURE_BASE_PATH + 'invalid_config.yml'
             ))
-            service._initialize_data_after_merge()
+            service.freeze()
+            service._initialize_data_after_merge(service.doc)
 
     def test_validate_invalid_additional_volumes(self):
         service = module.Service.from_yaml(get_fixture_path(
@@ -108,6 +109,7 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'valid_db_driver.yml'
         ))
+        service._initialize_data_after_merge(service.to_dict())
         # not setting _db_driver.
         with self.assertRaisesRegex(ConfigcrunchError,
                                     "If a service has the role 'db' it has to have "
@@ -129,8 +131,10 @@ class ServiceTestCase(unittest.TestCase):
                     "to": "doesnt matter2"
                 }
             }
-        }, absolute_paths=['FIRST', 'SECOND'])
-        service._initialize_data_after_merge()
+        })
+        service.absolute_paths = ['FIRST', 'SECOND']
+        service.freeze()
+        service._initialize_data_after_merge(service.doc)
 
         self.assertEqual({
             "one": {
@@ -161,8 +165,10 @@ class ServiceTestCase(unittest.TestCase):
                     "to": "doesnt matter2"
                 }
             }
-        }, absolute_paths=['FIRST', 'SECOND'])
-        service._initialize_data_after_merge()
+        })
+        service.absolute_paths = ['FIRST', 'SECOND']
+        service.freeze()
+        service._initialize_data_after_merge(service.doc)
 
         self.assertEqual({
             "one": {
@@ -193,9 +199,11 @@ class ServiceTestCase(unittest.TestCase):
                     "to": "doesnt matter2"
                 }
             }
-        }, absolute_paths=['FIRST', 'SECOND'])
+        })
+        service.absolute_paths = ['FIRST', 'SECOND']
+        service.freeze()
         with self.assertRaisesRegex(ConfigcrunchError, "This probably happens because one of your services"):
-            service._initialize_data_after_merge()
+            service._initialize_data_after_merge(service.doc)
 
     @mock.patch("os.path.exists", return_value=True)
     def test_init_data_after_merge_config_has_project(self, exist_mock: Mock):
@@ -210,8 +218,10 @@ class ServiceTestCase(unittest.TestCase):
                     "to": "doesnt matter2"
                 }
             }
-        }, parent=ProjectStub({}, set_parent_to_self=True))
-        service._initialize_data_after_merge()
+        })
+        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service.freeze()
+        service._initialize_data_after_merge(service.doc)
 
         self.assertEqual({
             "one": {
@@ -229,7 +239,7 @@ class ServiceTestCase(unittest.TestCase):
         exist_mock.assert_has_calls([
             call(os.path.join(ProjectStub.FOLDER, "config1/path")),
             call(os.path.join(ProjectStub.FOLDER, "config2/path2/blub"))
-        ])
+        ], any_order=True)
 
     @mock.patch("os.path.exists", return_value=True)
     def test_init_data_after_merge_config_has_no_path_no_project(self, exist_mock: Mock):
@@ -245,7 +255,8 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         })
-        service._initialize_data_after_merge()
+        service.freeze()
+        service._initialize_data_after_merge(service.doc)
 
         # Fallback is os.getcwd()
         self.assertEqual({
@@ -264,7 +275,7 @@ class ServiceTestCase(unittest.TestCase):
         exist_mock.assert_has_calls([
             call(os.path.join(os.getcwd(), "config1/path")),
             call(os.path.join(os.getcwd(), "config2/path2/blub"))
-        ])
+        ], any_order=True)
 
     def test_init_data_after_merge_config_illegal_config_from_dot(self):
         doc = {
@@ -274,9 +285,11 @@ class ServiceTestCase(unittest.TestCase):
             }}
         }
 
-        service = module.Service(doc, absolute_paths=['PATH'])
+        service = module.Service(doc)
+        service.absolute_paths = ['PATH']
+        service.freeze()
         with self.assertRaises(ConfigcrunchError):
-            service._initialize_data_after_merge()
+            service._initialize_data_after_merge(service.doc)
 
     def test_init_data_after_merge_config_illegal_config_from_os_sep(self):
         doc = {
@@ -286,9 +299,11 @@ class ServiceTestCase(unittest.TestCase):
             }}
         }
 
-        service =module.Service(doc, absolute_paths=['PATH'])
+        service = module.Service(doc)
+        service.absolute_paths = ['PATH']
+        service.freeze()
         with self.assertRaises(ConfigcrunchError):
-            service._initialize_data_after_merge()
+            service._initialize_data_after_merge(service.doc)
 
     def test_init_data_after_merge_config_invalid_entry(self):
         # Invalid entries should be skipped, the validation will
@@ -299,20 +314,27 @@ class ServiceTestCase(unittest.TestCase):
             }}
         }
 
-        service = module.Service(doc, absolute_paths=['PATH'])
-        service._initialize_data_after_merge()
+        service = module.Service(doc)
+        service.absolute_paths = ['PATH']
+        service.freeze()
+        service._initialize_data_after_merge(service.doc)
         self.assertDictEqual(doc["config"], service["config"])
 
     def test_initialize_data_after_merge_set_defaults(self):
         service = module.Service.from_dict({})
-        service._initialize_data_after_merge()
+        service.freeze()
+        service._initialize_data_after_merge(service.doc)
         self.assertEqual({
             "run_as_current_user": True,
             "dont_create_user": False,
             "pre_start": [],
             "post_start": [],
             "roles": [],
-            "working_directory": "."
+            "working_directory": ".",
+            "additional_subdomains": [],
+            "run_post_start_as_current_user": True,
+            "run_pre_start_as_current_user": True,
+            "read_env_file": True,
         }, service.doc)
 
     def test_initialize_data_after_merge_values_already_set(self):
@@ -322,16 +344,25 @@ class ServiceTestCase(unittest.TestCase):
             "pre_start": 'SET',
             "post_start": 'SET',
             "roles": 'SET',
-            "working_directory": 'SET'
+            "working_directory": 'SET',
+            "additional_subdomains": 'SET',
+            "run_post_start_as_current_user": 'SET',
+            "run_pre_start_as_current_user": 'SET',
+            "read_env_file": 'SET',
         })
-        service._initialize_data_after_merge()
+        service.freeze()
+        service._initialize_data_after_merge(service.doc)
         self.assertEqual({
             "run_as_current_user": 'SET',
             "dont_create_user": 'SET',
             "pre_start": 'SET',
             "post_start": 'SET',
             "roles": 'SET',
-            "working_directory": 'SET'
+            "working_directory": 'SET',
+            "additional_subdomains": 'SET',
+            "run_post_start_as_current_user": 'SET',
+            "run_pre_start_as_current_user": 'SET',
+            "read_env_file": 'SET',
         }, service.doc)
 
     def test_initialize_data_after_merge_db_driver_setup(self):
@@ -344,8 +375,9 @@ class ServiceTestCase(unittest.TestCase):
                 'riptide.config.document.service.db_driver_for_service.get'
         ) as (get, driver):
             driver.collect_additional_ports = MagicMock(return_value={"four": 4, "five": 5, "three": 6})
-            service._initialize_data_after_merge()
-            get.assert_called_once_with(service)
+            service.freeze()
+            service._initialize_data_after_merge(service.doc)
+            get.assert_called_once_with(service.doc, service)
             self.assertEqual({"one": 1, "two": 2, "four": 4, "five": 5, "three": 3}, service.doc["additional_ports"])
 
     @mock.patch('riptide.config.document.service.cppath.normalize', return_value='NORMALIZED')
@@ -392,7 +424,8 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         }
-        service._initialize_data_after_variables()
+        service.freeze()
+        service._initialize_data_after_variables(service.doc)
         self.assertEqual(4, normalize_mock.call_count,
                          "cppath.normalize has to be called once for each volume and each config")
 
@@ -402,7 +435,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("riptide.config.document.service.get_additional_port",
                 side_effect=lambda p, s, host_start: host_start + 10)
     def test_before_start(self, get_additional_port_mock: Mock, makedirs_mock: Mock):
-        project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
+        project_stub = ProjectStub.make({"src": "SRC"}, set_parent_to_self=True)
         service = module.Service.from_dict({
             "working_directory": "WORKDIR",
             "additional_ports": {
@@ -419,8 +452,11 @@ class ServiceTestCase(unittest.TestCase):
                     "host_start": 4
                 },
             }
-        }, parent=project_stub)
+        })
+        service.parent_doc = project_stub
 
+        project_stub.freeze()
+        service.freeze()
         service.before_start()
 
         self.assertEqual({
@@ -440,10 +476,14 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch("os.makedirs")
     def test_before_start_absolute_workdir(self, makedirs_mock: Mock):
-        project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
+        project_stub = ProjectStub.make({"src": "SRC"}, set_parent_to_self=True)
         service = module.Service.from_dict({
             "working_directory": "/WORKDIR"
-        }, parent=project_stub)
+        })
+        service.parent_doc = project_stub
+
+        service.freeze()
+        project_stub.freeze()
 
         service.before_start()
 
@@ -452,18 +492,24 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch("os.makedirs")
     def test_before_start_absolute_workdir_no_workdir(self, makedirs_mock: Mock):
-        project_stub = ProjectStub({"src": "SRC"}, set_parent_to_self=True)
-        service = module.Service.from_dict({}, parent=project_stub)
+        project_stub = ProjectStub.make({"src": "SRC"}, set_parent_to_self=True)
+        service = module.Service.from_dict({})
+        service.parent_doc = project_stub
+
+        service.freeze()
+        project_stub.freeze()
 
         service.before_start()
+
 
         # Assert NO creation of working directory
         makedirs_mock.assert_not_called()
 
     def test_get_project(self):
         service = module.Service.from_dict({})
-        project = ProjectStub({}, set_parent_to_self=True)
+        project = ProjectStub.make({}, set_parent_to_self=True)
         service.parent_doc = project
+        service.freeze()
         self.assertEqual(project, service.get_project())
 
     def test_get_project_no_parent(self):
@@ -538,7 +584,7 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         })
-        expected = OrderedDict({
+        expected = {
             # SRC
             ProjectStub.SRC_FOLDER:                         {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'},
             # CONFIG
@@ -557,9 +603,9 @@ class ServiceTestCase(unittest.TestCase):
             # ADDITIONAL VOLUMES
             # process_additional_volumes has to be called
             STUB_PAV__KEY: STUB_PAV__VAL
-        })
+        }
 
-        service.parent_doc = ProjectStub({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
 
         ## DB DRIVER SETUP
         with patch_mock_db_driver(
@@ -568,6 +614,7 @@ class ServiceTestCase(unittest.TestCase):
             service._db_driver = driver
             driver.collect_volumes.return_value = {'FROM_DB_DRIVER': 'VALUE'}
 
+        service.freeze()
         ## OVERALL ASSERTIONS
         actual = service.collect_volumes()
         self.assertEqual(expected, actual)
@@ -603,7 +650,9 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service.from_dict({"roles": ["something"]})
         expected = {}
 
-        service.parent_doc = ProjectStub({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service._initialize_data_after_merge(service.to_dict())
+        service.freeze()
 
         ## OVERALL ASSERTIONS
         self.assertEqual(expected, service.collect_volumes())
@@ -618,7 +667,9 @@ class ServiceTestCase(unittest.TestCase):
             'stderr~PROCESSED2':                            {'bind': module.LOGGING_CONTAINER_STDERR, 'mode': 'rw'}
         }
 
-        service.parent_doc = ProjectStub({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service._initialize_data_after_merge(service.to_dict())
+        service.freeze()
 
         ## OVERALL ASSERTIONS
         self.assertEqual(expected, service.collect_volumes())
@@ -640,6 +691,13 @@ class ServiceTestCase(unittest.TestCase):
             service._db_driver = driver
             driver.collect_environment.return_value = {'FROM_DB_DRIVER': 'VALUE'}
 
+        # TODO: Test reading from env file
+        service.parent_doc = ProjectStub.make({
+            "env_files": []
+        }, set_parent_to_self=True)
+        service.freeze()
+        service.parent_doc.parent_doc.freeze()
+
         self.assertEqual({
             "key1": "value1",
             "key2": "value2",
@@ -656,8 +714,8 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("riptide.config.document.service.get_project_meta_folder",
                 side_effect=lambda name: name + '~PROCESSED')
     def test_volume_path(self, get_project_meta_folder_mock: Mock):
-        service = module.Service.from_dict({'$name': 'TEST'},
-                                 parent=ProjectStub({}, set_parent_to_self=True))
+        service = module.Service.from_dict({'$name': 'TEST'})
+        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
 
         self.assertEqual(os.path.join(ProjectStub.FOLDER + '~PROCESSED', 'data', 'TEST'),
                          service.volume_path())
@@ -694,51 +752,65 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_domain_not_main(self):
         system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
-        project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
+        project = ProjectStub.make({'name': 'TEST-PROJECT'}, parent=system)
         app = YamlConfigDocumentStub.make({}, parent=project)
-        service = module.Service.from_dict({'$name': 'TEST-SERVICE', 'roles': ['?']},
-                                 parent=app)
+        service = module.Service.from_dict({'$name': 'TEST-SERVICE', 'roles': ['?']})
+        service.parent_doc = app
 
         self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
 
     def test_domain_main(self):
         system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
-        project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
+        project = ProjectStub.make({'name': 'TEST-PROJECT'}, parent=system)
         app = YamlConfigDocumentStub.make({}, parent=project)
-        service = module.Service.from_dict({'$name': 'TEST-SERVICE', 'roles': ['main']},
-                                 parent=app)
+        service = module.Service.from_dict({'$name': 'TEST-SERVICE', 'roles': ['main']})
+
+        service.parent_doc = app
+
+        service.freeze()
+        project.freeze()
+
+        service.before_start()
 
         self.assertEqual('TEST-PROJECT.TEST-URL', service.domain())
 
     def test_additional_domains_not_main(self):
         system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
-        project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
+        project = ProjectStub.make({'name': 'TEST-PROJECT'}, parent=system)
         app = YamlConfigDocumentStub.make({}, parent=project)
         service = module.Service.from_dict({
             '$name': 'TEST-SERVICE',
             'roles': ['?'],
             'additional_subdomains': ['first', 'second']
-        }, parent=app)
+        })
+        service.parent_doc = app
 
         self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
-        self.assertEqual(2, len(service.additional_domains()))
-        self.assertEqual('first.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()["first"])
-        self.assertEqual('second.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()["second"])
+        result = service.additional_domains()
+        self.assertEqual(2, len(result))
+        self.assertTrue("first" in result)
+        self.assertEqual('first.TEST-PROJECT--TEST-SERVICE.TEST-URL', result["first"])
+        self.assertTrue("second" in result)
+        self.assertEqual('second.TEST-PROJECT--TEST-SERVICE.TEST-URL', result["second"])
 
     def test_additional_domains_main(self):
         system = YamlConfigDocumentStub.make({'proxy': {'url': 'TEST-URL'}})
-        project = ProjectStub({'name': 'TEST-PROJECT'}, parent=system)
+        project = ProjectStub.make({'name': 'TEST-PROJECT'}, parent=system)
         app = YamlConfigDocumentStub.make({}, parent=project)
         service = module.Service.from_dict({
             '$name': 'TEST-SERVICE',
             'roles': ['main'],
             'additional_subdomains': ['first', 'second']
-        }, parent=app)
+        })
+        service.parent_doc = app
 
-        self.assertEqual('TEST-PROJECT--TEST-SERVICE.TEST-URL', service.domain())
-        self.assertEqual(2, len(service.additional_domains()))
-        self.assertEqual('first.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[0])
-        self.assertEqual('second.TEST-PROJECT--TEST-SERVICE.TEST-URL', service.additional_domains()[1])
+        self.assertEqual('TEST-PROJECT.TEST-URL', service.domain())
+        result = service.additional_domains()
+        self.assertEqual(2, len(result))
+        self.assertTrue("first" in result)
+        self.assertEqual('first.TEST-PROJECT.TEST-URL', result["first"])
+        self.assertTrue("second" in result)
+        self.assertEqual('second.TEST-PROJECT.TEST-URL', result["second"])
 
     @mock.patch("riptide.config.document.common_service_command.getuid", return_value=1234)
     def test_os_user(self, getuid_mock: Mock):

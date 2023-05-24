@@ -113,6 +113,8 @@ class CommandTestCase(unittest.TestCase):
         command = module.Command.from_yaml(get_fixture_path(
             FIXTURE_BASE_PATH + 'valid_via_service.yml'
         ))
+        command.freeze()
+        app.freeze()
         self.assertEqual('test', command.get_service(app))
 
     def test_get_service_not_via_service(self):
@@ -129,6 +131,8 @@ class CommandTestCase(unittest.TestCase):
             FIXTURE_BASE_PATH + 'valid_regular.yml'
         ))
         with self.assertRaisesRegex(TypeError, 'get_service can only be used on "in service" commands.'):
+            command.freeze()
+            app.freeze()
             command.get_service(app)
 
     def test_get_service_no_service_with_role(self):
@@ -145,6 +149,8 @@ class CommandTestCase(unittest.TestCase):
             FIXTURE_BASE_PATH + 'valid_via_service.yml'
         ))
         with self.assertRaisesRegex(ValueError, 'Command .* can not run in service with role rolename: No service with this role found in the app.'):
+            command.freeze()
+            app.freeze()
             command.get_service(app)
 
     @mock.patch('riptide.config.document.command.cppath.normalize', return_value='NORMALIZED')
@@ -181,14 +187,15 @@ class CommandTestCase(unittest.TestCase):
                     "container": "/vol5"
                 }
         }
-        cmd._initialize_data_after_variables()
+        cmd.freeze()
+        cmd._initialize_data_after_variables(cmd.doc)
         self.assertEqual(6, normalize_mock.call_count, "cppath.normalize has to be called once for each volume")
         self.assertEqual(expected, cmd.doc['additional_volumes'])
 
     def test_get_project(self):
         cmd = module.Command.from_dict({})
-        project = ProjectStub({}, set_parent_to_self=True)
-        cmd.parent_doc = project
+        project = cmd.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        cmd.freeze()
         self.assertEqual(project, cmd.get_project())
 
     def test_get_project_no_parent(self):
@@ -281,6 +288,7 @@ class CommandTestCase(unittest.TestCase):
             return []
 
         cmd.parent_doc.get_services_by_role = get_services_by_role_mock
+        cmd.freeze()
         actual = cmd.collect_volumes()
         self.assertEqual(expected, actual)
         self.assertIsInstance(actual, OrderedDict)
@@ -312,6 +320,7 @@ class CommandTestCase(unittest.TestCase):
             return []
 
         cmd.parent_doc.get_services_by_role = get_services_by_role_mock
+        cmd.freeze()
         actual = cmd.collect_volumes()
         self.assertEqual(expected, actual)
         self.assertIsInstance(actual, OrderedDict)
@@ -338,7 +347,8 @@ class CommandTestCase(unittest.TestCase):
         })
 
         # The project contains NO services matching the defined roles
-        cmd.parent_doc = ProjectStub({}, set_parent_to_self=True)
+        cmd.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        cmd.freeze()
         actual = cmd.collect_volumes()
         self.assertEqual(expected, actual)
         self.assertIsInstance(actual, OrderedDict)
@@ -358,10 +368,18 @@ class CommandTestCase(unittest.TestCase):
             'LINES': '20'
         }
 
+        # TODO: Test reading from env file
+        cmd.parent_doc = ProjectStub.make({
+            "env_files": []
+        }, set_parent_to_self=True)
+        cmd.freeze()
+        cmd.parent_doc.parent_doc.freeze()
+
         self.assertEqual(expected, cmd.collect_environment())
 
     def test_resolve_alias_nothing_to_alias(self):
         cmd = module.Command.from_dict({})
+        cmd.freeze()
         self.assertEqual(cmd, cmd.resolve_alias())
 
     def test_resolve_alias_something_to_alias(self):
@@ -376,6 +394,8 @@ class CommandTestCase(unittest.TestCase):
         }})
         # Make the mocked command's resolve_alias return itself.
         setattr(hello_world_command, 'resolve_alias', MagicMock(return_value=hello_world_command))
+        cmd.freeze()
+        cmd.parent_doc.freeze()
         # Assert that we get the hello world command
         self.assertEqual(hello_world_command, cmd.resolve_alias())
         # Make sure resolve_alias was actually called on our mocked command
@@ -385,7 +405,8 @@ class CommandTestCase(unittest.TestCase):
     @mock.patch('riptide.config.document.command.get_project_meta_folder', return_value='META')
     def test_volume_path(self, meta_folder_mock: Mock, os_makedirs_mock: Mock):
         cmd = module.Command.from_dict({'$name': 'hello_world'})
-        cmd.parent_doc = ProjectStub({}, set_parent_to_self=True)
+        cmd.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        cmd.freeze()
         expected_path = os.path.join('META', 'cmd_data', 'hello_world')
         self.assertEqual(expected_path, cmd.volume_path())
 

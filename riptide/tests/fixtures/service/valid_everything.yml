@@ -23,13 +23,15 @@ service:
     C_D_E: "123"
   config:
     one:
+      $source: foo
       from: configs/config1.txt
       to: b
     two:
+      $source: foo
       from: configs/config2.txt
       to: there
   run_as_current_user: true
-  dont_create_user: no
+  dont_create_user: false
   working_directory: home
   additional_ports:
     one:
