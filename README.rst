@@ -30,19 +30,15 @@
 .. _k8s_client:     https://github.com/theCapypara/riptide-k8s-client
 .. _k8s_controller: https://github.com/theCapypara/riptide-k8s-controller
 
-|build| |docs| |pypi-version| |pypi-downloads| |pypi-license| |pypi-pyversions| |slack|
+|build| |docs| |pypi-version| |pypi-downloads| |pypi-license| |pypi-pyversions|
 
-.. |build| image:: https://img.shields.io/github/workflow/status/theCapypara/riptide-lib/Build,%20test%20and%20publish
+.. |build| image:: https://img.shields.io/github/actions/workflow/status/theCapypara/riptide-lib/build-test-publish.yml
     :target: https://github.com/theCapypara/riptide-lib/actions
     :alt: Build Status
 
 .. |docs| image:: https://readthedocs.org/projects/riptide-docs/badge/?version=latest
     :target: https://riptide-docs.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
-
-.. |slack| image:: https://slack.riptide.theCapypara.de/badge.svg
-    :target: https://slack.riptide.theCapypara.de
-    :alt: Join our Slack workspace
 
 .. |pypi-version| image:: https://img.shields.io/pypi/v/riptide-lib
     :target: https://pypi.org/project/riptide-lib/
