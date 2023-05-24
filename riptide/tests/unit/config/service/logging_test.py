@@ -20,6 +20,7 @@ class ConfigFilesTestCase(unittest.TestCase):
         service = YamlConfigDocumentStub({'$name': service_name})
         service.get_project = MagicMock(return_value=ProjectStub({}))
 
+        service.freeze()
         create_logging_path(service)
 
         makedirs_mock.assert_called_once_with('/META' + os.sep + FOLDER_FOR_LOGGING + os.sep + service_name, exist_ok=True)
@@ -40,6 +41,7 @@ class ConfigFilesTestCase(unittest.TestCase):
 
         expected = '/META' + os.sep + FOLDER_FOR_LOGGING + os.sep + service_name + os.sep + 'SPECIAL_CHARS_REMOVED.log'
 
+        service.freeze()
         self.assertEqual(
             expected,
             get_logging_path_for(service, log_name)
