@@ -11,7 +11,6 @@
     *Container-Backends:*   engine_docker_
     *Database Drivers:*     db_mysql_            db_mongo_
     *Plugins:*              php_xdebug_
-    *Kubernetes:*           k8s_client_          k8s_controller_
     *Related Projects:*     configcrunch_
     *More:*                 docs_                repo_                docker_images_
     ======================  ===================  ===================  ===================
