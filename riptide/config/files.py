@@ -5,9 +5,11 @@ Riptide uses.
 Also provides some utility file-related functions.
 """
 import os
-import pkg_resources
+import atexit
+import importlib.resources
 import re
 from appdirs import user_config_dir
+from contextlib import ExitStack
 
 # Expected name of the project files during auto-discovery
 from typing import Optional
@@ -52,7 +54,11 @@ def discover_project_file() -> Optional[str]:
 
 def riptide_assets_dir() -> str:
     """ Path to the assets directory of riptide_lib. """
-    return pkg_resources.resource_filename('riptide', 'assets')
+    file_manager = ExitStack()
+    atexit.register(file_manager.close)
+    ref = importlib.resources.files('riptide') / 'assets'
+    path = file_manager.enter_context(importlib.resources.as_file(ref))
+    return path
 
 
 def riptide_main_config_file() -> str:

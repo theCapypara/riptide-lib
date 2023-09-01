@@ -1,6 +1,6 @@
 from typing import Dict, Union, TYPE_CHECKING
 
-import pkg_resources
+from importlib.metadata import entry_points
 
 from riptide.engine.abstract import AbstractEngine
 from riptide.plugin.abstract import AbstractPlugin
@@ -24,7 +24,7 @@ def load_plugins() -> Dict[str, AbstractPlugin]:
         # Look up package entrypoints for engines
         plugins = {
             entry_point.name:
-                entry_point.load()() for entry_point in pkg_resources.iter_entry_points(PLUGIN_ENTRYPOINT_KEY)
+                entry_point.load()() for entry_point in entry_points(group=PLUGIN_ENTRYPOINT_KEY)
         }
         for name, plugin in plugins.items():
             if not isinstance(plugin, AbstractPlugin):

@@ -1,5 +1,5 @@
 """Various utility functions"""
-import pkg_resources
+from importlib.metadata import version
 
 
 class SystemFlag:
@@ -34,4 +34,4 @@ def get_riptide_version():
 
 
 def get_riptide_version_raw():
-    return pkg_resources.get_distribution("riptide_lib").version
+    return version("riptide-lib")

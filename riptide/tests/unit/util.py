@@ -29,12 +29,12 @@ class UtilTestCase(unittest.TestCase):
         ]
         i = 0
         for version, expected in versions:
-            with mock.patch('pkg_resources.get_distribution') as gd_mock:
+            with mock.patch('importlib.metadata.version') as gd_mock:
                 version_mock = Mock()
                 version_mock.version = version
                 gd_mock.return_value = version_mock
 
                 self.assertEqual(expected, get_riptide_version(), f'for entry {i:d}')
 
-                gd_mock.assert_called_with('riptide_lib')
+                gd_mock.assert_called_with('riptide-lib')
             i += 1
