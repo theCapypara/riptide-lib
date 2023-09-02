@@ -1,6 +1,6 @@
 from typing import Generator, Tuple
 
-import pkg_resources
+from importlib.metadata import entry_points
 
 from riptide.engine.abstract import AbstractEngine
 from riptide.engine.loader import ENGINE_ENTRYPOINT_KEY
@@ -15,11 +15,11 @@ def load_engines() -> Generator[Tuple[str, AbstractEngine, AbstractEngineTester]
     # Collect testers
     engine_testers = {
         entry_point.name:
-            entry_point.load() for entry_point in pkg_resources.iter_entry_points(ENGINE_TESTER_ENTRYPOINT_KEY)
+            entry_point.load() for entry_point in entry_points(group=ENGINE_TESTER_ENTRYPOINT_KEY)
     }
 
     # Iterate engines
-    for engine_entry_point in pkg_resources.iter_entry_points(ENGINE_ENTRYPOINT_KEY):
+    for engine_entry_point in entry_points(group=ENGINE_ENTRYPOINT_KEY):
         if engine_entry_point.name not in engine_testers:
             print(f"WARNING: No engine tester found for {engine_entry_point.name}. Was not tested.")
             continue

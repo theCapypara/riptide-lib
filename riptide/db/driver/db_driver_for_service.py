@@ -1,7 +1,7 @@
 """Module to resolve database drivers for services"""
 from typing import Union, TYPE_CHECKING, Optional
 
-import pkg_resources
+from importlib.metadata import entry_points
 
 from riptide.db.driver.abstract import AbstractDbDriver
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ def get(service_data: Union['Service', dict], service: Optional['Service'] = Non
         service = service_data
     drivers = {
         entry_point.name:
-            entry_point.load() for entry_point in pkg_resources.iter_entry_points(DB_DRIVER_ENTRYPOINT_KEY)
+            entry_point.load() for entry_point in entry_points(group=DB_DRIVER_ENTRYPOINT_KEY)
     }
 
     if service_data["driver"]["name"] in drivers:

@@ -1,4 +1,4 @@
-import pkg_resources
+from importlib.metadata import entry_points
 
 from riptide.plugin.loader import load_plugins
 
@@ -10,7 +10,7 @@ def load_engine(engine_name):
     # Look up package entrypoints for engines
     engines = {
         entry_point.name:
-            entry_point.load() for entry_point in pkg_resources.iter_entry_points(ENGINE_ENTRYPOINT_KEY)
+            entry_point.load() for entry_point in entry_points(group=ENGINE_ENTRYPOINT_KEY)
     }
     if engine_name in engines:
         instance = engines[engine_name]()
