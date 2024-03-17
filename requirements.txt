@@ -7,4 +7,4 @@ psutil==5.9.6
 GitPython==3.1.42
 pywinpty==2.0.12; sys_platform == 'win32'
 python-hosts==1.0.5
-python-dotenv==1.0.0
+python-dotenv==1.0.1
