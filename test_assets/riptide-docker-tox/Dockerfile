@@ -22,11 +22,13 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         python3.9 python3.9-dev libpython3.9-dev libpython3.9-stdlib python3.9-distutils \
         python3.10 python3.10-dev libpython3.10-dev libpython3.10-stdlib python3.10-distutils \
         python3.11 python3.11-dev libpython3.11-dev libpython3.11-stdlib python3.11-distutils \
+        python3.12 python3.12-dev libpython3.12-dev libpython3.12-stdlib python3.12-distutils \
     && curl -fSL "https://bootstrap.pypa.io/get-pip.py" -o get-pip.py \
     && python3.8 get-pip.py \
     && python3.9 get-pip.py \
     && python3.10 get-pip.py \
     && python3.11 get-pip.py \
+    && python3.12 get-pip.py \
     && rm get-pip.py \
     && rm -rf /var/lib/apt/lists/*
 
