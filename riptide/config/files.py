@@ -6,8 +6,14 @@ Also provides some utility file-related functions.
 """
 import os
 import atexit
-import importlib.resources
 import re
+import sys
+
+if sys.version_info < (3, 11):
+    import pkg_resources
+else:
+    import importlib.resources
+
 from appdirs import user_config_dir
 from contextlib import ExitStack
 
@@ -54,11 +60,14 @@ def discover_project_file() -> Optional[str]:
 
 def riptide_assets_dir() -> str:
     """ Path to the assets directory of riptide_lib. """
-    file_manager = ExitStack()
-    atexit.register(file_manager.close)
-    ref = importlib.resources.files('riptide') / 'assets'
-    path = file_manager.enter_context(importlib.resources.as_file(ref))
-    return path
+    if sys.version_info < (3, 11):
+        return pkg_resources.resource_filename('riptide', 'assets')
+    else:
+        file_manager = ExitStack()
+        atexit.register(file_manager.close)
+        ref = importlib.resources.files('riptide') / 'assets'
+        path = file_manager.enter_context(importlib.resources.as_file(ref))
+        return path
 
 
 def riptide_main_config_file() -> str:
