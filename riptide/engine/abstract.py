@@ -3,8 +3,6 @@ import shutil
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict, Union, List, Optional
 
-from distutils.dir_util import copy_tree
-
 from riptide.config.files import path_in_project
 from riptide.engine.results import StartStopResultStep, MultiResultQueue
 
@@ -296,7 +294,7 @@ class AbstractEngine(ABC):
         if os.path.isfile(fromm):
             shutil.copy2(fromm, to)
         else:
-            copy_tree(fromm, to)
+            shutil.copytree(fromm, to, dirs_exist_ok=True)
 
     @abstractmethod
     def performance_value_for_auto(self, key: str, platform: str) -> bool:
