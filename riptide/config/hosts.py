@@ -23,9 +23,12 @@ def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
     :param system_config: System configuration
     """
 
-    if system_config["update_hosts_file"]:
+    if system_config["update_hosts_file"] is not False:
         if "project" in system_config:
-            hosts = Hosts()
+            if isinstance(system_config["update_hosts_file"], str):
+                hosts = Hosts(system_config["update_hosts_file"])
+            else:
+                hosts = Hosts()
             new_entries = []
             changes = False
 
