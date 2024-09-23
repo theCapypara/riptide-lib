@@ -1,8 +1,10 @@
-__version__ = '0.8.2'
-from setuptools import setup, find_packages
+__version__ = '0.9.0'
 
 # README read-in
 from os import path
+
+from setuptools import setup, find_packages
+
 this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
@@ -39,5 +41,6 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
     ],
 )
