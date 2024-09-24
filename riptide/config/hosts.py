@@ -1,10 +1,11 @@
 """Management of hosts-file entries for project services"""
+import platform
+
 from python_hosts import Hosts, HostsEntry
 from python_hosts.exception import UnableToWriteHosts
 
 from riptide.config.document.config import Config
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
-
 
 IGNORE_LOCAL_HOSTNAMES = [
     "localhost", "localhost.localdomain"
@@ -23,9 +24,17 @@ def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
     :param system_config: System configuration
     """
 
-    if system_config["update_hosts_file"]:
+    if system_config["update_hosts_file"] is not False:
         if "project" in system_config:
-            hosts = Hosts()
+            if isinstance(system_config["update_hosts_file"], str):
+                hosts = Hosts(system_config["update_hosts_file"])
+            else:
+                if platform.system() == "Darwin":
+                    hosts = Hosts("/private/etc/hosts")
+                elif platform.system() == "Windows":
+                    hosts = Hosts(r"C:\Windows\System32\Drivers\etc\hosts")
+                else:
+                    hosts = Hosts()
             new_entries = []
             changes = False
 
@@ -50,10 +59,11 @@ def update_hosts_file(system_config: Config, warning_callback=lambda msg: None):
                     hosts.write()
                 except UnableToWriteHosts:
                     entries = "\n".join([f"{e.address}\t{e.names[0]}" for e in new_entries])
-                    warning_callback(f"Could not update the hosts-file ({hosts.hosts_path}) to configure proxy server routing.\n"
-                                     f"> Give your user permission to edit this file, to remove this warning.\n"
-                                     f"> If you wish to manually add the entries instead, "
-                                     f"add the following entries to {hosts.hosts_path}:\n{entries}\n")
+                    warning_callback(
+                        f"Could not update the hosts-file ({hosts.path}) to configure proxy server routing.\n"
+                        f"> Give your user permission to edit this file, to remove this warning.\n"
+                        f"> If you wish to manually add the entries instead, "
+                        f"add the following entries to {hosts.path}:\n{entries}\n")
 
 
 def get_localhost_hosts():

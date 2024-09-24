@@ -1,13 +1,12 @@
-from collections import OrderedDict
-
 import os
+from collections import OrderedDict
 from pathlib import PurePosixPath
-
-from dotenv import dotenv_values
-from schema import Schema, Optional, Or
 from typing import TYPE_CHECKING, Union
 
 from configcrunch import variable_helper
+from dotenv import dotenv_values
+from schema import Schema, Optional, Or
+
 from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
 from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH
 from riptide.config.service.config_files import process_config
@@ -17,7 +16,6 @@ from riptide.lib.cross_platform import cppath
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
     from riptide.config.document.app import App
-
 
 HEADER = 'command'
 KEY_IDENTIFIER_IN_SERVICE_COMMAND = 'in_service_with_role'
@@ -30,6 +28,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
     Placed inside an :class:`riptide.config.document.app.App`.
 
     """
+
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -273,7 +272,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
                         services_already_checked.append(service)
                         for config_name, config in service["config"].items():
                             force_recreate = False
-                            if "force_recreate" in service["config"][config_name] and service["config"][config_name]["force_recreate"]:
+                            if "force_recreate" in service["config"][config_name] and service["config"][config_name][
+                                "force_recreate"]:
                                 force_recreate = True
                             bind_path = str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"])))
                             process_config(volumes, config_name, config, service, bind_path, regenerate=force_recreate)
@@ -308,7 +308,23 @@ class Command(ContainerDefinitionYamlConfigDocument):
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
         env = os.environ.copy()
-        keys_to_remove = {"PATH", "PS1", "USERNAME", "PWD", "SHELL", "HOME", "TMPDIR"}.intersection(set(env.keys()))
+        keys_to_remove = {
+            "PATH",
+            "PS1",
+            "USER",
+            "USERNAME",
+            "PWD",
+            "SHELL",
+            "HOME",
+            "TMPDIR",
+            "XDG_CACHE_HOME",
+            "XDG_CONFIG_DIRS",
+            "XDG_CONFIG_HOME",
+            "XDG_DATA_DIRS",
+            "XDG_DATA_HOME",
+            "XDG_RUNTIME_DIR",
+            "XDG_STATE_HOME"
+        }.intersection(set(env.keys()))
         for key in keys_to_remove:
             del env[key]
 
@@ -395,6 +411,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
                     host: '/home/peter/my_projects/project1/_riptide/cmd_data/command_name/command_cache'
                     container: '/foo/bar/cache'
         """
-        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data', self.internal_get("$name"))
+        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data',
+                            self.internal_get("$name"))
         os.makedirs(path, exist_ok=True)
         return path

@@ -64,9 +64,12 @@ class Config(YamlConfigDocument):
             List of URLs to Git repositories containing
             `Riptide Repositories </config_docs/using_repo/how_repositories.html>`_.
 
-        update_hosts_file: bool
+        update_hosts_file: Or[bool,str]
             Whether or not Riptide should automatically update the
             `system's host file </user_docs/3_installing.html#resolving-hostnames-permissions-for-the-etc-hosts-file>`_.
+
+            This may be set to string, in which case the string must be a path to a hosts file to update. If it
+            is set to `true`, the system's default hosts file is updated.
 
         [project]: :class:`~riptide.config.document.project.Project`
             If a project is loaded, Riptide inserts the project here. Do not manually insert a project
@@ -143,7 +146,7 @@ class Config(YamlConfigDocument):
                     Optional('compression'): bool,
                     Optional('autoexit'): int  # TODO: Not used, deprecated.
                 },
-                'update_hosts_file': bool,
+                'update_hosts_file': Or(bool, str),
                 'engine': str,
                 'repos': [str],
                 Optional('project'): DocReference(Project),  # Added and overwritten by system
