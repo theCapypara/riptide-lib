@@ -1,19 +1,16 @@
 import warnings
 from collections import OrderedDict
 
-from typing import List
-
+from configcrunch import ConfigcrunchError
+from configcrunch import variable_helper
 from dotenv import dotenv_values
 from schema import Schema, Optional, Or
 
-from configcrunch import YamlConfigDocument, ConfigcrunchError
-from configcrunch import variable_helper
 from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
 from riptide.config.errors import RiptideDeprecationWarning
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.config.service.config_files import *
 from riptide.config.service.logging import *
-
 # todo: validate actual schema values -> better schema | ALL documents
 from riptide.config.service.ports import get_additional_port
 from riptide.config.service.volumes import process_additional_volumes
@@ -262,7 +259,6 @@ class Service(ContainerDefinitionYamlConfigDocument):
             or image default. Default is 'auto' which means the value of `run_as_current_user`
             will be used.
 
-
         [allow_full_memlock]: bool
             Whether to set memlock ulimit to -1:-1 (soft:hard).
             This is required for some database services, such as Elasticsearch.
@@ -273,6 +269,13 @@ class Service(ContainerDefinitionYamlConfigDocument):
         [read_env_file]: bool
             If enabled, read the environment variables in the env-files defined in the project (``env_files``).
             Default: True
+
+        [ignore_original_entrypoint]: bool
+            If true, Riptide will not run the original entrypoint of the OCI image, but instead run the
+            command directly, as if no entrypoint was defined in the image.
+            Note that engines might ignore this setting, if they don't support it.
+
+            Default: False
 
         **Example Document:**
 
@@ -344,7 +347,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 Optional('config'): {
                     str: {
                         'from': str,
-                        '$source': str,  # Path to the document that "from" references. Is added durinng loading of service
+                        '$source': str,
+                        # Path to the document that "from" references. Is added durinng loading of service
                         'to': str,
                         Optional('force_recreate'): bool
                     }
@@ -383,7 +387,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
                     'name': str,
                     'config': any  # defined by driver
                 },
-                Optional('read_env_file'): bool
+                Optional('read_env_file'): bool,
+                Optional('ignore_original_entrypoint'): bool
             }
         )
 
@@ -426,6 +431,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         if "read_env_file" not in data:
             data["read_env_file"] = True
+
+        if "ignore_original_entrypoint" not in data:
+            data["ignore_original_entrypoint"] = False
 
         if "additional_subdomains" not in data:
             data["additional_subdomains"] = []
@@ -736,8 +744,10 @@ class Service(ContainerDefinitionYamlConfigDocument):
             something: 'https://project--service.riptide.local'
         """
         if "main" in self.internal_get("roles"):
-            return self.get_project().internal_get("name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
-        return self.get_project().internal_get("name") + DOMAIN_PROJECT_SERVICE_SEP + self.internal_get("$name") + "." + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
+            return self.get_project().internal_get("name") + "." + \
+                self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
+        return self.get_project().internal_get("name") + DOMAIN_PROJECT_SERVICE_SEP + self.internal_get("$name") + "." + \
+            self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
 
     @variable_helper
     def additional_domains(self) -> Dict[str, str]:
@@ -760,7 +770,9 @@ class Service(ContainerDefinitionYamlConfigDocument):
               second: 'https://seccond.project--service.riptide.local'
         """
         if "main" in self.internal_get("roles"):
-            return {subdomain: f'{subdomain}.{self.get_project().internal_get("name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
-                    for subdomain in self.internal_get("additional_subdomains")}
-        return {subdomain: f'{subdomain}.{self.get_project().internal_get("name")}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get("$name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
+            return {
+                subdomain: f'{subdomain}.{self.get_project().internal_get("name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
                 for subdomain in self.internal_get("additional_subdomains")}
+        return {
+            subdomain: f'{subdomain}.{self.get_project().internal_get("name")}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get("$name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
+            for subdomain in self.internal_get("additional_subdomains")}

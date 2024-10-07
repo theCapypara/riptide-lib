@@ -168,6 +168,13 @@ class Command(ContainerDefinitionYamlConfigDocument):
             If enabled, the container uses network mode `host`. Overrides network and port settings
             Default: False
 
+        [ignore_original_entrypoint]: bool
+            If true, Riptide will not run the original entrypoint of the OCI image, but instead run the
+            command directly, as if no entrypoint was defined in the image.
+            Note that engines might ignore this setting, if they don't support it.
+
+            Default: False
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -185,6 +192,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
             Optional('environment'): {str: str},
             Optional('read_env_file'): bool,
             Optional('use_host_network'): bool,
+            Optional('ignore_original_entrypoint'): bool
         })
 
     @classmethod
@@ -215,6 +223,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         if "read_env_file" not in self:
             data["read_env_file"] = True
+
+        if "ignore_original_entrypoint" not in data:
+            data["ignore_original_entrypoint"] = False
         return data
 
     def get_project(self) -> 'Project':
