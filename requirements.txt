@@ -3,8 +3,8 @@ pyyaml==6.0.2
 configcrunch==1.1.0.post1
 appdirs==1.4.4
 janus==1.0.0
-psutil==6.0.0
-GitPython==3.1.43
-pywinpty==2.0.13; sys_platform == 'win32'
+psutil==7.0.0
+GitPython==3.1.44
+pywinpty==2.0.15; sys_platform == 'win32'
 python-hosts==1.0.7
-python-dotenv==1.0.1
+python-dotenv==1.1.0
