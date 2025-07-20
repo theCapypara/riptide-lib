@@ -12,7 +12,7 @@ class AbstractPlugin(ABC):
     A Riptide plugin extends the functionality of Riptide.
 
     For this it can:
-    
+
     - Add new CLI commands to riptide-cli.
     - Set flags, which can be retrieved from the configuration using a variable helper
     - Directly read and modify all parts of the configuration entities loaded.
@@ -31,11 +31,11 @@ class AbstractPlugin(ABC):
         """
 
     @abstractmethod
-    def after_reload_config(self, config: 'Config'):
+    def after_reload_config(self, config: "Config"):
         """Called whenever a project is loaded or if the initial configuration is loaded without a project."""
 
     @abstractmethod
-    def get_flag_value(self, config: 'Config', flag_name: str) -> any:
+    def get_flag_value(self, config: "Config", flag_name: str) -> any:
         """
         Return the value of a requested plugin flag. Return False if not defined.
         The current config is passed, to give a context about the calling project.

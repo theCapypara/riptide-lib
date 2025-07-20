@@ -4,6 +4,7 @@ performance option.
 
 Assumes database environments are stored as named volumes by the engine.
 """
+
 from typing import TYPE_CHECKING
 
 from riptide.db.impl import AbstractDbEnvImpl
@@ -16,10 +17,10 @@ class NamedVolumeDbEnvImpl(AbstractDbEnvImpl):
     def list(self):
         """Lists the names of all available database environments."""
         prefix = self.named_volume_prefix_for(self.env)
-        list = [nv[len(prefix):] for nv in self.env.engine.list_named_volumes() if nv.startswith(prefix)]
+        list = [nv[len(prefix) :] for nv in self.env.engine.list_named_volumes() if nv.startswith(prefix)]
         # if the list is empty, still add default.
         if len(list) < 1:
-            return ['default']
+            return ["default"]
         return list
 
     def delete(self, name: str):
@@ -42,11 +43,11 @@ class NamedVolumeDbEnvImpl(AbstractDbEnvImpl):
         )
 
     @classmethod
-    def named_volume_for_db_data(cls, db_env: 'DbEnvironments', env_name: str):
+    def named_volume_for_db_data(cls, db_env: "DbEnvironments", env_name: str):
         """Returns the name of the named volume for this database environment"""
-        return f'{cls.named_volume_prefix_for(db_env)}{env_name}'
+        return f"{cls.named_volume_prefix_for(db_env)}{env_name}"
 
     @staticmethod
-    def named_volume_prefix_for(db_env: 'DbEnvironments'):
+    def named_volume_prefix_for(db_env: "DbEnvironments"):
         driver_name = db_env.db_service["driver"]["name"]
-        return f'{db_env.db_service.get_project()["name"]}__db_{driver_name}__'
+        return f"{db_env.db_service.get_project()['name']}__db_{driver_name}__"

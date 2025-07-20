@@ -7,7 +7,7 @@ from schema import Schema, Optional
 from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, variable_helper, REMOVE
 from riptide.config.document.app import App
 
-HEADER = 'project'
+HEADER = "project"
 
 if TYPE_CHECKING:
     from riptide.config.document.config import Config
@@ -19,6 +19,7 @@ class Project(YamlConfigDocument):
     Has an :class:`riptide.config.document.app.App` in it's ``app`` entry.
 
     """
+
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -71,34 +72,32 @@ class Project(YamlConfigDocument):
         """
         return Schema(
             {
-                Optional('$ref'): str,  # reference to other Project documents
-                Optional('$path'): str,  # Path to the project file, added by system after loading.
-                'name': str,
-                'src': str,
-                'app': DocReference(App),
-                Optional('links'): [str],
-                Optional('default_services'): [str],
-                Optional('env_files'): [str]
+                Optional("$ref"): str,  # reference to other Project documents
+                Optional("$path"): str,  # Path to the project file, added by system after loading.
+                "name": str,
+                "src": str,
+                "app": DocReference(App),
+                Optional("links"): [str],
+                Optional("default_services"): [str],
+                Optional("env_files"): [str],
             }
         )
 
     @classmethod
     def subdocuments(cls):
-        return [
-            ("app", App)
-        ]
+        return [("app", App)]
 
     def validate(self) -> bool:
         r = super().validate()
-        if '_' in self.internal_get('name'):
+        if "_" in self.internal_get("name"):
             raise ValueError("Project name is invalid: Must not contain underscores (_).")
         return r
 
     def _initialize_data_after_merge(self, data):
-        if 'links' not in data:
-            data['links'] = []
-        if 'env_files' not in data:
-            data['env_files'] = ["./.env"]
+        if "links" not in data:
+            data["links"] = []
+        if "env_files" not in data:
+            data["env_files"] = ["./.env"]
         return data
 
     def folder(self):
@@ -117,7 +116,7 @@ class Project(YamlConfigDocument):
         return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
-    def parent(self) -> 'Config':
+    def parent(self) -> "Config":
         """
         Returns the system configuration document.
 

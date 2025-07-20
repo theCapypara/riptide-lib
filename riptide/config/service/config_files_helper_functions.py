@@ -21,10 +21,12 @@ def read_file(config_file_path: str, file_to_read_in: str) -> str:
     absolute_file_to_read_in = os.path.realpath(os.path.join(config_file_dir, file_to_read_in))
     is_valid_subpath = absolute_file_to_read_in.startswith(config_file_dir + os.sep)
     if not is_valid_subpath:
-        raise ValueError(f"read_file: {file_to_read_in} must be a relative path to the config file {config_file_path} "
-                         f"and must not be in a parent directory.")
+        raise ValueError(
+            f"read_file: {file_to_read_in} must be a relative path to the config file {config_file_path} "
+            f"and must not be in a parent directory."
+        )
     if not os.path.exists(absolute_file_to_read_in):
         raise ValueError(f"read_file: File {absolute_file_to_read_in} not found.")
 
-    with open(absolute_file_to_read_in, 'r') as file:
+    with open(absolute_file_to_read_in, "r") as file:
         return file.read().strip()

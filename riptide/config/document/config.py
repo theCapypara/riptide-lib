@@ -12,7 +12,7 @@ from riptide.plugin.loader import load_plugins
 if TYPE_CHECKING:
     from riptide.engine.abstract import AbstractEngine
 
-HEADER = 'riptide'
+HEADER = "riptide"
 
 
 class Config(YamlConfigDocument):
@@ -24,6 +24,7 @@ class Config(YamlConfigDocument):
     the project must be inserted into the ``project`` key.
 
     """
+
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -135,26 +136,26 @@ class Config(YamlConfigDocument):
         """
         return Schema(
             {
-                'proxy': {
-                    'url': str,
-                    'ports': {
-                        'http': int,
-                        'https': Or(int, False)  # False disables HTTPS
+                "proxy": {
+                    "url": str,
+                    "ports": {
+                        "http": int,
+                        "https": Or(int, False),  # False disables HTTPS
                     },
-                    'autostart': bool,
-                    Optional('autostart_restrict'): [str],
-                    Optional('compression'): bool,
-                    Optional('autoexit'): int  # TODO: Not used, deprecated.
+                    "autostart": bool,
+                    Optional("autostart_restrict"): [str],
+                    Optional("compression"): bool,
+                    Optional("autoexit"): int,  # TODO: Not used, deprecated.
                 },
-                'update_hosts_file': Or(bool, str),
-                'engine': str,
-                'repos': [str],
-                Optional('project'): DocReference(Project),  # Added and overwritten by system
+                "update_hosts_file": Or(bool, str),
+                "engine": str,
+                "repos": [str],
+                Optional("project"): DocReference(Project),  # Added and overwritten by system
                 # Performance entries should be added by the system to the YAML file before validation if missing:
-                'performance': {
-                    'dont_sync_named_volumes_with_host': Or(bool, 'auto'),
-                    'dont_sync_unimportant_src': Or(bool, 'auto')
-                }
+                "performance": {
+                    "dont_sync_named_volumes_with_host": Or(bool, "auto"),
+                    "dont_sync_unimportant_src": Or(bool, "auto"),
+                },
             }
         )
 
@@ -192,7 +193,7 @@ class Config(YamlConfigDocument):
 
         :param inp: plugin-name.flag-name
         """
-        plugin_name_and_flag_name = inp.split('.', 1)
+        plugin_name_and_flag_name = inp.split(".", 1)
         all_plugins = load_plugins()
         if plugin_name_and_flag_name[0] in all_plugins:
             return load_plugins()[plugin_name_and_flag_name[0]].get_flag_value(self, plugin_name_and_flag_name[1])
@@ -216,8 +217,8 @@ class Config(YamlConfigDocument):
                 with open(riptide_main_config_file(), "w") as f:
                     f.write(yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False))
 
-    def load_performance_options(self, engine: 'AbstractEngine'):
+    def load_performance_options(self, engine: "AbstractEngine"):
         """Initializes performance options set to 'auto' based on the engine used."""
         for key, val in self.doc["performance"].items():
-            if val == 'auto':
+            if val == "auto":
                 self.doc["performance"][key] = engine.performance_value_for_auto(key, platform.system().lower())

@@ -1,4 +1,5 @@
 """Generic module to return all sorts of status information for services"""
+
 from typing import Dict, NamedTuple, Union, List
 
 from riptide.config.document.config import Config
@@ -45,22 +46,12 @@ def status_for(project: Project, engine: AbstractEngine, system_config: Config) 
                 for entry in service["additional_ports"].values():
                     port_host = get_existing_port_mapping(project, service, entry["host_start"])
                     if port_host:
-                        additional_ports.append(AdditionalPortsEntry(
-                            title=entry["title"],
-                            container=entry["container"],
-                            host=port_host
-                        ))
+                        additional_ports.append(
+                            AdditionalPortsEntry(title=entry["title"], container=entry["container"], host=port_host)
+                        )
 
-            status_dict[name] = StatusResult(
-                running=running,
-                web=proxy_url,
-                additional_ports=additional_ports
-            )
+            status_dict[name] = StatusResult(running=running, web=proxy_url, additional_ports=additional_ports)
         else:
-            status_dict[name] = StatusResult(
-                running=running,
-                web=None,
-                additional_ports=[]
-            )
+            status_dict[name] = StatusResult(running=running, web=None, additional_ports=[])
 
     return status_dict

@@ -15,6 +15,7 @@ class EndResultQueue(Exception):
     """
     Marks the end of a ResultQueue.
     """
+
     pass
 
 
@@ -23,13 +24,18 @@ class ResultError(EndResultQueue):
     Marks the end of a ResultQueue and signals an error.
     Is raised if a result queue was ended with an error.
     """
-    def __init__(self, message: str, details: str = None, cause: Exception = None, *args: object, **kwargs: object) -> None:
+
+    def __init__(
+        self, message: str, details: str = None, cause: Exception = None, *args: object, **kwargs: object
+    ) -> None:
         self.message = message
         self.details = details
         self.cause = cause
         self.traceback_string = "Unknown reason."
         if cause:
-            self.traceback_string = "".join(traceback.format_exception(type(cause), value=cause, tb=cause.__traceback__))
+            self.traceback_string = "".join(
+                traceback.format_exception(type(cause), value=cause, tb=cause.__traceback__)
+            )
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -46,7 +52,7 @@ class ResultPoisoned(InterruptedError, ResultError):
     pass
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ResultQueue(Generic[T]):
@@ -69,6 +75,7 @@ class ResultQueue(Generic[T]):
 
     Queue can be ended with an error (ResultError), which will be raised when reading over it.
     """
+
     __opened_instances = []
 
     poisoned = False
@@ -133,6 +140,7 @@ class ResultQueue(Generic[T]):
                 raise end
             raise StopAsyncIteration
         return top
+
     pass
 
 
@@ -205,7 +213,7 @@ class MultiResultQueue(Generic[T]):
                 result = (self.dict_of_queues[queue], done.exception(), True)
             elif isinstance(done.exception(), EndResultQueue):
                 # Provide end value for queue
-                result = (self.dict_of_queues[queue], None,             True)
+                result = (self.dict_of_queues[queue], None, True)
             else:
                 raise done.exception()
         else:

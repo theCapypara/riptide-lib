@@ -13,8 +13,7 @@ class DbImportExport(Exception):
 
 
 class AbstractDbDriver(ABC):
-
-    def __init__(self, service: 'Service'):
+    def __init__(self, service: "Service"):
         self.service = service
 
     @abstractmethod

@@ -2,6 +2,7 @@
 'Cross-platform' uid/gid retreival.
 TODO: It's not actually cross-plarform. Under Windows it just returns 0 (root; default mapping for volumes).
 """
+
 import os
 
 FALLBACK_ID = 0

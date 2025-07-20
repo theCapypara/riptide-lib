@@ -1,4 +1,5 @@
 """Functions for switching the current database environment"""
+
 import json
 import os
 from typing import TYPE_CHECKING
@@ -11,16 +12,16 @@ if TYPE_CHECKING:
     from riptide.config.document.project import Project
     from riptide.config.document.service import Service
 
-CONFIG_DBENV = 'env'
-CONFIG_DBENV__DEFAULT = 'default'
+CONFIG_DBENV = "env"
+CONFIG_DBENV__DEFAULT = "default"
 
-DB_DRIVER_CONFIG_NAME = '.db.json'
+DB_DRIVER_CONFIG_NAME = ".db.json"
 
 
 class DbEnvironments:
     """Manage database environments for a given project"""
 
-    def __init__(self, project: 'Project', engine: 'AbstractEngine'):
+    def __init__(self, project: "Project", engine: "AbstractEngine"):
         self.project = project
 
         # Find and assign db service
@@ -39,27 +40,23 @@ class DbEnvironments:
             self.impl = DataDirectoryDbEnvImpl(self)
 
     @staticmethod
-    def has_db(project: 'Project'):
+    def has_db(project: "Project"):
         """Returns whether or not this project has a database to manage"""
         return DbEnvironments(project, None).db_service is not None
 
     @staticmethod
-    def get_volume_configuration_for_driver(container_bind_path: str, service: 'Service'):
+    def get_volume_configuration_for_driver(container_bind_path: str, service: "Service"):
         """
         Returns the volume configuration (collect_volumes format) for use by a DB driver, to collect service volume for data.
         """
         instance = DbEnvironments(service.get_project(), None)
         host_path = DataDirectoryDbEnvImpl.path_for_db_data(instance)
         named_volume = NamedVolumeDbEnvImpl.named_volume_for_db_data(instance, instance.currently_selected_name())
-        return {host_path: {
-            'bind': container_bind_path,
-            'mode': 'rw',
-            'name': named_volume
-        }}
+        return {host_path: {"bind": container_bind_path, "mode": "rw", "name": named_volume}}
 
     def currently_selected_name(self):
         """Returns the name of the currently selected environment."""
-        return self.config['env']
+        return self.config["env"]
 
     def list(self):
         """
@@ -119,12 +116,10 @@ class DbEnvironments:
         path = self._get_configuration_path()
         if not os.path.exists(path):
             # Defaults
-            return {
-                CONFIG_DBENV: CONFIG_DBENV__DEFAULT
-            }
-        with open(path, 'r') as fp:
+            return {CONFIG_DBENV: CONFIG_DBENV__DEFAULT}
+        with open(path, "r") as fp:
             return json.load(fp)
 
     def _write_configuration(self):
-        with open(self._get_configuration_path(), 'w') as fp:
+        with open(self._get_configuration_path(), "w") as fp:
             return json.dump(self.config, fp)

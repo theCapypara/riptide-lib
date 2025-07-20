@@ -4,6 +4,7 @@ performance option.
 
 Assumes database environments are stored in directories under _riptide/data/<service_name>/env
 """
+
 import os
 from typing import TYPE_CHECKING
 
@@ -19,7 +20,7 @@ class DataDirectoryDbEnvImpl(AbstractDbEnvImpl):
         """Lists the names of all available database environments."""
         from riptide.db.environments import CONFIG_DBENV__DEFAULT
 
-        dir = os.path.join(self.env.db_service.volume_path(), 'env')
+        dir = os.path.join(self.env.db_service.volume_path(), "env")
         if not os.path.exists(dir):
             return [CONFIG_DBENV__DEFAULT]
 
@@ -44,7 +45,7 @@ class DataDirectoryDbEnvImpl(AbstractDbEnvImpl):
         return os.path.exists(self._path_to_env(self.env.db_service, name))
 
     @classmethod
-    def path_for_db_data(cls, db_env: 'DbEnvironments'):
+    def path_for_db_data(cls, db_env: "DbEnvironments"):
         """
         Path to the current database data directory for the currently active environment.
         If folder does not exist, create.
@@ -54,6 +55,6 @@ class DataDirectoryDbEnvImpl(AbstractDbEnvImpl):
         return path
 
     @staticmethod
-    def _path_to_env(service: 'Service', env_name: str):
+    def _path_to_env(service: "Service", env_name: str):
         """Path to the database data directory for environment 'name'."""
-        return os.path.join(service.volume_path(), 'env', env_name)
+        return os.path.join(service.volume_path(), "env", env_name)

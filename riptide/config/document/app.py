@@ -9,7 +9,7 @@ from riptide.config.document.service import Service
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
 
-HEADER = 'app'
+HEADER = "app"
 
 
 class App(YamlConfigDocument):
@@ -20,6 +20,7 @@ class App(YamlConfigDocument):
     and (multiple) :class:`riptide.config.document.command.Command`
     and is usually included in a :class:`riptide.config.document.project.Project`.
     """
+
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -97,25 +98,13 @@ class App(YamlConfigDocument):
         """
         return Schema(
             {
-                Optional('$ref'): str,  # reference to other App documents
-                'name': str,
-                Optional('notices'): {
-                    Optional('usage'): str,
-                    Optional('installation'): str
-                },
-                Optional('import'): {
-                    str: {
-                        'target': str,
-                        'name': str
-                    }
-                },
-                Optional('services'): {
-                    str: DocReference(Service)
-                },
-                Optional('commands'): {
-                    str: DocReference(Command)
-                },
-                Optional('unimportant_paths'): [str]
+                Optional("$ref"): str,  # reference to other App documents
+                "name": str,
+                Optional("notices"): {Optional("usage"): str, Optional("installation"): str},
+                Optional("import"): {str: {"target": str, "name": str}},
+                Optional("services"): {str: DocReference(Service)},
+                Optional("commands"): {str: DocReference(Command)},
+                Optional("unimportant_paths"): [str],
             }
         )
 
@@ -143,7 +132,7 @@ class App(YamlConfigDocument):
         return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
-    def parent(self) -> 'Project':
+    def parent(self) -> "Project":
         """
         Returns the project that this app belongs to.
 

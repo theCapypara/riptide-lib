@@ -1,4 +1,5 @@
 """Loads projects for integration tests"""
+
 import inspect
 import os
 import shutil
@@ -29,10 +30,9 @@ class ProjectLoadResult(NamedTuple):
     temp_system_dir: str
 
 
-def load(testsuite,
-         project_file_names: List[str],
-         srcs: List[str],
-         config_file_name='valid.yml') -> Generator[ContextManager[ProjectLoadResult], None, None]:
+def load(
+    testsuite, project_file_names: List[str], srcs: List[str], config_file_name="valid.yml"
+) -> Generator[ContextManager[ProjectLoadResult], None, None]:
     """
     Generator that returns context managers
 
@@ -60,25 +60,35 @@ def load(testsuite,
     caller_name = calframe[1][3]
 
     with mock.patch("riptide.config.loader.repositories.collect", return_value=[get_fixture_paths()]):
-        for (engine_name, engine, engine_tester) in load_engines():
+        for engine_name, engine, engine_tester in load_engines():
             for src in srcs:
                 for project_name in project_file_names:
                     # Create temporary config directory
                     with TemporaryDirectory() as config_directory:
                         with mock.patch("riptide.config.files.user_config_dir", return_value=config_directory):
                             # Copy system config file
-                            shutil.copy2(get_fixture_path('config' + os.sep + config_file_name), os.path.join(config_directory, 'config.yml'))
+                            shutil.copy2(
+                                get_fixture_path("config" + os.sep + config_file_name),
+                                os.path.join(config_directory, "config.yml"),
+                            )
                             # Create temporary project directory
                             with TemporaryDirectory() as project_directory:
                                 # Copy project file
-                                shutil.copy2(get_fixture_path('project' + os.sep + project_name), os.path.join(project_directory, 'riptide.yml'))
+                                shutil.copy2(
+                                    get_fixture_path("project" + os.sep + project_name),
+                                    os.path.join(project_directory, "riptide.yml"),
+                                )
 
-                                name = (caller_name + '--' + project_name + '--' + engine_name + '--' + src)
+                                name = caller_name + "--" + project_name + "--" + engine_name + "--" + src
 
                                 @contextmanager
                                 def ctx_manager() -> ContextManager[ProjectLoadResult]:
                                     # replace dots with _, PyCharm seems to have parsing issues with .
-                                    with testsuite.subTest(project=project_name.replace('.', '_'), src=src.replace('.', '_'), engine=engine_name):
+                                    with testsuite.subTest(
+                                        project=project_name.replace(".", "_"),
+                                        src=src.replace(".", "_"),
+                                        engine=engine_name,
+                                    ):
                                         old_dir = os.getcwd()
                                         try:
                                             os.chdir(project_directory)
@@ -103,7 +113,7 @@ def load(testsuite,
                                                 engine=engine,
                                                 engine_tester=engine_tester,
                                                 temp_dir=project_directory,
-                                                temp_system_dir=config_directory
+                                                temp_system_dir=config_directory,
                                             )
                                         finally:
                                             os.chdir(old_dir)

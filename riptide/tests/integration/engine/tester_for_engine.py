@@ -10,6 +10,7 @@ Example:
         [riptide.engine.tests]
         docker=riptide_engine_docker.tests.integration.tester:DockerEngineTester
 """
+
 import abc
 from typing import Tuple, Union
 
@@ -36,7 +37,9 @@ class AbstractEngineTester(abc.ABC):
         """Check that the services are actually non present"""
 
     @abc.abstractmethod
-    def get_permissions_at(self, path, engine_obj, project, service, write_check=True, is_directory=True, as_user=0) -> Tuple[int, int, int, bool]:
+    def get_permissions_at(
+        self, path, engine_obj, project, service, write_check=True, is_directory=True, as_user=0
+    ) -> Tuple[int, int, int, bool]:
         """
         Returns for path the owner, group and octal mode as tuple.
         if write_check and is_directory=True:
@@ -62,7 +65,7 @@ class AbstractEngineTester(abc.ABC):
         """
 
     @abc.abstractmethod
-    def assert_file_exists(self, file, engine, project, service, type='both'):
+    def assert_file_exists(self, file, engine, project, service, type="both"):
         """
         Assert that a file or directory at the given path exists
         :type type: str file, dirctory or both

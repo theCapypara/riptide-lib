@@ -1,6 +1,7 @@
 """
 Functions for processing ``config`` entries in :class:`riptide.config.document.service.Service` objects
 """
+
 import os
 from functools import partial
 from typing import TYPE_CHECKING, Dict
@@ -11,11 +12,11 @@ from riptide.config.service.config_files_helper_functions import read_file
 if TYPE_CHECKING:
     from riptide.config.document.service import Service
 
-FOLDER_FOR_PROCESSED_CONFIG = 'processed_config'
+FOLDER_FOR_PROCESSED_CONFIG = "processed_config"
 
 
 def process_config(
-        volumes: Dict, config_name: str, config: dict, service: 'Service', bind_path: str, regenerate=True
+    volumes: Dict, config_name: str, config: dict, service: "Service", bind_path: str, regenerate=True
 ) -> None:
     """
     Processes the config file for the given project.
@@ -47,7 +48,7 @@ def process_config(
             f"setting for the 'config' entries."
         )
 
-    is_in_source_path = bind_path.startswith('/src/') and 'roles' in service and 'src' in service['roles']
+    is_in_source_path = bind_path.startswith("/src/") and "roles" in service and "src" in service["roles"]
 
     target_file = get_config_file_path(config_name, service, is_in_source_path, bind_path)
     if regenerate or not os.path.exists(target_file):
@@ -55,38 +56,36 @@ def process_config(
         read_file_partial = partial(read_file, config["$source"])
         read_file_partial.__name__ = read_file.__name__
 
-        with open(config["$source"], 'r') as stream:
-            processed_file = service.process_vars_for(stream.read(), [
-                read_file_partial
-            ])
+        with open(config["$source"], "r") as stream:
+            processed_file = service.process_vars_for(stream.read(), [read_file_partial])
 
         if is_in_source_path:
-            notice_file = target_file + '.riptide_info.txt'
+            notice_file = target_file + ".riptide_info.txt"
             if not os.path.isfile(notice_file):
-                with open(notice_file, 'w') as f:
-                    f.writelines([
-                        f'The file {os.path.basename(target_file)} was created by Riptide. Do not modify it.\n'
-                        f'It will automatically be re-generated if you restart the project.\n'
-                        f'Please add this file and {os.path.basename(target_file)} to the ignore file of your VCS.\n\n'
-                        f'The {os.path.basename(target_file)} is based on a template file, which you can find here:\n'
-                        f'   {config["$source"]}\n\n'
-                        f'Please have a look at the documentation if you want to use a different template file (Schema for '
-                        f'Services, entry "config").'
-                    ])
+                with open(notice_file, "w") as f:
+                    f.writelines(
+                        [
+                            f"The file {os.path.basename(target_file)} was created by Riptide. Do not modify it.\n"
+                            f"It will automatically be re-generated if you restart the project.\n"
+                            f"Please add this file and {os.path.basename(target_file)} to the ignore file of your VCS.\n\n"
+                            f"The {os.path.basename(target_file)} is based on a template file, which you can find here:\n"
+                            f"   {config['$source']}\n\n"
+                            f"Please have a look at the documentation if you want to use a different template file (Schema for "
+                            f'Services, entry "config").'
+                        ]
+                    )
 
         os.makedirs(os.path.dirname(target_file), exist_ok=True)
 
-        with open(target_file, 'w') as f:
+        with open(target_file, "w") as f:
             f.write(processed_file)
 
     # Only add a volume if needed
     if not is_in_source_path:
-        volumes[target_file] = {
-           'bind': bind_path, 'mode': 'rw'
-        }
+        volumes[target_file] = {"bind": bind_path, "mode": "rw"}
 
 
-def get_config_file_path(config_name: str, service: 'Service', is_in_source_path: bool, bind_path: str) -> str:
+def get_config_file_path(config_name: str, service: "Service", is_in_source_path: bool, bind_path: str) -> str:
     """
     Returns the path to the processed configuration file for a service.
 
@@ -96,18 +95,13 @@ def get_config_file_path(config_name: str, service: 'Service', is_in_source_path
     """
     if is_in_source_path:
         # FILE INSIDE SOURCE: Copy to src!
-        return os.path.join(service.get_project().src_folder(), bind_path[len('/str/'):])
+        return os.path.join(service.get_project().src_folder(), bind_path[len("/str/") :])
     else:
         # FILE IN _RIPTIDE:
         project = service.get_project()
         processed_config_folder = os.path.join(
-            get_project_meta_folder(project.folder()),
-            FOLDER_FOR_PROCESSED_CONFIG,
-            service["$name"]
+            get_project_meta_folder(project.folder()), FOLDER_FOR_PROCESSED_CONFIG, service["$name"]
         )
-        target_file = os.path.join(
-            processed_config_folder,
-            remove_all_special_chars(config_name)
-        )
+        target_file = os.path.join(processed_config_folder, remove_all_special_chars(config_name))
 
         return target_file

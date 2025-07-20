@@ -7,7 +7,7 @@ else:
 
 from riptide.plugin.loader import load_plugins
 
-ENGINE_ENTRYPOINT_KEY = 'riptide.engine'
+ENGINE_ENTRYPOINT_KEY = "riptide.engine"
 
 
 def load_engine(engine_name):
@@ -15,13 +15,12 @@ def load_engine(engine_name):
     # Look up package entrypoints for engines
     if sys.version_info < (3, 10):
         engines = {
-            entry_point.name:
-                entry_point.load() for entry_point in pkg_resources.iter_entry_points(ENGINE_ENTRYPOINT_KEY)
+            entry_point.name: entry_point.load()
+            for entry_point in pkg_resources.iter_entry_points(ENGINE_ENTRYPOINT_KEY)
         }
     else:
         engines = {
-            entry_point.name:
-                entry_point.load() for entry_point in entry_points().select(group=ENGINE_ENTRYPOINT_KEY)
+            entry_point.name: entry_point.load() for entry_point in entry_points().select(group=ENGINE_ENTRYPOINT_KEY)
         }
 
     if engine_name in engines:
