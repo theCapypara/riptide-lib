@@ -3,14 +3,14 @@ from __future__ import annotations
 import os
 import shutil
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Union, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from riptide.config.files import path_in_project
-from riptide.engine.results import StartStopResultStep, MultiResultQueue
+from riptide.engine.results import MultiResultQueue, StartStopResultStep
 
 if TYPE_CHECKING:
-    from riptide.config.document.project import Project
     from riptide.config.document.command import Command
+    from riptide.config.document.project import Project
     from riptide.config.document.service import Service
 
 
@@ -28,7 +28,7 @@ class ServiceStoppedException(BaseException):
 class AbstractEngine(ABC):
     @abstractmethod
     def start_project(
-        self, project: Project, services: List[str], quick=False, command_group: str = "default"
+        self, project: Project, services: list[str], quick=False, command_group: str = "default"
     ) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project.
@@ -54,7 +54,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def stop_project(self, project: Project, services: List[str]) -> MultiResultQueue[StartStopResultStep]:
+    def stop_project(self, project: Project, services: list[str]) -> MultiResultQueue[StartStopResultStep]:
         """
         Stops all services in the project
 
@@ -65,7 +65,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def status(self, project: Project) -> Dict[str, bool]:
+    def status(self, project: Project) -> dict[str, bool]:
         """
         Returns the status for the given project (whether services are started or not)
 
@@ -97,7 +97,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def address_for(self, project: Project, service_name: str) -> Union[None, Tuple[str, int]]:
+    def address_for(self, project: Project, service_name: str) -> Tuple[str, int] | None:
         """
         Returns the ip address and port of the host providing the service for project.
 
@@ -108,7 +108,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, project: Project, command_name: str, arguments: List[str]) -> int:
+    def cmd(self, project: Project, command_name: str, arguments: list[str]) -> int:
         """
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
@@ -134,7 +134,7 @@ class AbstractEngine(ABC):
         """
 
     @abstractmethod
-    def cmd_in_service(self, project: Project, command_name: str, service_name: str, arguments: List[str]) -> int:
+    def cmd_in_service(self, project: Project, command_name: str, service_name: str, arguments: list[str]) -> int:
         """
         Execute the command identified by command_name in the service container identified
         by service_name and attach command to stdout/stdin/stderr.
@@ -153,7 +153,7 @@ class AbstractEngine(ABC):
 
     @abstractmethod
     def service_fg(
-        self, project: Project, service_name: str, arguments: List[str], command_group: str = "default"
+        self, project: Project, service_name: str, arguments: list[str], command_group: str = "default"
     ) -> None:
         """
         Execute a service and attach output to stdout/stdin/stderr.
@@ -304,7 +304,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def list_named_volumes(self) -> List[str]:
+    def list_named_volumes(self) -> list[str]:
         """
         List all named volumes created by the engine.
         The returned list contains the names of the volumes without any internal prefixes/suffixes (as defined
@@ -367,7 +367,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def get_service_or_command_image_labels(self, obj: Tuple[Service, Command]) -> Optional[Dict[str, str]]:
+    def get_service_or_command_image_labels(self, obj: Service | Command) -> dict[str, str] | None:
         """
         Returns the labels for the images assigned to the provided service or object as a dict.
         Returns None if the service or command does not have an image or the image was not pulled yet.
