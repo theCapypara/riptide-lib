@@ -46,6 +46,7 @@ def load_config(project_file=None, skip_project_load=False, enable_local_project
 
     :param project_file: Project file to load or None for auto-discovery
     :param skip_project_load: Skip project loading. If True, the project_file setting will be ignored
+    :param enable_local_project_config: If true, load the `riptide.local.yml` as well.
     :return: :class:`riptide.config.document.config.Config` object.
     :raises: :class:`FileNotFoundError`: If the system config was not found
     :raises: :class:`schema.SchemaError`: On validation errors

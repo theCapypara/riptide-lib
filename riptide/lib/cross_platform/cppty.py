@@ -2,8 +2,9 @@
 
 import platform
 from threading import Thread
+from typing import TYPE_CHECKING
 
-if platform.system().lower().startswith("win"):
+if platform.system().lower().startswith("win") and not TYPE_CHECKING:
     # windows
 
     from winpty import PtyProcess
@@ -52,7 +53,7 @@ if platform.system().lower().startswith("win"):
         return process.exitstatus()
 else:
     # linux and mac
-    import riptide.lib.cross_platform.stdlib_pty_fork as pty
+    import pty
 
-    def spawn(argv, **kwargs):
+    def spawn(argv, win_repeat_argv0=False, **kwargs):
         return pty.spawn(argv)

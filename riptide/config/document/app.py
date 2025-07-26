@@ -1,7 +1,9 @@
-from schema import Optional, Schema, Or
-from typing import List, Union, TYPE_CHECKING, Tuple, Type
+from __future__ import annotations
 
-from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, REMOVE
+from schema import Optional, Schema
+from typing import List, TYPE_CHECKING, Tuple, Type
+
+from configcrunch import YamlConfigDocument, DocReference
 from configcrunch import variable_helper
 from riptide.config.document.command import Command
 from riptide.config.document.service import Service
@@ -20,6 +22,8 @@ class App(YamlConfigDocument):
     and (multiple) :class:`riptide.config.document.command.Command`
     and is usually included in a :class:`riptide.config.document.project.Project`.
     """
+
+    parent_doc: Project | None
 
     @classmethod
     def header(cls) -> str:
@@ -132,7 +136,7 @@ class App(YamlConfigDocument):
         return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
-    def parent(self) -> "Project":
+    def parent(self) -> Project:
         """
         Returns the project that this app belongs to.
 
@@ -144,11 +148,13 @@ class App(YamlConfigDocument):
 
             something: '.'
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, Project)
+        return parent
 
     @variable_helper
-    def get_service_by_role(self, role_name: str) -> Union[Service, None]:
+    def get_service_by_role(self, role_name: str) -> Service | None:
         """
         Returns any service with the given role name (first found) or None.
 

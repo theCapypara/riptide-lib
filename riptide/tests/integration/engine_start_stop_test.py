@@ -1,7 +1,5 @@
 import os
 
-import requests
-import unittest
 
 from riptide.engine import loader as riptide_engine_loader
 from riptide.tests.integration.project_loader import load

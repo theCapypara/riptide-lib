@@ -2,7 +2,7 @@ import asyncio
 import traceback
 
 import janus
-from typing import Dict, NamedTuple, Union, TypeVar, Generic
+from typing import Dict, NamedTuple, Union, TypeVar, Generic, Self
 
 
 class StartStopResultStep(NamedTuple):
@@ -26,7 +26,7 @@ class ResultError(EndResultQueue):
     """
 
     def __init__(
-        self, message: str, details: str = None, cause: Exception = None, *args: object, **kwargs: object
+        self, message: str, details: str | None = None, cause: Exception | None = None, *args: object, **kwargs: object
     ) -> None:
         self.message = message
         self.details = details
@@ -76,12 +76,12 @@ class ResultQueue(Generic[T]):
     Queue can be ended with an error (ResultError), which will be raised when reading over it.
     """
 
-    __opened_instances = []
+    __opened_instances: list[Self] = []
 
     poisoned = False
 
     def __init__(self):
-        self.queue = janus.Queue()
+        self.queue: janus.Queue = janus.Queue()
         self.was_ended_put = False
         self.was_ended_get = False
         self.__class__.__opened_instances.append(self)

@@ -20,9 +20,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "configcrunch >= 1.1.0",
+    "configcrunch >= 1.2.0",
     "schema >= 0.7",
     "pyyaml >= 6.0",
     "appdirs >= 1.4",
@@ -54,3 +55,13 @@ explicit_package_bases = true
 namespace_packages = true
 check_untyped_defs = true
 exclude = ["test_assets"]
+
+[[tool.mypy.overrides]]
+module = [
+    "appdirs",
+    "python_hosts",
+    "schema",
+    "winpty",
+    "python_hosts.exception"
+]
+ignore_missing_imports = true

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from riptide.engine.abstract import AbstractEngine
 
@@ -31,11 +33,11 @@ class AbstractPlugin(ABC):
         """
 
     @abstractmethod
-    def after_reload_config(self, config: "Config"):
+    def after_reload_config(self, config: Config):
         """Called whenever a project is loaded or if the initial configuration is loaded without a project."""
 
     @abstractmethod
-    def get_flag_value(self, config: "Config", flag_name: str) -> any:
+    def get_flag_value(self, config: Config, flag_name: str) -> Any:
         """
         Return the value of a requested plugin flag. Return False if not defined.
         The current config is passed, to give a context about the calling project.

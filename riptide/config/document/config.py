@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import platform
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from schema import Schema, Optional, Or
@@ -185,7 +187,7 @@ class Config(YamlConfigDocument):
         return riptide_config_dir()
 
     @variable_helper
-    def get_plugin_flag(self, inp: str) -> any:
+    def get_plugin_flag(self, inp: str) -> Any:
         """
         Returns the value (usually true/false, but can also be other data) of a flag set by a Riptide plugin.
 

@@ -1,12 +1,10 @@
 """Module to resolve database drivers for services"""
 
-import sys
-from typing import Union, TYPE_CHECKING, Optional
+from __future__ import annotations
 
-if sys.version_info < (3, 10):
-    import pkg_resources
-else:
-    from importlib.metadata import entry_points
+from typing import Union, TYPE_CHECKING, Optional, overload
+
+from importlib.metadata import entry_points
 
 from riptide.db.driver.abstract import AbstractDbDriver
 
@@ -17,22 +15,22 @@ if TYPE_CHECKING:
 DB_DRIVER_ENTRYPOINT_KEY = "riptide.db_driver"
 
 
-def get(service_data: Union["Service", dict], service: Optional["Service"] = None) -> Union[AbstractDbDriver, None]:
+@overload
+def get(service_data: Service) -> AbstractDbDriver | None: ...
+@overload
+def get(service_data: Union[Service, dict], service: Service) -> AbstractDbDriver | None: ...
+def get(service_data: Union[Service, dict], service: Optional[Service] = None) -> AbstractDbDriver | None:
     """Returns the db driver instance for this service, if a driver is defined."""
     # Look up package entrypoints for db drivers
     if service is None:
+        from riptide.config.document.service import Service
+
+        assert isinstance(service_data, Service)
         service = service_data
 
-    if sys.version_info < (3, 10):
-        drivers = {
-            entry_point.name: entry_point.load()
-            for entry_point in pkg_resources.iter_entry_points(DB_DRIVER_ENTRYPOINT_KEY)
-        }
-    else:
-        drivers = {
-            entry_point.name: entry_point.load()
-            for entry_point in entry_points().select(group=DB_DRIVER_ENTRYPOINT_KEY)
-        }
+    drivers: dict[str, type[AbstractDbDriver]] = {
+        entry_point.name: entry_point.load() for entry_point in entry_points().select(group=DB_DRIVER_ENTRYPOINT_KEY)
+    }
 
     if service_data["driver"]["name"] in drivers:
         return drivers[service_data["driver"]["name"]](service)

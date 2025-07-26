@@ -1,14 +1,18 @@
 """Functions for switching the current database environment"""
 
+from __future__ import annotations
+
 import json
 import os
 from typing import TYPE_CHECKING
 
 from riptide.config.files import get_project_meta_folder, remove_all_special_chars
+from riptide.db.impl import AbstractDbEnvImpl
 from riptide.db.impl.data_directory import DataDirectoryDbEnvImpl
 from riptide.db.impl.named_volume import NamedVolumeDbEnvImpl
 
 if TYPE_CHECKING:
+    from riptide.engine.abstract import AbstractEngine
     from riptide.config.document.project import Project
     from riptide.config.document.service import Service
 
@@ -21,7 +25,13 @@ DB_DRIVER_CONFIG_NAME = ".db.json"
 class DbEnvironments:
     """Manage database environments for a given project"""
 
-    def __init__(self, project: "Project", engine: "AbstractEngine"):
+    project: Project
+    config: dict[str, str]
+    engine: AbstractEngine | None
+    impl: AbstractDbEnvImpl
+    db_service: Service | None
+
+    def __init__(self, project: Project, engine: AbstractEngine | None):
         self.project = project
 
         # Find and assign db service
@@ -40,7 +50,7 @@ class DbEnvironments:
             self.impl = DataDirectoryDbEnvImpl(self)
 
     @staticmethod
-    def has_db(project: "Project"):
+    def has_db(project: Project):
         """Returns whether or not this project has a database to manage"""
         return DbEnvironments(project, None).db_service is not None
 

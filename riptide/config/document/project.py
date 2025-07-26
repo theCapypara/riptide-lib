@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import os
 
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from schema import Schema, Optional
 
-from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, variable_helper, REMOVE
+from configcrunch import YamlConfigDocument, DocReference, variable_helper
 from riptide.config.document.app import App
 
 HEADER = "project"
@@ -19,6 +21,8 @@ class Project(YamlConfigDocument):
     Has an :class:`riptide.config.document.app.App` in it's ``app`` entry.
 
     """
+
+    parent_doc: Config | None
 
     @classmethod
     def header(cls) -> str:
@@ -116,7 +120,7 @@ class Project(YamlConfigDocument):
         return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
-    def parent(self) -> "Config":
+    def parent(self) -> Config:
         """
         Returns the system configuration document.
 
@@ -129,5 +133,7 @@ class Project(YamlConfigDocument):
             something: 'riptide.local'
 
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, Config)
+        return parent

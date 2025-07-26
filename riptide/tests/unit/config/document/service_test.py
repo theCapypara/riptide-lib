@@ -1,26 +1,25 @@
-from collections import OrderedDict
-
 import os
 import unittest
+from collections import OrderedDict
 from unittest import mock
-
-from unittest.mock import Mock, MagicMock, call
-
-from schema import SchemaError
+from unittest.mock import MagicMock, Mock, call
 
 import riptide.config.document.service as module
 from configcrunch import ConfigcrunchError
-from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
-from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
+from riptide.config.files import CONTAINER_HOME_PATH, CONTAINER_SRC_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
-from riptide.tests.helpers import patch_mock_db_driver, get_fixture_path
+from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
+from riptide.tests.helpers import get_fixture_path, patch_mock_db_driver
 from riptide.tests.stubs import ProjectStub, process_config_stub
 from riptide.tests.unit.config.service.volumes_test import STUB_PAV__KEY, STUB_PAV__VAL
+from schema import SchemaError
 
 FIXTURE_BASE_PATH = "service" + os.sep
 
 
 class ServiceTestCase(unittest.TestCase):
+    maxDiff = None
+
     def test_header(self):
         service = module.Service.from_dict({})
         self.assertEqual(module.HEADER, service.header())
@@ -293,6 +292,7 @@ class ServiceTestCase(unittest.TestCase):
             {
                 "run_as_current_user": True,
                 "dont_create_user": False,
+                "ignore_original_entrypoint": False,
                 "pre_start": [],
                 "post_start": [],
                 "roles": [],
@@ -310,6 +310,7 @@ class ServiceTestCase(unittest.TestCase):
             {
                 "run_as_current_user": "SET",
                 "dont_create_user": "SET",
+                "ignore_original_entrypoint": "SET",
                 "pre_start": "SET",
                 "post_start": "SET",
                 "roles": "SET",
@@ -326,6 +327,7 @@ class ServiceTestCase(unittest.TestCase):
             {
                 "run_as_current_user": "SET",
                 "dont_create_user": "SET",
+                "ignore_original_entrypoint": "SET",
                 "pre_start": "SET",
                 "post_start": "SET",
                 "roles": "SET",
@@ -579,7 +581,7 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_collect_volumes_no_src(self):
         service = module.Service.from_dict({"roles": ["something"]})
-        expected = {}
+        expected: dict[str, str] = {}
 
         service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
         service._initialize_data_after_merge(service.to_dict())
@@ -616,16 +618,16 @@ class ServiceTestCase(unittest.TestCase):
         # TODO: Test reading from env file
         service.parent_doc = ProjectStub.make({"env_files": []}, set_parent_to_self=True)
         service.freeze()
-        service.parent_doc.parent_doc.freeze()
+        service.get_project().freeze()
 
         self.assertEqual({"key1": "value1", "key2": "value2", "FROM_DB_DRIVER": "VALUE"}, service.collect_environment())
 
     def test_collect_ports(self):
         service = module.Service.from_dict({})
 
-        service._loaded_port_mappings = [1, 3, 4]
+        service._loaded_port_mappings = {1: 1, 3: 3, 4: 4}
 
-        self.assertEqual([1, 3, 4], service.collect_ports())
+        self.assertEqual({1: 1, 3: 3, 4: 4}, service.collect_ports())
 
     @mock.patch("riptide.config.document.service.get_project_meta_folder", side_effect=lambda name: name + "~PROCESSED")
     def test_volume_path(self, get_project_meta_folder_mock: Mock):

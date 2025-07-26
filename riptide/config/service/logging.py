@@ -1,4 +1,6 @@
-"""Functions for helping processing ``logging`` entries in :class:`riptide.config.document.service.Service` objects"""
+"""Functions for helping to process ``logging`` entries in :class:`riptide.config.document.service.Service` objects"""
+
+from __future__ import annotations
 
 import os
 from pathlib import PurePosixPath
@@ -25,13 +27,13 @@ def _get_log_path(service):
     return os.path.join(get_project_meta_folder(project.folder()), FOLDER_FOR_LOGGING, service["$name"])
 
 
-def create_logging_path(service: "Service"):
+def create_logging_path(service: Service):
     """Create the logs folder in the project's meta folder (_riptide) and a subfolder for the service."""
     path = _get_log_path(service)
     os.makedirs(path, exist_ok=True)
 
 
-def get_logging_path_for(service: "Service", log_name: str) -> str:
+def get_logging_path_for(service: Service, log_name: str) -> str:
     """
     Get the host path to store the log file with the given name at.
     """

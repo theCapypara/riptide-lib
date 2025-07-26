@@ -3,7 +3,7 @@ import asyncio
 import unittest
 
 import requests
-from typing import re, Union, AnyStr, Pattern
+from typing import Union, AnyStr, Pattern
 from urllib import request
 
 
@@ -66,7 +66,7 @@ class EngineTest(unittest.TestCase):
         response = requests.get("http://" + ip + ":" + port)
 
         self.assertEqual(200, response.status_code)
-        self.assertRegex(response.content.decode("utf-8"), regex)
+        self.assertRegex(response.content.decode("utf-8"), regex)  # type: ignore
 
     async def _start_async_test(self, engine, project, services, engine_tester):
         """Start a project with the given services and run all assertions on it"""

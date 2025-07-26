@@ -5,7 +5,7 @@ import os
 import shutil
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import NamedTuple, Generator, List, ContextManager
+from typing import NamedTuple, Generator, List, ContextManager, Iterator
 from unittest import mock
 
 from riptide.config.document.config import Config
@@ -82,7 +82,7 @@ def load(
                                 name = caller_name + "--" + project_name + "--" + engine_name + "--" + src
 
                                 @contextmanager
-                                def ctx_manager() -> ContextManager[ProjectLoadResult]:
+                                def ctx_manager() -> Iterator[ProjectLoadResult]:
                                     # replace dots with _, PyCharm seems to have parsing issues with .
                                     with testsuite.subTest(
                                         project=project_name.replace(".", "_"),

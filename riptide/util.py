@@ -17,18 +17,10 @@ def get_riptide_version():
     """
     version = get_riptide_version_raw().split(".")
     major = version[0]
-    minor = version[1] if len(version) > 1 else None
-    patch = version[2] if len(version) > 2 else None
+    minor = patch = None
     try:
-        major = int(major)
-    except (ValueError, TypeError):
-        pass
-    try:
-        minor = int(minor)
-    except (ValueError, TypeError):
-        pass
-    try:
-        patch = int(patch)
+        minor = int(version[1]) if len(version) > 1 else None
+        patch = int(version[2]) if len(version) > 2 else None
     except (ValueError, TypeError):
         pass
 

@@ -2,6 +2,8 @@
 Functions for processing ``config`` entries in :class:`riptide.config.document.service.Service` objects
 """
 
+from __future__ import annotations
+
 import os
 from functools import partial
 from typing import TYPE_CHECKING, Dict
@@ -16,7 +18,7 @@ FOLDER_FOR_PROCESSED_CONFIG = "processed_config"
 
 
 def process_config(
-    volumes: Dict, config_name: str, config: dict, service: "Service", bind_path: str, regenerate=True
+    volumes: Dict, config_name: str, config: dict, service: Service, bind_path: str, regenerate=True
 ) -> None:
     """
     Processes the config file for the given project.
@@ -54,7 +56,7 @@ def process_config(
     if regenerate or not os.path.exists(target_file):
         # Additional helper functions
         read_file_partial = partial(read_file, config["$source"])
-        read_file_partial.__name__ = read_file.__name__
+        read_file_partial.__name__ = read_file.__name__  # type: ignore
 
         with open(config["$source"], "r") as stream:
             processed_file = service.process_vars_for(stream.read(), [read_file_partial])

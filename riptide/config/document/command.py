@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 from collections import OrderedDict
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, cast
 
 from configcrunch import variable_helper
 from dotenv import dotenv_values
@@ -28,6 +30,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
     Placed inside an :class:`riptide.config.document.app.App`.
 
     """
+
+    parent_doc: App | None
 
     @classmethod
     def header(cls) -> str:
@@ -237,15 +241,19 @@ class Command(ContainerDefinitionYamlConfigDocument):
             data["ignore_original_entrypoint"] = False
         return data
 
-    def get_project(self) -> "Project":
+    def get_project(self) -> Project:
         """
         Returns the project or raises an error if this is not assigned to a project
 
         :raises: IndexError: If not assigned to a project
         """
         try:
-            return self.parent_doc.parent_doc
-        except Exception as ex:
+            app = self.parent_doc
+            assert app is not None
+            project = app.parent_doc
+            assert project is not None
+            return project
+        except AssertionError as ex:
             raise IndexError("Expected command to have a project assigned") from ex
 
     def collect_volumes(self) -> OrderedDict:
@@ -308,7 +316,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
             return self.parent()["commands"][self["aliases"]].resolve_alias()
         return self
 
-    def collect_environment(self) -> dict:
+    def collect_environment(self) -> dict[str, str | None]:
         """
         Collect environment variables.
 
@@ -329,7 +337,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
-        env = os.environ.copy()
+        env = cast(dict[str, str | None], os.environ.copy())
         keys_to_remove = {
             "PATH",
             "PS1",
@@ -404,7 +412,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
         )
 
     @variable_helper
-    def parent(self) -> "App":
+    def parent(self) -> App:
         """
         Returns the app that this command belongs to.
 
@@ -416,8 +424,10 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
             something: 'This is easy to use.'
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, App)
+        return parent
 
     @variable_helper
     def volume_path(self) -> str:

@@ -17,7 +17,7 @@ def convert_in_service_to_normal(app: App, command_name: str) -> Command:
     old_cmd = app["commands"][command_name]
     service = app["services"][old_cmd.get_service(app)]
 
-    env = {}
+    env: dict[str, str] = {}
     env.update(service["environment"] if "environment" in service else {})
     env.update(old_cmd["environment"] if "environment" in old_cmd else {})
     new_cmd = Command.from_dict(

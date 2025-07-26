@@ -5,7 +5,7 @@ import os
 import unittest
 from unittest import mock
 
-from unittest.mock import Mock, MagicMock, call
+from unittest.mock import Mock, MagicMock
 
 from schema import SchemaError
 
@@ -139,7 +139,7 @@ class CommandTestCase(unittest.TestCase):
     def test_collect_volumes(
         self, process_config_mock: Mock, process_additional_volumes_mock: Mock, os_environ_mock: Mock
     ):
-        env = {}
+        env: dict[str, str] = {}
         os_environ_mock.__getitem__.side_effect = env.__getitem__
         os_environ_mock.__iter__.side_effect = env.__iter__
         os_environ_mock.__contains__.side_effect = env.__contains__
@@ -224,7 +224,7 @@ class CommandTestCase(unittest.TestCase):
         "riptide.config.document.command.process_additional_volumes", return_value={STUB_PAV__KEY: STUB_PAV__VAL}
     )
     def test_collect_volumes_no_roles(self, process_additional_volumes_mock: Mock, os_environ_mock: Mock):
-        env = {}
+        env: dict[str, str] = {}
         os_environ_mock.__getitem__.side_effect = env.__getitem__
         os_environ_mock.__iter__.side_effect = env.__iter__
         os_environ_mock.__contains__.side_effect = env.__contains__
@@ -287,7 +287,7 @@ class CommandTestCase(unittest.TestCase):
         # TODO: Test reading from env file
         cmd.parent_doc = ProjectStub.make({"env_files": []}, set_parent_to_self=True)
         cmd.freeze()
-        cmd.parent_doc.parent_doc.freeze()
+        cmd.get_project().freeze()
 
         self.assertEqual(expected, cmd.collect_environment())
 

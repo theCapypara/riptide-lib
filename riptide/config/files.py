@@ -5,22 +5,24 @@ Riptide uses.
 Also provides some utility file-related functions.
 """
 
+from __future__ import annotations
+
 import os
 import atexit
 import re
-import sys
 
-if sys.version_info < (3, 11):
-    import pkg_resources
-else:
-    import importlib.resources
+import importlib.resources
+from pathlib import Path
 
 from appdirs import user_config_dir
 from contextlib import ExitStack
 
-# Expected name of the project files during auto-discovery
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from riptide.config.document.project import Project
+
+# Expected name of the project files during auto-discovery
 RIPTIDE_PROJECT_CONFIG_NAME = "riptide.yml"
 # Name of the meta-directory
 RIPTIDE_PROJECT_META_FOLDER_NAME = "_riptide"
@@ -59,16 +61,13 @@ def discover_project_file() -> Optional[str]:
     return _discover_project_file__step(os.getcwd())
 
 
-def riptide_assets_dir() -> str:
+def riptide_assets_dir() -> Path:
     """Path to the assets directory of riptide_lib."""
-    if sys.version_info < (3, 11):
-        return pkg_resources.resource_filename("riptide", "assets")
-    else:
-        file_manager = ExitStack()
-        atexit.register(file_manager.close)
-        ref = importlib.resources.files("riptide") / "assets"
-        path = file_manager.enter_context(importlib.resources.as_file(ref))
-        return path
+    file_manager = ExitStack()
+    atexit.register(file_manager.close)
+    ref = importlib.resources.files("riptide") / "assets"
+    path = file_manager.enter_context(importlib.resources.as_file(ref))
+    return path
 
 
 def riptide_main_config_file() -> str:
@@ -128,7 +127,7 @@ def get_current_relative_project_path(project_folder_path: str) -> str:
     return os.path.relpath(os.getcwd(), start=project_folder_path)
 
 
-def get_current_relative_src_path(project: "Project") -> str:
+def get_current_relative_src_path(project: Project) -> str:
     """
     For project:
     Returns the current (host) working directory path relative to the specified src path. If outside of src, returns .

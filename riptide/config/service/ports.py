@@ -23,8 +23,6 @@ Format of ports.json::
 
 """
 
-import asyncio
-import errno
 import json
 import os
 import psutil
@@ -47,7 +45,7 @@ def _is_open(current_port: int, list_reserved_ports: dict):
     if str(current_port) in list_reserved_ports.keys():
         return False
     try:
-        ports = [con.laddr.port for con in psutil.net_connections()]
+        ports = [con.laddr.port for con in psutil.net_connections()]  # type: ignore
         return current_port not in ports
     except psutil.AccessDenied:
         # This might fail on some OSes. In this case, try to connect to it.
@@ -129,7 +127,7 @@ class PortsConfig:
     Used to load and write the ports.json file.
     """
 
-    _ports_config = None
+    _ports_config: dict | None = None
 
     @classmethod
     def load(cls):
@@ -142,6 +140,7 @@ class PortsConfig:
     @classmethod
     def get(cls) -> dict:
         """Gets the contents of the loaded ports.json file (as dict)"""
+        assert cls._ports_config is not None
         return cls._ports_config
 
     @classmethod

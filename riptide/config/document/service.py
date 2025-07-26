@@ -1,28 +1,39 @@
+from __future__ import annotations
+
+import os
 import warnings
 from collections import OrderedDict
+from pathlib import PurePosixPath
+from typing import TYPE_CHECKING
 
-from configcrunch import ConfigcrunchError
-from configcrunch import variable_helper
+from configcrunch import ConfigcrunchError, variable_helper
 from dotenv import dotenv_values
-from schema import Schema, Optional, Or
-
-from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
+from riptide.config.document.common_service_command import (
+    ContainerDefinitionYamlConfigDocument,
+)
 from riptide.config.errors import RiptideDeprecationWarning
-from riptide.config.files import CONTAINER_SRC_PATH
-from riptide.config.service.config_files import *
-from riptide.config.service.logging import *
+from riptide.config.files import CONTAINER_SRC_PATH, get_project_meta_folder
+from riptide.config.service.config_files import process_config
+from riptide.config.service.logging import (
+    LOGGING_CONTAINER_STDERR,
+    LOGGING_CONTAINER_STDOUT,
+    create_logging_path,
+    get_command_logging_container_path,
+    get_logging_path_for,
+)
 
 # todo: validate actual schema values -> better schema | ALL documents
 from riptide.config.service.ports import get_additional_port
 from riptide.config.service.volumes import process_additional_volumes
 from riptide.db.driver import db_driver_for_service
 from riptide.lib.cross_platform import cppath
+from schema import Optional, Or, Schema
 
 DOMAIN_PROJECT_SERVICE_SEP = "--"
 
 if TYPE_CHECKING:
-    from riptide.config.document.project import Project
     from riptide.config.document.app import App
+    from riptide.config.document.project import Project
 
 HEADER = "service"
 
@@ -37,6 +48,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
     the service with the ``$name`` entry during runtime.
 
     """
+
+    parent_doc: App | None
 
     @classmethod
     def header(cls) -> str:
@@ -388,7 +401,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         driver and creates all files for ``config`` entries.
         """
         self._db_driver = None
-        self._loaded_port_mappings = None
+        self._loaded_port_mappings: dict[int, int] | None = None
 
         if "run_as_root" in data:
             warnings.warn(
@@ -534,16 +547,20 @@ class Service(ContainerDefinitionYamlConfigDocument):
         else:
             return self["command"]
 
-    def get_project(self) -> "Project":
+    def get_project(self) -> Project:
         """
         Returns the project or raises an error if this is not assigned to a project
 
         :raises: IndexError: If not assigned to a project
         """
         try:
-            return self.parent_doc.parent_doc
-        except Exception as ex:
-            raise IndexError("Expected service to have a project assigned") from ex
+            app = self.parent_doc
+            assert app is not None
+            project = app.parent_doc
+            assert project is not None
+            return project
+        except AssertionError as ex:
+            raise IndexError("Expected command to have a project assigned") from ex
 
     def collect_volumes(self) -> OrderedDict:
         """
@@ -609,7 +626,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         return volumes
 
-    def collect_environment(self) -> dict:
+    def collect_environment(self) -> dict[str, str | None]:
         """
         Collect environment variables from the "environment" entry in the service
         configuration.
@@ -624,7 +641,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
-        env = {}
+        env: dict[str, str | None] = {}
         if "environment" in self:
             for name, value in self["environment"].items():
                 env[name] = value
@@ -639,7 +656,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         return env
 
-    def collect_ports(self) -> dict:
+    def collect_ports(self) -> dict[int, int]:
         """
         Takes additional_ports and returns the actual host/container mappings for these
         ports.
@@ -653,6 +670,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         """
         # This is already loaded in before_start. Make sure to use riptide_start_project_ctx
         # when starting if this is None
+        assert self._loaded_port_mappings is not None
         return self._loaded_port_mappings
 
     def error_str(self) -> str:
@@ -661,7 +679,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         )
 
     @variable_helper
-    def parent(self) -> "App":
+    def parent(self) -> App:
         """
         Returns the app that this service belongs to.
 
@@ -673,8 +691,10 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
             something: 'This is easy to use.'
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, App)
+        return parent
 
     @variable_helper
     def volume_path(self) -> str:
@@ -699,7 +719,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         return path
 
     @variable_helper
-    def get_working_directory(self) -> str:
+    def get_working_directory(self) -> str | None:
         """
         Returns the path to the working directory of the service **inside** the container.
 
@@ -735,22 +755,21 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
             something: 'https://project--service.riptide.local'
         """
+        project = self.get_project()
+        config = project.parent_doc
+        assert config is not None
         if "main" in self.internal_get("roles"):
-            return (
-                self.get_project().internal_get("name")
-                + "."
-                + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
-            )
+            return project.internal_get("name") + "." + config.internal_get("proxy")["url"]
         return (
-            self.get_project().internal_get("name")
+            project.internal_get("name")
             + DOMAIN_PROJECT_SERVICE_SEP
             + self.internal_get("$name")
             + "."
-            + self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
+            + config.internal_get("proxy")["url"]
         )
 
     @variable_helper
-    def additional_domains(self) -> Dict[str, str]:
+    def additional_domains(self) -> dict[str, str]:
         """
         Takes additional_subdomains and returns subdomain/full domain name mappings
         that this service should be available under in addition to the main domain.
@@ -769,12 +788,15 @@ class Service(ContainerDefinitionYamlConfigDocument):
               first: 'https://first.project--service.riptide.local'
               second: 'https://seccond.project--service.riptide.local'
         """
+        project = self.get_project()
+        config = project.parent_doc
+        assert config is not None
         if "main" in self.internal_get("roles"):
             return {
-                subdomain: f"{subdomain}.{self.get_project().internal_get('name')}.{self.parent_doc.parent_doc.parent_doc.internal_get('proxy')['url']}"
+                subdomain: f"{subdomain}.{self.get_project().internal_get('name')}.{config.internal_get('proxy')['url']}"
                 for subdomain in self.internal_get("additional_subdomains")
             }
         return {
-            subdomain: f"{subdomain}.{self.get_project().internal_get('name')}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get('$name')}.{self.parent_doc.parent_doc.parent_doc.internal_get('proxy')['url']}"
+            subdomain: f"{subdomain}.{self.get_project().internal_get('name')}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get('$name')}.{config.internal_get('proxy')['url']}"
             for subdomain in self.internal_get("additional_subdomains")
         }

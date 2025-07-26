@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import os
 import shutil
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Union, List, Optional
+from typing import Tuple, Dict, Union, List, Optional, TYPE_CHECKING
 
 from riptide.config.files import path_in_project
 from riptide.engine.results import StartStopResultStep, MultiResultQueue
+
+if TYPE_CHECKING:
+    from riptide.config.document.project import Project
+    from riptide.config.document.command import Command
+    from riptide.config.document.service import Service
 
 
 RIPTIDE_HOST_HOSTNAME = "host.riptide.internal"  # the engine has to make the host reachable under this hostname
@@ -21,7 +28,7 @@ class ServiceStoppedException(BaseException):
 class AbstractEngine(ABC):
     @abstractmethod
     def start_project(
-        self, project: "Project", services: List[str], quick=False, command_group: str = "default"
+        self, project: Project, services: List[str], quick=False, command_group: str = "default"
     ) -> MultiResultQueue[StartStopResultStep]:
         """
         Starts all services in the project.
@@ -47,7 +54,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def stop_project(self, project: "Project", services: List[str]) -> MultiResultQueue[StartStopResultStep]:
+    def stop_project(self, project: Project, services: List[str]) -> MultiResultQueue[StartStopResultStep]:
         """
         Stops all services in the project
 
@@ -58,7 +65,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def status(self, project: "Project") -> Dict[str, bool]:
+    def status(self, project: Project) -> Dict[str, bool]:
         """
         Returns the status for the given project (whether services are started or not)
 
@@ -68,7 +75,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def service_status(self, project: "Project", service_name: str) -> bool:
+    def service_status(self, project: Project, service_name: str) -> bool:
         """
         Returns the status for a single service in a given project (whether service is started or not)
 
@@ -79,7 +86,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def container_name_for(self, project: "Project", service_name: str) -> str:
+    def container_name_for(self, project: Project, service_name: str) -> str:
         """
         Returns the container name for the given service or whatever is the equivalent.
 
@@ -90,7 +97,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def address_for(self, project: "Project", service_name: str) -> Union[None, Tuple[str, int]]:
+    def address_for(self, project: Project, service_name: str) -> Union[None, Tuple[str, int]]:
         """
         Returns the ip address and port of the host providing the service for project.
 
@@ -101,7 +108,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, project: "Project", command_name: str, arguments: List[str]) -> int:
+    def cmd(self, project: Project, command_name: str, arguments: List[str]) -> int:
         """
         Execute the command identified by command_name in the project environment and
         attach command to stdout/stdin/stderr.
@@ -127,7 +134,7 @@ class AbstractEngine(ABC):
         """
 
     @abstractmethod
-    def cmd_in_service(self, project: "Project", command_name: str, service_name: str, arguments: List[str]) -> int:
+    def cmd_in_service(self, project: Project, command_name: str, service_name: str, arguments: List[str]) -> int:
         """
         Execute the command identified by command_name in the service container identified
         by service_name and attach command to stdout/stdin/stderr.
@@ -146,7 +153,7 @@ class AbstractEngine(ABC):
 
     @abstractmethod
     def service_fg(
-        self, project: "Project", service_name: str, arguments: List[str], command_group: str = "default"
+        self, project: Project, service_name: str, arguments: List[str], command_group: str = "default"
     ) -> None:
         """
         Execute a service and attach output to stdout/stdin/stderr.
@@ -163,7 +170,7 @@ class AbstractEngine(ABC):
 
         The engine must regard the performance settings in the system configuration (project.parent().performance).
 
-        :param project: 'Project'
+        :param project: Project
         :param service_name: str
         :param arguments: List of arguments
         :param command_group: The command group of all services that should be used for the fg service container
@@ -171,7 +178,7 @@ class AbstractEngine(ABC):
         """
 
     @abstractmethod
-    def cmd_detached(self, project: "Project", command: "Command", run_as_root=False) -> (int, str):
+    def cmd_detached(self, project: Project, command: Command, run_as_root=False) -> tuple[int, str]:
         """
         Execute the command in the project environment and
         return the exit code (int), stdout/stderr of the command (str).
@@ -186,13 +193,13 @@ class AbstractEngine(ABC):
         routable to the host system.
 
         :param run_as_root: Force execution of the command container with the highest possible permissions
-        :param project: 'Project'
-        :param command: Command Command to run. May not be part of the passed project object but must be treated as such.
+        :param project: Project
+        :param command: Command to run. May not be part of the passed project object but must be treated as such.
         :return:
         """
 
     @abstractmethod
-    def exec(self, project: "Project", service_name: str, cols=None, lines=None, root=False) -> None:
+    def exec(self, project: Project, service_name: str, cols=None, lines=None, root=False) -> None:
         """
         Open an interactive shell into service_name and attach stdout/stdin/stderr.
         Returns when the shell is exited.
@@ -207,9 +214,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def exec_custom(
-        self, project: "Project", service_name: str, command: str, cols=None, lines=None, root=False
-    ) -> None:
+    def exec_custom(self, project: Project, service_name: str, command: str, cols=None, lines=None, root=False) -> None:
         """
         Run a custom command in service service_name and attach stdout/stdin/stderr.
         Returns when the command is exited.
@@ -227,7 +232,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def pull_images(self, project: "Project", line_reset="\n", update_func=lambda msg: None) -> None:
+    def pull_images(self, project: Project, line_reset="\n", update_func=lambda msg: None) -> None:
         """
         Pull new versions of images for commands and services described in project.
 
@@ -253,7 +258,7 @@ class AbstractEngine(ABC):
         """
         pass
 
-    def path_rm(self, path, project: "Project"):
+    def path_rm(self, path, project: Project):
         """
         Delete a path. Default is using python builtin functions.
         PATH MUST BE WITHIN PROJECT.
@@ -271,7 +276,7 @@ class AbstractEngine(ABC):
         else:
             shutil.rmtree(path)
 
-    def path_copy(self, fromm, to, project: "Project"):
+    def path_copy(self, fromm, to, project: Project):
         """
         Copy a path. Default is using python builtin functions. 'to' may not exist already.
         TO PATH MUST BE WITHIN PROJECT.
@@ -362,7 +367,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def get_service_or_command_image_labels(self, obj: Tuple["Service", "Command"]) -> Optional[Dict[str, str]]:
+    def get_service_or_command_image_labels(self, obj: Tuple[Service, Command]) -> Optional[Dict[str, str]]:
         """
         Returns the labels for the images assigned to the provided service or object as a dict.
         Returns None if the service or command does not have an image or the image was not pulled yet.

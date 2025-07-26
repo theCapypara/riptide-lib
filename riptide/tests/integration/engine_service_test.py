@@ -2,14 +2,12 @@ import json
 import os
 import platform
 import re
+import stat
+import unittest
+from pathlib import PurePosixPath
 from time import sleep
 
 import requests
-import stat
-from pathlib import PurePosixPath
-
-import unittest
-
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.lib.cross_platform import cpuser
 from riptide.tests.integration.project_loader import load
@@ -101,7 +99,6 @@ class EngineServiceTest(EngineTest):
     def test_configs(self):
         for project_ctx in load(self, ["integration_all.yml"], ["."]):
             with project_ctx as loaded:
-                engine = loaded.engine
                 project = loaded.config["project"]
                 service_name = "configs"
                 service = project["app"]["services"][service_name]
