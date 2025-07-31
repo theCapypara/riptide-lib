@@ -1,4 +1,5 @@
 import os
+import platform
 from collections import OrderedDict
 from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, Union
@@ -275,7 +276,11 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         # If SSH_AUTH_SOCK is set, provide the ssh auth socket as a volume
         if 'SSH_AUTH_SOCK' in os.environ:
-            volumes[os.environ['SSH_AUTH_SOCK']] = {'bind': os.environ['SSH_AUTH_SOCK'], 'mode': 'rw'}
+            if platform.system() != "Darwin":
+                volumes[os.environ['SSH_AUTH_SOCK']] = {'bind': os.environ['SSH_AUTH_SOCK'], 'mode': 'rw'}
+            else:
+                # See: https://stackoverflow.com/a/60713369
+                volumes['/run/host-services/ssh-auth.sock'] = {'bind': os.environ['SSH_AUTH_SOCK'], 'mode': 'rw'}
 
         # additional_volumes
         if "additional_volumes" in self:
