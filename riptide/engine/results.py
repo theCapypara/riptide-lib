@@ -1,7 +1,8 @@
 import asyncio
 import traceback
 from asyncio import Future
-from typing import AsyncIterator, Generic, NamedTuple, Self, TypeVar
+from typing import Generic, NamedTuple, Self, TypeVar
+from collections.abc import AsyncIterator
 
 import janus
 

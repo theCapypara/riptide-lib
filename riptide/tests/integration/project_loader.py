@@ -5,7 +5,8 @@ import os
 import shutil
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import NamedTuple, Generator, List, ContextManager, Iterator
+from typing import NamedTuple, ContextManager
+from collections.abc import Generator, Iterator
 from unittest import mock
 
 from riptide.config.document.config import Config
@@ -31,7 +32,7 @@ class ProjectLoadResult(NamedTuple):
 
 
 def load(
-    testsuite, project_file_names: List[str], srcs: List[str], config_file_name="valid.yml"
+    testsuite, project_file_names: list[str], srcs: list[str], config_file_name="valid.yml"
 ) -> Generator[ContextManager[ProjectLoadResult], None, None]:
     """
     Generator that returns context managers

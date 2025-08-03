@@ -1,4 +1,4 @@
-from typing import Generator, Tuple
+from collections.abc import Generator
 
 from importlib.metadata import entry_points
 
@@ -9,7 +9,7 @@ from riptide.tests.integration.engine.tester_for_engine import AbstractEngineTes
 ENGINE_TESTER_ENTRYPOINT_KEY = "riptide.engine.tests"
 
 
-def load_engines() -> Generator[Tuple[str, AbstractEngine, AbstractEngineTester], None, None]:
+def load_engines() -> Generator[tuple[str, AbstractEngine, AbstractEngineTester], None, None]:
     """Generator that returns tuples of (name, engine, engine_tester)"""
 
     # Collect testers

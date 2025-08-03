@@ -55,7 +55,7 @@ class DbEnvironments:
         return DbEnvironments(project, None).db_service is not None
 
     @staticmethod
-    def get_volume_configuration_for_driver(container_bind_path: str, service: "Service"):
+    def get_volume_configuration_for_driver(container_bind_path: str, service: Service):
         """
         Returns the volume configuration (collect_volumes format) for use by a DB driver, to collect service volume for data.
         """
@@ -127,7 +127,7 @@ class DbEnvironments:
         if not os.path.exists(path):
             # Defaults
             return {CONFIG_DBENV: CONFIG_DBENV__DEFAULT}
-        with open(path, "r") as fp:
+        with open(path) as fp:
             return json.load(fp)
 
     def _write_configuration(self):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 from riptide.config.files import path_in_project
 from riptide.engine.results import MultiResultQueue, StartStopResultStep
@@ -97,7 +97,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def address_for(self, project: Project, service_name: str) -> Tuple[str, int] | None:
+    def address_for(self, project: Project, service_name: str) -> tuple[str, int] | None:
         """
         Returns the ip address and port of the host providing the service for project.
 

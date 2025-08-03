@@ -219,7 +219,7 @@ class Config(YamlConfigDocument):
                 with open(riptide_main_config_file(), "w") as f:
                     f.write(yaml.dump(self.to_dict(), default_flow_style=False, sort_keys=False))
 
-    def load_performance_options(self, engine: "AbstractEngine"):
+    def load_performance_options(self, engine: AbstractEngine):
         """Initializes performance options set to 'auto' based on the engine used."""
         for key, val in self.doc["performance"].items():
             if val == "auto":

@@ -394,11 +394,11 @@ class EngineServiceTest(EngineTest):
                 self.assertTrue(os.path.exists(os.path.join(path_to_logging, "logging", "two.log")))
 
                 # Assert contents of files
-                with open(os.path.join(path_to_logging, "logging", "stdout.log"), "r") as file:
+                with open(os.path.join(path_to_logging, "logging", "stdout.log")) as file:
                     # Engines may add custom buffer on service restarts
                     self.assertTrue(MAIN_COMMAND_STDOUT.decode("utf-8") in file.read())
 
-                with open(os.path.join(path_to_logging, "logging", "stderr.log"), "r") as file:
+                with open(os.path.join(path_to_logging, "logging", "stderr.log")) as file:
                     # Engines may add custom buffer on service restarts
                     self.assertTrue(MAIN_COMMAND_STDERR.decode("utf-8") in file.read())
 

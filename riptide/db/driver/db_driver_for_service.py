@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Union, TYPE_CHECKING, Optional, overload
+from typing import TYPE_CHECKING, overload
 
 from importlib.metadata import entry_points
 
@@ -18,8 +18,8 @@ DB_DRIVER_ENTRYPOINT_KEY = "riptide.db_driver"
 @overload
 def get(service_data: Service) -> AbstractDbDriver | None: ...
 @overload
-def get(service_data: Union[Service, dict], service: Service) -> AbstractDbDriver | None: ...
-def get(service_data: Union[Service, dict], service: Optional[Service] = None) -> AbstractDbDriver | None:
+def get(service_data: Service | dict, service: Service) -> AbstractDbDriver | None: ...
+def get(service_data: Service | dict, service: Service | None = None) -> AbstractDbDriver | None:
     """Returns the db driver instance for this service, if a driver is defined."""
     # Look up package entrypoints for db drivers
     if service is None:

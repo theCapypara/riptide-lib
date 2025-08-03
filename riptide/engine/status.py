@@ -1,6 +1,6 @@
 """Generic module to return all sorts of status information for services"""
 
-from typing import Dict, NamedTuple, Union, List
+from typing import NamedTuple
 
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
@@ -16,11 +16,11 @@ class AdditionalPortsEntry(NamedTuple):
 
 class StatusResult(NamedTuple):
     running: bool
-    web: Union[str, None]  # proxy url if service has a web port assigned, None otherwise
-    additional_ports: List[AdditionalPortsEntry]  # if service has additional ports
+    web: str | None  # proxy url if service has a web port assigned, None otherwise
+    additional_ports: list[AdditionalPortsEntry]  # if service has additional ports
 
 
-def status_for(project: Project, engine: AbstractEngine, system_config: Config) -> Dict[str, StatusResult]:
+def status_for(project: Project, engine: AbstractEngine, system_config: Config) -> dict[str, StatusResult]:
     """
     Returns the status for a given project's services, including if they are running and
     all their additional ports.

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import os
 from functools import partial
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from riptide.config.files import get_project_meta_folder, remove_all_special_chars
 from riptide.config.service.config_files_helper_functions import read_file
@@ -18,7 +18,7 @@ FOLDER_FOR_PROCESSED_CONFIG = "processed_config"
 
 
 def process_config(
-    volumes: Dict, config_name: str, config: dict, service: Service, bind_path: str, regenerate=True
+    volumes: dict, config_name: str, config: dict, service: Service, bind_path: str, regenerate=True
 ) -> None:
     """
     Processes the config file for the given project.
@@ -58,7 +58,7 @@ def process_config(
         read_file_partial = partial(read_file, config["$source"])
         read_file_partial.__name__ = read_file.__name__  # type: ignore
 
-        with open(config["$source"], "r") as stream:
+        with open(config["$source"]) as stream:
             processed_file = service.process_vars_for(stream.read(), [read_file_partial])
 
         if is_in_source_path:
@@ -87,7 +87,7 @@ def process_config(
         volumes[target_file] = {"bind": bind_path, "mode": "rw"}
 
 
-def get_config_file_path(config_name: str, service: "Service", is_in_source_path: bool, bind_path: str) -> str:
+def get_config_file_path(config_name: str, service: Service, is_in_source_path: bool, bind_path: str) -> str:
     """
     Returns the path to the processed configuration file for a service.
 

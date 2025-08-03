@@ -27,7 +27,7 @@ import json
 import os
 import psutil
 import socket
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from riptide.config.files import riptide_ports_config_file
 from riptide.lib.dict_merge import dict_merge
@@ -98,7 +98,7 @@ def get_additional_port(project: "Project", service: "Service", start_port: int)
     return port
 
 
-def get_existing_port_mapping(project: "Project", service: "Service", start_port: int, load=True) -> Union[int, None]:
+def get_existing_port_mapping(project: "Project", service: "Service", start_port: int, load=True) -> int | None:
     """
     Return an existing port mapping for the given port. If no saved mapping exists already, returns None.
 
@@ -134,7 +134,7 @@ class PortsConfig:
         """(Re)-loads the ports.json file."""
         cls._ports_config = {"ports": {}, "requests": {}}
         if os.path.exists(riptide_ports_config_file()):
-            with open(riptide_ports_config_file(), mode="r") as file:
+            with open(riptide_ports_config_file()) as file:
                 cls._ports_config = json.load(file)
 
     @classmethod

@@ -4,7 +4,6 @@ from collections import OrderedDict
 
 import os
 from pathlib import PurePosixPath
-from typing import List
 
 from riptide.config.files import CONTAINER_SRC_PATH
 
@@ -13,7 +12,7 @@ VOLUME_TYPE_DIRECTORY = "directory"
 VOLUME_TYPE_FILE = "file"
 
 
-def process_additional_volumes(volumes: List[dict], project_folder: str):
+def process_additional_volumes(volumes: list[dict], project_folder: str):
     """
     Process the volume entries provided and return volume entries
     as described in :class:`riptide.config.document.service.Service` collect_volumes.

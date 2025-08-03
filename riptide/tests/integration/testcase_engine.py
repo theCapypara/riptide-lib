@@ -3,7 +3,8 @@ import asyncio
 import unittest
 
 import requests
-from typing import Union, AnyStr, Pattern
+from typing import AnyStr
+from re import Pattern
 from urllib import request
 
 
@@ -61,7 +62,7 @@ class EngineTest(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(rsp_message, response.content, msg)
 
-    def assert_response_matches_regex(self, regex: Union[AnyStr, Pattern[AnyStr]], engine, project, service_name):
+    def assert_response_matches_regex(self, regex: AnyStr | Pattern[AnyStr], engine, project, service_name):
         (ip, port) = engine.address_for(project, service_name)
         response = requests.get("http://" + ip + ":" + port)
 

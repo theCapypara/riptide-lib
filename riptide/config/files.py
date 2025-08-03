@@ -17,7 +17,7 @@ from pathlib import Path
 from appdirs import user_config_dir
 from contextlib import ExitStack
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
@@ -52,7 +52,7 @@ def _discover_project_file__step(path):
     return _discover_project_file__step(os.path.join(path, ".."))
 
 
-def discover_project_file() -> Optional[str]:
+def discover_project_file() -> str | None:
     """
     Starting in the current working directory upwards, try to find a project file.
 
@@ -146,6 +146,6 @@ def remove_all_special_chars(string: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]", "-", string)
 
 
-def path_in_project(path: str, project: "Project") -> bool:
+def path_in_project(path: str, project: Project) -> bool:
     """Check if a path is within a project's directory or a subdirectory of it (symlinks are ignored)."""
     return path.startswith(os.path.abspath(project.folder()) + os.sep)

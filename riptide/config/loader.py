@@ -105,7 +105,7 @@ def load_projects(sort=False) -> dict:
     """
     projects = {}
     if os.path.exists(riptide_projects_file()):
-        with open(riptide_projects_file(), mode="r") as file:
+        with open(riptide_projects_file()) as file:
             projects = json.load(file)
     if not sort:
         return projects

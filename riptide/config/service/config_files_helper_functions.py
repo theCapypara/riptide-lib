@@ -28,5 +28,5 @@ def read_file(config_file_path: str, file_to_read_in: str) -> str:
     if not os.path.exists(absolute_file_to_read_in):
         raise ValueError(f"read_file: File {absolute_file_to_read_in} not found.")
 
-    with open(absolute_file_to_read_in, "r") as file:
+    with open(absolute_file_to_read_in) as file:
         return file.read().strip()

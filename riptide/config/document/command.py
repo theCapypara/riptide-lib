@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from collections import OrderedDict
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from configcrunch import variable_helper
 from dotenv import dotenv_values
@@ -310,7 +310,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         return volumes
 
-    def resolve_alias(self) -> "Command":
+    def resolve_alias(self) -> Command:
         """If this is not an alias, returns self. Otherwise returns command that is aliased by this (recursively)."""
         if "aliases" in self:
             return self.parent()["commands"][self["aliases"]].resolve_alias()
@@ -375,7 +375,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         return env
 
-    def get_service(self, app: "App") -> Union[str, None]:
+    def get_service(self, app: App) -> str | None:
         """
         Only applicable to "in service" commands.
 

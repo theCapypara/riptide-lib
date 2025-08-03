@@ -1,4 +1,4 @@
-from typing import Dict, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from importlib.metadata import entry_points
 
@@ -8,10 +8,10 @@ if TYPE_CHECKING:
     pass
 
 PLUGIN_ENTRYPOINT_KEY = "riptide.plugin"
-loaded_plugins: Union[None, Dict[str, AbstractPlugin]] = None
+loaded_plugins: None | dict[str, AbstractPlugin] = None
 
 
-def load_plugins() -> Dict[str, AbstractPlugin]:
+def load_plugins() -> dict[str, AbstractPlugin]:
     """
     Load the engine by the given name.
     Returns a Dict containing plugin names and interface implementations.
@@ -21,7 +21,7 @@ def load_plugins() -> Dict[str, AbstractPlugin]:
     global loaded_plugins
     if not loaded_plugins:
         # Look up package entrypoints for engines
-        plugins: Dict[str, AbstractPlugin] = {
+        plugins: dict[str, AbstractPlugin] = {
             entry_point.name: entry_point.load()() for entry_point in entry_points().select(group=PLUGIN_ENTRYPOINT_KEY)
         }
 

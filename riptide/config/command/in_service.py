@@ -1,7 +1,5 @@
 """Module for functions related to in_service commands"""
 
-from typing import List
-
 from riptide.config.document.app import App
 from riptide.config.document.command import Command
 from riptide.config.document.project import Project
@@ -36,7 +34,7 @@ def convert_in_service_to_normal(app: App, command_name: str) -> Command:
     return new_cmd
 
 
-def run(engine: AbstractEngine, project: Project, command_name: str, arguments: List[str]) -> int:
+def run(engine: AbstractEngine, project: Project, command_name: str, arguments: list[str]) -> int:
     """
     Runs an in_service command.
     If the service for the command is started, command is executed in that service container.

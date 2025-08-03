@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from schema import Optional, Schema
-from typing import List, TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING
 
 from configcrunch import YamlConfigDocument, DocReference
 from configcrunch import variable_helper
@@ -113,7 +113,7 @@ class App(YamlConfigDocument):
         )
 
     @classmethod
-    def subdocuments(cls) -> List[Tuple[str, Type[YamlConfigDocument]]]:
+    def subdocuments(cls) -> list[tuple[str, type[YamlConfigDocument]]]:
         return [
             ("services[]", Service),
             ("commands[]", Command),
@@ -174,7 +174,7 @@ class App(YamlConfigDocument):
         raise ValueError(f"No service with role {role_name} found in the app.")
 
     @variable_helper
-    def get_services_by_role(self, role_name: str) -> List[Service]:
+    def get_services_by_role(self, role_name: str) -> list[Service]:
         """
         Returns all services with the given role name.
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from riptide.engine.abstract import AbstractEngine
 
@@ -69,7 +69,7 @@ class AbstractDbDriver(ABC):
         """
 
     @abstractmethod
-    def collect_info(self) -> Dict[str, str]:
+    def collect_info(self) -> dict[str, str]:
         """
         Collect information about accessing the database.
 
