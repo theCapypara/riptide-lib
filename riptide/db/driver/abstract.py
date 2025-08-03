@@ -61,7 +61,7 @@ class AbstractDbDriver(ABC):
         pass
 
     @abstractmethod
-    def ask_for_import_file(self):
+    def ask_for_import_file(self) -> str:
         """
         Return a prompt to show the user in an CLI/GUI that prompts them to enter
         the path to the import file/directory.
