@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 from collections import OrderedDict
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, cast
 
 from configcrunch import variable_helper
 from dotenv import dotenv_values
@@ -17,8 +19,8 @@ if TYPE_CHECKING:
     from riptide.config.document.project import Project
     from riptide.config.document.app import App
 
-HEADER = 'command'
-KEY_IDENTIFIER_IN_SERVICE_COMMAND = 'in_service_with_role'
+HEADER = "command"
+KEY_IDENTIFIER_IN_SERVICE_COMMAND = "in_service_with_role"
 
 
 class Command(ContainerDefinitionYamlConfigDocument):
@@ -29,6 +31,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
     """
 
+    parent_doc: App | None
+
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -38,9 +42,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
         """
         Can be either a normal command, a command in a service, or an alias command.
         """
-        return Schema(
-            Or(cls.schema_alias(), cls.schema_normal(), cls.schema_in_service())
-        )
+        return Schema(Or(cls.schema_alias(), cls.schema_normal(), cls.schema_in_service()))
 
     @classmethod
     def schema_normal(cls):
@@ -114,27 +116,28 @@ class Command(ContainerDefinitionYamlConfigDocument):
               image: riptidepy/php
               command: 'php index.php'
         """
-        return Schema({
-            Optional('$ref'): str,  # reference to other Service documents
-            Optional('$name'): str,  # Added by system during processing parent app.
-
-            'image': str,
-            Optional('command'): str,
-            Optional('additional_volumes'): {
-                str: {
-                    'host': str,
-                    'container': str,
-                    Optional('mode'): str,  # default: rw - can be rw/ro.
-                    Optional('type'): Or('directory', 'file'),  # default: directory
-                    Optional('volume_name'): str
-                }
-            },
-            Optional('environment'): {str: str},
-            Optional('config_from_roles'): [str],
-            Optional('read_env_file'): bool,
-            Optional('use_host_network'): bool,
-            Optional('ignore_original_entrypoint'): bool,
-        })
+        return Schema(
+            {
+                Optional("$ref"): str,  # reference to other Service documents
+                Optional("$name"): str,  # Added by system during processing parent app.
+                "image": str,
+                Optional("command"): str,
+                Optional("additional_volumes"): {
+                    str: {
+                        "host": str,
+                        "container": str,
+                        Optional("mode"): str,  # default: rw - can be rw/ro.
+                        Optional("type"): Or("directory", "file"),  # default: directory
+                        Optional("volume_name"): str,
+                    }
+                },
+                Optional("environment"): {str: str},
+                Optional("config_from_roles"): [str],
+                Optional("read_env_file"): bool,
+                Optional("use_host_network"): bool,
+                Optional("ignore_original_entrypoint"): bool,
+            }
+        )
 
     @classmethod
     def schema_in_service(cls):
@@ -191,17 +194,18 @@ class Command(ContainerDefinitionYamlConfigDocument):
               in_service_with_role: php
               command: 'php index.php'
         """
-        return Schema({
-            Optional('$ref'): str,  # reference to other Service documents
-            Optional('$name'): str,  # Added by system during processing parent app.
-
-            KEY_IDENTIFIER_IN_SERVICE_COMMAND: str,
-            'command': str,
-            Optional('environment'): {str: str},
-            Optional('read_env_file'): bool,
-            Optional('use_host_network'): bool,
-            Optional('ignore_original_entrypoint'): bool
-        })
+        return Schema(
+            {
+                Optional("$ref"): str,  # reference to other Service documents
+                Optional("$name"): str,  # Added by system during processing parent app.
+                KEY_IDENTIFIER_IN_SERVICE_COMMAND: str,
+                "command": str,
+                Optional("environment"): {str: str},
+                Optional("read_env_file"): bool,
+                Optional("use_host_network"): bool,
+                Optional("ignore_original_entrypoint"): bool,
+            }
+        )
 
     @classmethod
     def schema_alias(cls):
@@ -216,15 +220,16 @@ class Command(ContainerDefinitionYamlConfigDocument):
         aliases: str
             Name of the command that is aliased by this command.
         """
-        return Schema({
-            Optional('$ref'): str,  # reference to other Service documents
-            Optional('$name'): str,  # Added by system during processing parent app.
-
-            'aliases': str
-        })
+        return Schema(
+            {
+                Optional("$ref"): str,  # reference to other Service documents
+                Optional("$name"): str,  # Added by system during processing parent app.
+                "aliases": str,
+            }
+        )
 
     def _initialize_data_after_variables(self, data: dict) -> dict:
-        """ Normalize all host-paths to only use the system-type directory separator """
+        """Normalize all host-paths to only use the system-type directory separator"""
         if "additional_volumes" in data:
             for obj in data["additional_volumes"].values():
                 obj["host"] = cppath.normalize(obj["host"])
@@ -236,15 +241,19 @@ class Command(ContainerDefinitionYamlConfigDocument):
             data["ignore_original_entrypoint"] = False
         return data
 
-    def get_project(self) -> 'Project':
+    def get_project(self) -> Project:
         """
         Returns the project or raises an error if this is not assigned to a project
 
         :raises: IndexError: If not assigned to a project
         """
         try:
-            return self.parent_doc.parent_doc
-        except Exception as ex:
+            app = self.parent_doc
+            assert app is not None
+            project = app.parent_doc
+            assert project is not None
+            return project
+        except AssertionError as ex:
             raise IndexError("Expected command to have a project assigned") from ex
 
     def collect_volumes(self) -> OrderedDict:
@@ -271,16 +280,16 @@ class Command(ContainerDefinitionYamlConfigDocument):
         volumes = OrderedDict({})
 
         # source code
-        volumes[project.src_folder()] = {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'}
+        volumes[project.src_folder()] = {"bind": CONTAINER_SRC_PATH, "mode": "rw"}
 
         # If SSH_AUTH_SOCK is set, provide the ssh auth socket as a volume
-        if 'SSH_AUTH_SOCK' in os.environ:
-            volumes[os.environ['SSH_AUTH_SOCK']] = {'bind': os.environ['SSH_AUTH_SOCK'], 'mode': 'rw'}
+        if "SSH_AUTH_SOCK" in os.environ:
+            volumes[os.environ["SSH_AUTH_SOCK"]] = {"bind": os.environ["SSH_AUTH_SOCK"], "mode": "rw"}
 
         # additional_volumes
         if "additional_volumes" in self:
             # Shared with services logic
-            volumes.update(process_additional_volumes(list(self['additional_volumes'].values()), project.folder()))
+            volumes.update(process_additional_volumes(list(self["additional_volumes"].values()), project.folder()))
 
         # config_from_role
         if "config_from_roles" in self:
@@ -291,21 +300,23 @@ class Command(ContainerDefinitionYamlConfigDocument):
                         services_already_checked.append(service)
                         for config_name, config in service["config"].items():
                             force_recreate = False
-                            if "force_recreate" in service["config"][config_name] and service["config"][config_name][
-                                "force_recreate"]:
+                            if (
+                                "force_recreate" in service["config"][config_name]
+                                and service["config"][config_name]["force_recreate"]
+                            ):
                                 force_recreate = True
-                            bind_path = str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"])))
+                            bind_path = str(PurePosixPath("/src/").joinpath(PurePosixPath(config["to"])))
                             process_config(volumes, config_name, config, service, bind_path, regenerate=force_recreate)
 
         return volumes
 
-    def resolve_alias(self) -> 'Command':
-        """ If this is not an alias, returns self. Otherwise returns command that is aliased by this (recursively). """
+    def resolve_alias(self) -> Command:
+        """If this is not an alias, returns self. Otherwise returns command that is aliased by this (recursively)."""
         if "aliases" in self:
             return self.parent()["commands"][self["aliases"]].resolve_alias()
         return self
 
-    def collect_environment(self) -> dict:
+    def collect_environment(self) -> dict[str, str | None]:
         """
         Collect environment variables.
 
@@ -326,7 +337,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
-        env = os.environ.copy()
+        env = cast(dict[str, str | None], os.environ.copy())
         keys_to_remove = {
             "PATH",
             "PS1",
@@ -342,29 +353,29 @@ class Command(ContainerDefinitionYamlConfigDocument):
             "XDG_DATA_DIRS",
             "XDG_DATA_HOME",
             "XDG_RUNTIME_DIR",
-            "XDG_STATE_HOME"
+            "XDG_STATE_HOME",
         }.intersection(set(env.keys()))
         for key in keys_to_remove:
             del env[key]
 
         if "environment" in self:
-            for key, value in self['environment'].items():
+            for key, value in self["environment"].items():
                 env[key] = value
 
         if "read_env_file" not in self or self["read_env_file"]:
-            for env_file_path in self.get_project()['env_files']:
+            for env_file_path in self.get_project()["env_files"]:
                 env.update(dotenv_values(os.path.join(self.get_project().folder(), env_file_path)))
 
         try:
             cols, lines = os.get_terminal_size()
-            env['COLUMNS'] = str(cols)
-            env['LINES'] = str(lines)
+            env["COLUMNS"] = str(cols)
+            env["LINES"] = str(lines)
         except OSError:
             pass
 
         return env
 
-    def get_service(self, app: 'App') -> Union[str, None]:
+    def get_service(self, app: App) -> str | None:
         """
         Only applicable to "in service" commands.
 
@@ -378,25 +389,30 @@ class Command(ContainerDefinitionYamlConfigDocument):
         if KEY_IDENTIFIER_IN_SERVICE_COMMAND not in self.doc:
             raise TypeError('get_service can only be used on "in service" commands.')
 
-        if 'services' not in app:
+        if "services" not in app:
             raise ValueError(
                 f"Command {(self['$name'] if '$name' in self else '???')} can not run in service with role "
                 f"{self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND]}: "
-                f"The app has no services.")
+                f"The app has no services."
+            )
 
-        for service_name, service in app['services'].items():
-            if 'roles' in service and self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND] in service['roles']:
+        for service_name, service in app["services"].items():
+            if "roles" in service and self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND] in service["roles"]:
                 return service_name
 
-        raise ValueError(f"Command {(self['$name'] if '$name' in self else '???')} can not run in service with role "
-                         f"{self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND]}: "
-                         f"No service with this role found in the app.")
+        raise ValueError(
+            f"Command {(self['$name'] if '$name' in self else '???')} can not run in service with role "
+            f"{self.doc[KEY_IDENTIFIER_IN_SERVICE_COMMAND]}: "
+            f"No service with this role found in the app."
+        )
 
     def error_str(self) -> str:
-        return f"{self.__class__.__name__}<{(self.internal_get('$name') if self.internal_contains('$name') else '???')}>"
+        return (
+            f"{self.__class__.__name__}<{(self.internal_get('$name') if self.internal_contains('$name') else '???')}>"
+        )
 
     @variable_helper
-    def parent(self) -> 'App':
+    def parent(self) -> App:
         """
         Returns the app that this command belongs to.
 
@@ -408,8 +424,10 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
             something: 'This is easy to use.'
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, App)
+        return parent
 
     @variable_helper
     def volume_path(self) -> str:
@@ -430,7 +448,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
                     host: '/home/peter/my_projects/project1/_riptide/cmd_data/command_name/command_cache'
                     container: '/foo/bar/cache'
         """
-        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'cmd_data',
-                            self.internal_get("$name"))
+        path = os.path.join(
+            get_project_meta_folder(self.get_project().folder()), "cmd_data", self.internal_get("$name")
+        )
         os.makedirs(path, exist_ok=True)
         return path

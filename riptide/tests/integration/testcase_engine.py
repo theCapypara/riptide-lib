@@ -3,7 +3,8 @@ import asyncio
 import unittest
 
 import requests
-from typing import re, Union, AnyStr, Pattern
+from typing import AnyStr
+from re import Pattern
 from urllib import request
 
 
@@ -24,12 +25,14 @@ class EngineTest(unittest.TestCase):
             if "port" in service:
                 # 2. Check if services with port can be resolved to an ip address
                 address = engine.address_for(project, service_name)
-                self.assertIsNotNone(address,
-                                     f'After starting a service with a port configured, '
-                                     f'it has to be resolvable. Service: {service_name}')
+                self.assertIsNotNone(
+                    address,
+                    f"After starting a service with a port configured, "
+                    f"it has to be resolvable. Service: {service_name}",
+                )
 
                 # 3. Check if these services can be reached via HTTP
-                http_address = 'http://' + address[0] + ':' + address[1]
+                http_address = "http://" + address[0] + ":" + address[1]
                 try:
                     request.urlopen(http_address)
                 except OSError as err:
@@ -46,8 +49,7 @@ class EngineTest(unittest.TestCase):
         for service in services:
             # 2. Check if all services can no longer be resolved to an ip address
             address = engine.address_for(project, service)
-            self.assertIsNone(address,
-                              'After stopping a service it must not be resolvable to an ip address + port.')
+            self.assertIsNone(address, "After stopping a service it must not be resolvable to an ip address + port.")
 
         # 3. Let engine tester check details
         service_objects = [project["app"]["services"][name] for name in services]
@@ -55,17 +57,17 @@ class EngineTest(unittest.TestCase):
 
     def assert_response(self, rsp_message: bytes, engine, project, service_name, sub_path="", msg=None):
         (ip, port) = engine.address_for(project, service_name)
-        response = requests.get('http://' + ip + ':' + port + sub_path)
+        response = requests.get("http://" + ip + ":" + port + sub_path)
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(rsp_message, response.content, msg)
 
-    def assert_response_matches_regex(self, regex: Union[AnyStr, Pattern[AnyStr]], engine, project, service_name):
+    def assert_response_matches_regex(self, regex: AnyStr | Pattern[AnyStr], engine, project, service_name):
         (ip, port) = engine.address_for(project, service_name)
-        response = requests.get('http://' + ip + ':' + port)
+        response = requests.get("http://" + ip + ":" + port)
 
         self.assertEqual(200, response.status_code)
-        self.assertRegex(response.content.decode('utf-8'), regex)
+        self.assertRegex(response.content.decode("utf-8"), regex)  # type: ignore
 
     async def _start_async_test(self, engine, project, services, engine_tester):
         """Start a project with the given services and run all assertions on it"""
@@ -77,7 +79,7 @@ class EngineTest(unittest.TestCase):
 
         # 1. No services must fail start
         self.maxDiff = 99999
-        self.assertDictEqual({}, failures, 'No service must fail starting')
+        self.assertDictEqual({}, failures, "No service must fail starting")
 
         self.assert_running(engine, project, services, engine_tester)
 
@@ -90,6 +92,6 @@ class EngineTest(unittest.TestCase):
                 failures.append(str(status))
 
         # 1. No services must fail start
-        self.assertListEqual([], failures, 'No service must fail stoping')
+        self.assertListEqual([], failures, "No service must fail stoping")
 
         self.assert_not_running(engine, project, services, engine_tester)

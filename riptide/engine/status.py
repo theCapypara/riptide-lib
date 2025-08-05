@@ -1,5 +1,6 @@
 """Generic module to return all sorts of status information for services"""
-from typing import Dict, NamedTuple, Union, List
+
+from typing import NamedTuple
 
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
@@ -15,11 +16,11 @@ class AdditionalPortsEntry(NamedTuple):
 
 class StatusResult(NamedTuple):
     running: bool
-    web: Union[str, None]  # proxy url if service has a web port assigned, None otherwise
-    additional_ports: List[AdditionalPortsEntry]  # if service has additional ports
+    web: str | None  # proxy url if service has a web port assigned, None otherwise
+    additional_ports: list[AdditionalPortsEntry]  # if service has additional ports
 
 
-def status_for(project: Project, engine: AbstractEngine, system_config: Config) -> Dict[str, StatusResult]:
+def status_for(project: Project, engine: AbstractEngine, system_config: Config) -> dict[str, StatusResult]:
     """
     Returns the status for a given project's services, including if they are running and
     all their additional ports.
@@ -45,22 +46,12 @@ def status_for(project: Project, engine: AbstractEngine, system_config: Config) 
                 for entry in service["additional_ports"].values():
                     port_host = get_existing_port_mapping(project, service, entry["host_start"])
                     if port_host:
-                        additional_ports.append(AdditionalPortsEntry(
-                            title=entry["title"],
-                            container=entry["container"],
-                            host=port_host
-                        ))
+                        additional_ports.append(
+                            AdditionalPortsEntry(title=entry["title"], container=entry["container"], host=port_host)
+                        )
 
-            status_dict[name] = StatusResult(
-                running=running,
-                web=proxy_url,
-                additional_ports=additional_ports
-            )
+            status_dict[name] = StatusResult(running=running, web=proxy_url, additional_ports=additional_ports)
         else:
-            status_dict[name] = StatusResult(
-                running=running,
-                web=None,
-                additional_ports=[]
-            )
+            status_dict[name] = StatusResult(running=running, web=None, additional_ports=[])
 
     return status_dict

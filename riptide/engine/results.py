@@ -1,12 +1,14 @@
 import asyncio
 import traceback
+from asyncio import Future
+from typing import Generic, NamedTuple, Self, TypeVar
+from collections.abc import AsyncIterator
 
 import janus
-from typing import Dict, NamedTuple, Union, TypeVar, Generic
 
 
 class StartStopResultStep(NamedTuple):
-    steps: Union[int, None]
+    steps: int | None
     current_step: int
     text: str
 
@@ -15,6 +17,7 @@ class EndResultQueue(Exception):
     """
     Marks the end of a ResultQueue.
     """
+
     pass
 
 
@@ -23,13 +26,18 @@ class ResultError(EndResultQueue):
     Marks the end of a ResultQueue and signals an error.
     Is raised if a result queue was ended with an error.
     """
-    def __init__(self, message: str, details: str = None, cause: Exception = None, *args: object, **kwargs: object) -> None:
+
+    def __init__(
+        self, message: str, details: str | None = None, cause: Exception | None = None, *args: object, **kwargs: object
+    ) -> None:
         self.message = message
         self.details = details
         self.cause = cause
         self.traceback_string = "Unknown reason."
         if cause:
-            self.traceback_string = "".join(traceback.format_exception(type(cause), value=cause, tb=cause.__traceback__))
+            self.traceback_string = "".join(
+                traceback.format_exception(type(cause), value=cause, tb=cause.__traceback__)
+            )
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -46,7 +54,7 @@ class ResultPoisoned(InterruptedError, ResultError):
     pass
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ResultQueue(Generic[T]):
@@ -69,17 +77,18 @@ class ResultQueue(Generic[T]):
 
     Queue can be ended with an error (ResultError), which will be raised when reading over it.
     """
-    __opened_instances = []
+
+    __opened_instances: list[Self] = []
 
     poisoned = False
 
     def __init__(self):
-        self.queue = janus.Queue()
+        self.queue: janus.Queue = janus.Queue()
         self.was_ended_put = False
         self.was_ended_get = False
         self.__class__.__opened_instances.append(self)
 
-    def put(self, obj):
+    def put(self, obj: T):
         if self.was_ended_put:
             raise EOFError("ResultQueue was already ended.")
         if self.__class__.poisoned:
@@ -102,9 +111,9 @@ class ResultQueue(Generic[T]):
         for instance in cls.__opened_instances:
             instance.end_with_error(ResultPoisoned("Process was interrupted."))
 
-    async def get(self):
+    async def get(self) -> T:
         """
-        Returns the next element, or raises it, if is is an instance of
+        Returns the next element, or raises it, if it is an instance of
         EndResultQueue. If it is, the queue is also marked as ended,
         prohibiting calling get again.
         If a raised EndResultQueue is an instance of ResultError,
@@ -133,6 +142,7 @@ class ResultQueue(Generic[T]):
                 raise end
             raise StopAsyncIteration
         return top
+
     pass
 
 
@@ -155,7 +165,12 @@ class MultiResultQueue(Generic[T]):
     A list of ids and ResultQueues in it can also be manually retrieved.
     """
 
-    def __init__(self, dict_of_queues: Dict[ResultQueue, str]):
+    dict_of_queues: dict[ResultQueue, str]
+    ended: bool
+    done_list: list[Future[T]]
+    pending_in_iteration: dict[Future[T], ResultQueue]
+
+    def __init__(self, dict_of_queues: dict[ResultQueue, str]):
         """
         Creates the multi queue.
         :param dict_of_queues: The parameter has to contain the result queues in a dict. Key is the queue and value a string
@@ -167,7 +182,7 @@ class MultiResultQueue(Generic[T]):
     def ids(self):
         return list(self.dict_of_queues.values())
 
-    def __aiter__(self):
+    def __aiter__(self) -> AsyncIterator[tuple[str, T | ResultError | None, bool]]:
         # pending_in_iteration is a dict that maps the asyncio tasks created from the queue.get methods to the
         # queue objects, so that when a get task finishes the queue that the task belongs to can be found
         self.pending_in_iteration = {}
@@ -182,7 +197,7 @@ class MultiResultQueue(Generic[T]):
             self.pending_in_iteration[task] = queue
         return self
 
-    async def __anext__(self):
+    async def __anext__(self) -> tuple[str, T | ResultError | None, bool]:
         if self.ended:
             raise StopAsyncIteration
 
@@ -198,16 +213,19 @@ class MultiResultQueue(Generic[T]):
         queue = self.pending_in_iteration[done]
         del self.pending_in_iteration[done]
 
-        if done.exception():
+        result: tuple[str, T | ResultError | None, bool]
+        exc = done.exception()
+        if exc is not None:
             # Deal with exceptions (=> done was ended)
-            if isinstance(done.exception(), ResultError):
+            if isinstance(exc, ResultError):
                 # Provide error for queue
-                result = (self.dict_of_queues[queue], done.exception(), True)
-            elif isinstance(done.exception(), EndResultQueue):
+                result = (self.dict_of_queues[queue], exc, True)
+            elif isinstance(exc, EndResultQueue):
                 # Provide end value for queue
-                result = (self.dict_of_queues[queue], None,             True)
+                result = (self.dict_of_queues[queue], None, True)
             else:
-                raise done.exception()
+                assert exc is not None
+                raise exc
         else:
             # Provide value from queue
             result = (self.dict_of_queues[queue], done.result(), False)
