@@ -626,7 +626,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         return volumes
 
-    def collect_environment(self) -> dict[str, str | None]:
+    def collect_environment(self) -> dict[str, str]:
         """
         Collect environment variables from the "environment" entry in the service
         configuration.
@@ -654,7 +654,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
         if self._db_driver:
             env.update(self._db_driver.collect_environment())
 
-        return env
+        # Filter out any None value environment variables
+        return {k: v for k, v in env.items() if v is not None}
 
     def collect_ports(self) -> dict[int, int]:
         """

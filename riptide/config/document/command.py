@@ -7,17 +7,18 @@ from typing import TYPE_CHECKING, cast
 
 from configcrunch import variable_helper
 from dotenv import dotenv_values
-from schema import Schema, Optional, Or
-
-from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
-from riptide.config.files import get_project_meta_folder, CONTAINER_SRC_PATH
+from riptide.config.document.common_service_command import (
+    ContainerDefinitionYamlConfigDocument,
+)
+from riptide.config.files import CONTAINER_SRC_PATH, get_project_meta_folder
 from riptide.config.service.config_files import process_config
 from riptide.config.service.volumes import process_additional_volumes
 from riptide.lib.cross_platform import cppath
+from schema import Optional, Or, Schema
 
 if TYPE_CHECKING:
-    from riptide.config.document.project import Project
     from riptide.config.document.app import App
+    from riptide.config.document.project import Project
 
 HEADER = "command"
 KEY_IDENTIFIER_IN_SERVICE_COMMAND = "in_service_with_role"
@@ -316,7 +317,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
             return self.parent()["commands"][self["aliases"]].resolve_alias()
         return self
 
-    def collect_environment(self) -> dict[str, str | None]:
+    def collect_environment(self) -> dict[str, str]:
         """
         Collect environment variables.
 
@@ -373,7 +374,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
         except OSError:
             pass
 
-        return env
+        # Filter out any None value environment variables
+        return {k: v for k, v in env.items() if v is not None}
 
     def get_service(self, app: App) -> str | None:
         """
