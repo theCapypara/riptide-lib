@@ -40,7 +40,7 @@ Repository = "https://github.com/theCapypara/riptide-lib"
 Documentation = "https://riptide-docs.readthedocs.io"
 
 [tool.setuptools.packages.find]
-exclude = ["test_assets"]
+exclude = ["test_assets", "test_reports"]
 
 [tool.ruff]
 line-length = 120

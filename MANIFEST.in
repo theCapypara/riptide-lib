@@ -1,2 +1,3 @@
 graft riptide/assets
+graft riptide/tests/fixtures
 recursive-include riptide py.typed
