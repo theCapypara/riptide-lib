@@ -45,7 +45,7 @@ class EngineServiceTest(EngineTest):
                 elif loaded.src == "src":
                     self.assert_response(index_file_in_src, loaded.engine, project, service_name)
                 else:
-                    AssertionError("Error in test: Unexpected src")
+                    self.fail("Error in test: Unexpected src")
 
                 # Check permissions
                 user, group, mode, write_check = loaded.engine_tester.get_permissions_at(
@@ -180,7 +180,7 @@ class EngineServiceTest(EngineTest):
                         elif loaded.src == "src":
                             self.assert_response(index_file_in_src_workdir, loaded.engine, project, service_name)
                         else:
-                            AssertionError("Error in test: Unexpected src")
+                            self.fail("Error in test: Unexpected src")
                     elif service_name == "working_directory_absolute":
                         # We didn't put an index.html at /a_folder, so we expect
                         # a directory listing of the three files we put in the image
@@ -197,7 +197,7 @@ class EngineServiceTest(EngineTest):
                             service_name,
                         )
                     else:
-                        AssertionError("Error in test: Unexpected service")
+                        self.fail("Error in test: Unexpected service")
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, services, loaded.engine_tester)
