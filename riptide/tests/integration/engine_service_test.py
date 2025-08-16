@@ -6,6 +6,9 @@ import stat
 import unittest
 from pathlib import PurePosixPath
 from time import sleep
+from types import SimpleNamespace
+from unittest import mock
+from unittest.mock import Mock
 
 import requests
 from riptide.config.files import CONTAINER_SRC_PATH
@@ -417,10 +420,9 @@ class EngineServiceTest(EngineTest):
                 # STOP
                 self.run_stop_test(loaded.engine, project, services, loaded.engine_tester)
 
-    def test_additional_ports(self):
-        self.skipTest("Currently broken on Py3.9+, probably a race condition.")
-        return
-
+    # Pretend that 9966 is not open (so it has to take 9967)
+    @mock.patch("psutil.net_connections", return_value=[SimpleNamespace(laddr=SimpleNamespace(port=9966))])
+    def test_additional_ports(self, net_connections_mock: Mock):
         for project_ctx in load(self, ["integration_all.yml"], ["."]):
             with project_ctx as loaded:
                 project = loaded.config["project"]
@@ -432,8 +434,29 @@ class EngineServiceTest(EngineTest):
                 # START
                 self.run_start_test(loaded.engine, project, [service1], loaded.engine_tester)
 
-                # Check if localhost:9965 get's us the contents of the service
-                response = requests.get("http://127.0.0.1:9965/hostname")
+                # Get and validate the ports in the port mapping file
+                # The mapping file must already contain entries for both
+                ports_file_path = os.path.join(loaded.temp_system_dir, "ports.json")
+                self.assertTrue(os.path.exists(ports_file_path))
+                with open(ports_file_path) as f:
+                    ports_file = json.load(f)
+                self.assertTrue("requests" in ports_file)
+                self.assertTrue(project["name"] in ports_file["requests"])
+                self.assertTrue(service1 in ports_file["requests"][project["name"]])
+                self.assertTrue(service2 in ports_file["requests"][project["name"]])
+                self.assertTrue("9965" in ports_file["requests"][project["name"]][service1])
+                self.assertTrue("9965" in ports_file["requests"][project["name"]][service2])
+                port_service1 = ports_file["requests"][project["name"]][service1]["9965"]
+                port_service2 = ports_file["requests"][project["name"]][service2]["9965"]
+                # The services must have gotten port 9965 and 9967 on the host, but not both the same
+                self.assertTrue(port_service1 == 9965 or port_service1 == 9967, f"port was instead {port_service1}")
+                self.assertTrue(port_service2 == 9965 or port_service2 == 9967, f"port was instead {port_service2}")
+                self.assertNotEqual(port_service1, port_service2)
+                self.assertTrue("ports" in ports_file)
+                self.assertDictEqual({"9965": True, "9967": True}, ports_file["ports"])
+
+                # Check if localhost:{...} gets us the contents of the service
+                response = requests.get(f"http://127.0.0.1:{port_service1}/hostname")
                 self.assertEqual(200, response.status_code)
                 self.assertEqual(response.content, b"additional_ports\n")
 
@@ -441,38 +464,27 @@ class EngineServiceTest(EngineTest):
                 self.run_stop_test(loaded.engine, project, [service1], loaded.engine_tester)
 
                 # Test Two: Two times same service, second service must have other host port (+1)
-                #           We start second service first, to really make sure it doesn't use the first port
 
                 # START
                 self.run_start_test(loaded.engine, project, [service2], loaded.engine_tester)
                 self.run_start_test(loaded.engine, project, [service1], loaded.engine_tester)
 
                 # Check both services on expected ports
-                response = requests.get("http://127.0.0.1:9965/hostname")
+                response = requests.get(f"http://127.0.0.1:{port_service1}/hostname")
                 self.assertEqual(200, response.status_code)
                 self.assertEqual(response.content, b"additional_ports\n")
-                response = requests.get("http://127.0.0.1:9966/hostname")
+                response = requests.get(f"http://127.0.0.1:{port_service2}/hostname")
                 self.assertEqual(200, response.status_code)
                 self.assertEqual(
                     response.content,
                     b"additional_ports_again\n",
-                    "The second service must register an additional port on host of 9965 + 1",
+                    "The second service must register an additional port on host of 9965 or 9967",
                 )
 
                 # STOP
                 self.run_stop_test(loaded.engine, project, [service1, service2], loaded.engine_tester)
 
-                # Test contents of ports.json
-                with open(os.path.join(loaded.temp_system_dir, "ports.json")) as file:
-                    json_ports = json.load(file)
-
-                self.assertDictEqual(
-                    {
-                        "ports": {"9965": True, "9966": True},
-                        "requests": {project["name"]: {service1: {"9965": 9965}, service2: {"9965": 9966}}},
-                    },
-                    json_ports,
-                )
+                net_connections_mock.assert_called()
 
     @unittest.skipIf(
         platform.system().lower().startswith("win"),

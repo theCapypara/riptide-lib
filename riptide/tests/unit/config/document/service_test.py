@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, Mock, call
 
 import riptide.config.document.service as module
 from configcrunch import ConfigcrunchError
+from riptide.config import loader as LOADER_MODULE
 from riptide.config.files import CONTAINER_HOME_PATH, CONTAINER_SRC_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
@@ -40,7 +41,7 @@ class ServiceTestCase(unittest.TestCase):
         for name in valid_names:
             with self.subTest(name=name):
                 service = module.Service.from_yaml(get_fixture_path(FIXTURE_BASE_PATH + name))
-                service._initialize_data_after_merge(service.to_dict())
+                self.init_service(service, service.to_dict())
                 self.assertTrue(service.validate())
 
     def test_validate_invalid_roles(self):
@@ -62,7 +63,7 @@ class ServiceTestCase(unittest.TestCase):
         with self.assertRaises(ConfigcrunchError):
             service = module.Service.from_yaml(get_fixture_path(FIXTURE_BASE_PATH + "invalid_config.yml"))
             service.freeze()
-            service._initialize_data_after_merge(service.doc)
+            self.init_service(service, service.doc)
 
     def test_validate_invalid_additional_volumes(self):
         service = module.Service.from_yaml(get_fixture_path(FIXTURE_BASE_PATH + "invalid_additional_volumes.yml"))
@@ -92,7 +93,7 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_validate_extra_db_driver_not_found(self):
         service = module.Service.from_yaml(get_fixture_path(FIXTURE_BASE_PATH + "valid_db_driver.yml"))
-        service._initialize_data_after_merge(service.to_dict())
+        self.init_service(service, service.to_dict())
         # not setting _db_driver.
         with self.assertRaisesRegex(
             ConfigcrunchError,
@@ -113,7 +114,7 @@ class ServiceTestCase(unittest.TestCase):
         )
         service.absolute_paths = ["FIRST", "SECOND"]
         service.freeze()
-        service._initialize_data_after_merge(service.doc)
+        self.init_service(service, service.doc)
 
         self.assertEqual(
             {
@@ -146,7 +147,7 @@ class ServiceTestCase(unittest.TestCase):
         )
         service.absolute_paths = ["FIRST", "SECOND"]
         service.freeze()
-        service._initialize_data_after_merge(service.doc)
+        self.init_service(service, service.doc)
 
         self.assertEqual(
             {
@@ -180,7 +181,7 @@ class ServiceTestCase(unittest.TestCase):
         service.absolute_paths = ["FIRST", "SECOND"]
         service.freeze()
         with self.assertRaisesRegex(ConfigcrunchError, "This probably happens because one of your services"):
-            service._initialize_data_after_merge(service.doc)
+            self.init_service(service, service.doc)
 
     @mock.patch("os.path.exists", return_value=True)
     def test_init_data_after_merge_config_has_project(self, exist_mock: Mock):
@@ -194,19 +195,22 @@ class ServiceTestCase(unittest.TestCase):
         )
         service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
         service.freeze()
-        service._initialize_data_after_merge(service.doc)
+        self.init_service(service, service.doc, with_project=True)
+
+        source_path_1 = os.path.join(ProjectStub.FOLDER, "config1/path")
+        source_path_2 = os.path.join(ProjectStub.FOLDER, "config2/path2/blub")
 
         self.assertEqual(
             {
                 "one": {
                     "from": "config1/path",
                     "to": "doesnt matter",
-                    "$source": os.path.join(ProjectStub.FOLDER, "config1/path"),
+                    "$source": source_path_1,
                 },
                 "two": {
                     "from": "config2/path2/blub",
                     "to": "doesnt matter2",
-                    "$source": os.path.join(ProjectStub.FOLDER, "config2/path2/blub"),
+                    "$source": source_path_2,
                 },
             },
             service["config"],
@@ -214,8 +218,8 @@ class ServiceTestCase(unittest.TestCase):
 
         exist_mock.assert_has_calls(
             [
-                call(os.path.join(ProjectStub.FOLDER, "config1/path")),
-                call(os.path.join(ProjectStub.FOLDER, "config2/path2/blub")),
+                call(source_path_1),
+                call(source_path_2),
             ],
             any_order=True,
         )
@@ -231,7 +235,7 @@ class ServiceTestCase(unittest.TestCase):
             }
         )
         service.freeze()
-        service._initialize_data_after_merge(service.doc)
+        self.init_service(service, service.doc)
 
         # Fallback is os.getcwd()
         self.assertEqual(
@@ -262,7 +266,7 @@ class ServiceTestCase(unittest.TestCase):
         service.absolute_paths = ["PATH"]
         service.freeze()
         with self.assertRaises(ConfigcrunchError):
-            service._initialize_data_after_merge(service.doc)
+            self.init_service(service, service.doc)
 
     def test_init_data_after_merge_config_illegal_config_from_os_sep(self):
         doc = {"config": {"one": {"from": os.sep + "PATH", "to": "doesnt matter"}}}
@@ -271,7 +275,7 @@ class ServiceTestCase(unittest.TestCase):
         service.absolute_paths = ["PATH"]
         service.freeze()
         with self.assertRaises(ConfigcrunchError):
-            service._initialize_data_after_merge(service.doc)
+            self.init_service(service, service.doc)
 
     def test_init_data_after_merge_config_invalid_entry(self):
         # Invalid entries should be skipped, the validation will
@@ -281,13 +285,13 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service(doc)
         service.absolute_paths = ["PATH"]
         service.freeze()
-        service._initialize_data_after_merge(service.doc)
+        self.init_service(service, service.doc)
         self.assertDictEqual(doc["config"], service["config"])
 
     def test_initialize_data_after_merge_set_defaults(self):
         service = module.Service.from_dict({})
         service.freeze()
-        service._initialize_data_after_merge(service.doc)
+        self.init_service(service, service.doc)
         self.assertEqual(
             {
                 "run_as_current_user": True,
@@ -322,7 +326,7 @@ class ServiceTestCase(unittest.TestCase):
             }
         )
         service.freeze()
-        service._initialize_data_after_merge(service.doc)
+        self.init_service(service, service.doc)
         self.assertEqual(
             {
                 "run_as_current_user": "SET",
@@ -346,7 +350,7 @@ class ServiceTestCase(unittest.TestCase):
         with patch_mock_db_driver("riptide.config.document.service.db_driver_for_service.get") as (get, driver):
             driver.collect_additional_ports = MagicMock(return_value={"four": 4, "five": 5, "three": 6})
             service.freeze()
-            service._initialize_data_after_merge(service.doc)
+            self.init_service(service, service.doc)
             get.assert_called_once_with(service.doc, service)
             self.assertEqual({"one": 1, "two": 2, "four": 4, "five": 5, "three": 3}, service.doc["additional_ports"])
 
@@ -584,7 +588,7 @@ class ServiceTestCase(unittest.TestCase):
         expected: dict[str, str] = {}
 
         service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
-        service._initialize_data_after_merge(service.to_dict())
+        self.init_service(service, service.to_dict())
         service.freeze()
 
         ## OVERALL ASSERTIONS
@@ -599,7 +603,7 @@ class ServiceTestCase(unittest.TestCase):
         expected = {"stderr~PROCESSED2": {"bind": module.LOGGING_CONTAINER_STDERR, "mode": "rw"}}
 
         service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
-        service._initialize_data_after_merge(service.to_dict())
+        self.init_service(service, service.to_dict())
         service.freeze()
 
         ## OVERALL ASSERTIONS
@@ -743,3 +747,12 @@ class ServiceTestCase(unittest.TestCase):
     def test_home_path(self):
         service = module.Service.from_dict({})
         self.assertEqual(CONTAINER_HOME_PATH, service.home_path())
+
+    def init_service(self, service: module.Service, doc: dict, with_project: bool = False):
+        if with_project:
+            # XXX: Not ideal, see comment at CURRENTLY_LOADING_PROJECT_PATH
+            LOADER_MODULE.CURRENTLY_LOADING_PROJECT_PATH = os.path.join(ProjectStub.FOLDER, "riptide.yml")
+        try:
+            service._initialize_data_after_merge(doc)
+        finally:
+            LOADER_MODULE.CURRENTLY_LOADING_PROJECT_PATH = None

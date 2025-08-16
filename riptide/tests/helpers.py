@@ -1,10 +1,7 @@
 import os
-
 from unittest import mock
-
 from unittest.mock import Mock
 
-from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.db.driver.abstract import AbstractDbDriver
 
 
@@ -42,18 +39,6 @@ def patch_ycd_mock(ycd):
     - doc: Returns the value of the document parameter passed with the constructor
     """
     return _WithYcdMock(ycd)
-
-
-def side_effect_for_load_subdocument():
-    """
-    Returns a side effect function creating a stub instance of YCDD.
-    Used for testing calls to load_subdocument.
-    """
-
-    def func(value, *args, **kwargs):
-        return YamlConfigDocumentStub.make(value)
-
-    return func
 
 
 def patch_mock_db_driver(db_driver_get_path):

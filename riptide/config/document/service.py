@@ -454,11 +454,13 @@ class Service(ContainerDefinitionYamlConfigDocument):
         if self.absolute_paths:
             folders_to_search = [os.path.dirname(path) for path in self.absolute_paths]
         else:
-            try:
-                folders_to_search = [self.get_project().folder()]
-            except IndexError:
+            from riptide.config.loader import CURRENTLY_LOADING_PROJECT_PATH
+
+            if CURRENTLY_LOADING_PROJECT_PATH is None:
                 # Fallback: Assume cwd
                 folders_to_search = [os.getcwd()]
+            else:
+                folders_to_search = [os.path.dirname(CURRENTLY_LOADING_PROJECT_PATH)]
 
         if "config" in data and isinstance(data["config"], dict):
             for config in data["config"].values():
@@ -518,7 +520,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         return True
 
     def before_start(self):
-        """Loads data required for service start, called by riptide_project_start_ctx()"""
+        """Loads data required for service start, called by riptide_start_project_ctx()"""
         # Collect ports
         project = self.get_project()
         self._loaded_port_mappings = {}
@@ -560,7 +562,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
             assert project is not None
             return project
         except AssertionError as ex:
-            raise IndexError("Expected command to have a project assigned") from ex
+            raise IndexError("Expected service to have a project assigned") from ex
 
     def collect_volumes(self) -> OrderedDict:
         """

@@ -1,14 +1,12 @@
 import os
 import unittest
 from unittest import mock
-
-from unittest.mock import call, Mock
-
-from schema import SchemaError
+from unittest.mock import Mock
 
 import riptide.config.document.project as module
-from configcrunch import ConfigcrunchError, YamlConfigDocument
-from riptide.tests.helpers import side_effect_for_load_subdocument, get_fixture_path
+from configcrunch import YamlConfigDocument
+from riptide.tests.helpers import get_fixture_path
+from schema import SchemaError
 
 FIXTURE_BASE_PATH = "project" + os.sep
 
@@ -47,42 +45,28 @@ class ProjectTestCase(unittest.TestCase):
         project.resolve_and_merge_references(["./path1", "./path2"])
         super_mock.assert_called_once_with(["./path1", "./path2"])
 
-    @unittest.skip("Needs to be rewritten for configcrunch 1.0+")
     def test_resolve_and_merge_references_with_app(self):
         paths = ["path1", "path2"]
 
         app = {"key1": "value1"}
         doc = {"name": "test", "app": app}
 
-        with mock.patch(
-            "riptide.config.document.project.load_subdocument", side_effect=side_effect_for_load_subdocument()
-        ) as load_subdoc_mock:
-            project = module.Project(doc)
-            project.resolve_and_merge_references(paths)
+        project = module.Project(doc)
+        project.resolve_and_merge_references(paths)
+        project.freeze()
 
-            self.assertIsInstance(project["app"], YamlConfigDocument)
-            self.assertEqual(app, project["app"].doc)
+        self.assertIsInstance(project["app"], YamlConfigDocument)
+        self.assertEqual(app, project["app"].doc)
 
-            load_subdoc_mock.assert_has_calls(
-                [
-                    call(app, project, module.App, paths),
-                ],
-                any_order=True,
-            )
-
-    @unittest.skip("Needs to be rewritten for configcrunch 1.0+")
     def test_resolve_and_merge_references_with_app_no_dict(self):
         paths = ["path1", "path2"]
 
         app = "nodict"
         doc = {"name": "test", "app": app}
 
-        with mock.patch(
-            "riptide.config.document.project.load_subdocument", side_effect=side_effect_for_load_subdocument()
-        ):
-            project = module.Project(doc)
-            with self.assertRaises(ConfigcrunchError):
-                project.resolve_and_merge_references(paths)
+        project = module.Project(doc)
+        with self.assertRaises(ValueError):
+            project.resolve_and_merge_references(paths)
 
     def test_folder_no_path(self):
         project = module.Project.from_dict({})

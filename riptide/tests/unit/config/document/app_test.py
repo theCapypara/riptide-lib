@@ -2,12 +2,10 @@ import os
 import unittest
 from unittest import mock
 
-from schema import SchemaError
-
 import riptide.config.document.app as module
-
 from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.tests.helpers import get_fixture_path
+from schema import SchemaError
 
 FIXTURE_BASE_PATH = "app" + os.sep
 
@@ -40,21 +38,67 @@ class AppTestCase(unittest.TestCase):
         app.resolve_and_merge_references(["./path1", "./path2"])
         super_mock.assert_called_once_with(["./path1", "./path2"])
 
-    @unittest.skip("Needs to be rewritten for configcrunch 1.0+")
     def test_resolve_and_merge_references_with_services(self):
-        raise NotImplementedError()  # see git history for previous implementation & rewriting
+        paths = ["path1", "path2"]
 
-    @unittest.skip("Needs to be rewritten for configcrunch 1.0+")
+        service1 = {"key1": "value1"}
+        service2 = {"key2": "value2"}
+        doc = {"name": "test", "services": {"service1": service1, "service2": service2}}
+
+        app = module.App(doc)
+        app.resolve_and_merge_references(paths)
+        app.freeze()
+
+        self.assertIsNotNone(app["services"]["service1"].doc)
+        self.assertTrue("key1" in app["services"]["service1"].doc)
+        self.assertEqual("value1", app["services"]["service1"].doc["key1"])
+        self.assertIsNotNone(app["services"]["service2"].doc)
+        self.assertTrue("key2" in app["services"]["service2"].doc)
+        self.assertEqual("value2", app["services"]["service2"].doc["key2"])
+
     def test_resolve_and_merge_references_with_services_no_dict(self):
-        raise NotImplementedError()  # see git history for previous implementation & rewriting
+        paths = ["path1", "path2"]
 
-    @unittest.skip("Needs to be rewritten for configcrunch 1.0+")
+        service1 = "nodict"
+        doc = {
+            "name": "test",
+            "services": {
+                "service1": service1,
+            },
+        }
+
+        app = module.App(doc)
+        with self.assertRaises(ValueError):
+            app.resolve_and_merge_references(paths)
+
     def test_resolve_and_merge_references_with_commands(self):
-        raise NotImplementedError()  # see git history for previous implementation & rewriting
+        paths = ["path1", "path2"]
 
-    @unittest.skip("Needs to be rewritten for configcrunch 1.0+")
+        cmd1 = {"key1": "value1"}
+        cmd2 = {"key2": "value2"}
+        doc = {"name": "test", "commands": {"cmd1": cmd1, "cmd2": cmd2}}
+
+        app = module.App(doc)
+        app.resolve_and_merge_references(paths)
+        app.freeze()
+
+        self.assertEqual({"$name": "cmd1", "key1": "value1"}, app["commands"]["cmd1"].doc)
+        self.assertEqual({"$name": "cmd2", "key2": "value2"}, app["commands"]["cmd2"].doc)
+
     def test_resolve_and_merge_references_with_commands_no_dict(self):
-        raise NotImplementedError()  # see git history for previous implementation & rewriting
+        paths = ["path1", "path2"]
+
+        cmd1 = "nodict"
+        doc = {
+            "name": "test",
+            "commands": {
+                "cmd1": cmd1,
+            },
+        }
+
+        app = module.App(doc)
+        with self.assertRaises(ValueError):
+            app.resolve_and_merge_references(paths)
 
     def test_get_service_by_role(self):
         SEARCHED_ROLE = "needle"

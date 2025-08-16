@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from schema import Optional, Schema
 from typing import TYPE_CHECKING
 
-from configcrunch import YamlConfigDocument, DocReference
-from configcrunch import variable_helper
+from configcrunch import DocReference, YamlConfigDocument, variable_helper
 from riptide.config.document.command import Command
 from riptide.config.document.service import Service
+from schema import Optional, Schema
 
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
