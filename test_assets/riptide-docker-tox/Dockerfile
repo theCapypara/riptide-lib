@@ -32,6 +32,7 @@ RUN curl -sSL https://get.docker.com/ | sh
 RUN apt-get update && apt-get install -y \
     build-essential \
     libcap-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src

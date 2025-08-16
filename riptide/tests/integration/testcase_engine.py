@@ -1,22 +1,22 @@
 import asyncio
-
 import unittest
+from asyncio import AbstractEventLoop
+from re import Pattern
+from typing import AnyStr
+from urllib import request
 
 import requests
-from typing import AnyStr
-from re import Pattern
-from urllib import request
 
 
 class EngineTest(unittest.TestCase):
     def run_start_test(self, engine, project, services, engine_tester):
         # Run async test code
-        loop = asyncio.get_event_loop()
+        loop = self._get_event_loop()
         loop.run_until_complete(self._start_async_test(engine, project, services, engine_tester))
 
     def run_stop_test(self, engine, project, services, engine_tester):
         # Run async test code
-        loop = asyncio.get_event_loop()
+        loop = self._get_event_loop()
         loop.run_until_complete(self._stop_async_test(engine, project, services, engine_tester))
 
     def assert_running(self, engine, project, services, engine_tester):
@@ -95,3 +95,11 @@ class EngineTest(unittest.TestCase):
         self.assertListEqual([], failures, "No service must fail stoping")
 
         self.assert_not_running(engine, project, services, engine_tester)
+
+    def _get_event_loop(self) -> AbstractEventLoop:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop
