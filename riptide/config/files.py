@@ -7,20 +7,20 @@ Also provides some utility file-related functions.
 
 from __future__ import annotations
 
-import os
 import atexit
-import re
-
 import importlib.resources
+import os
+import re
+from contextlib import ExitStack
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from appdirs import user_config_dir
-from contextlib import ExitStack
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
+
+ENV_RIPTIDE_CONFIG_DIR = "RIPTIDE_CONFIG_DIR"
 
 # Expected name of the project files during auto-discovery
 RIPTIDE_PROJECT_CONFIG_NAME = "riptide.yml"
@@ -92,6 +92,8 @@ def riptide_local_repositories_path() -> str:
 
 def riptide_config_dir() -> str:
     """Path to the system configuration directory."""
+    if ENV_RIPTIDE_CONFIG_DIR in os.environ:
+        return os.path.abspath(os.environ[ENV_RIPTIDE_CONFIG_DIR])
     return user_config_dir("riptide", False)
 
 
