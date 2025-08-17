@@ -42,6 +42,9 @@ jobs:
           push: false
           tags: riptide_integration_test
           load: true
+        env:
+          DOCKER_BUILD_SUMMARY: "false"
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
       - name: Install system dependencies
         run: >-
           sudo apt-get install -y build-essential libcap-dev libffi-dev
