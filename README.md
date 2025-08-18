@@ -1,4 +1,9 @@
-# ![Riptide](https://riptide-docs.readthedocs.io/en/latest/_images/logo.png)
+<h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://riptide-docs.readthedocs.io/en/latest/_images/logo_dark.png">
+  <img alt="Riptide" src="https://riptide-docs.readthedocs.io/en/latest/_images/logo.png" width="300">
+</picture>
+</h1>
 
 [<img src="https://img.shields.io/github/actions/workflow/status/theCapypara/riptide-lib/build.yml" alt="Build Status">](https://github.com/theCapypara/riptide-lib/actions)
 [<img src="https://readthedocs.org/projects/riptide-docs/badge/?version=latest" alt="Documentation Status">](https://riptide-docs.readthedocs.io/en/latest/)
