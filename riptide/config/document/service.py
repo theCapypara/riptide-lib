@@ -239,6 +239,10 @@ class Service(ContainerDefinitionYamlConfigDocument):
                     volume_name have the same content, even across projects. As a constraint, the name of
                     two volumes should only be the same, if the host path specified is also the same, to ensure
                     the same behaviour regardless of if the performance setting is enabled.
+                [host_system]: Or['Linux', 'Darwin', 'Windows']
+                    Only mount this volume if the host
+                    `system name <https://docs.python.org/3/library/platform.html#platform.system>` matches
+                    this value.
 
         [driver]
             The database driver configuration, set this only if the role "db" is set.
@@ -382,6 +386,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
                         Optional("mode"): Or("rw", "ro"),  # default: rw - can be rw/ro.
                         Optional("type"): Or("directory", "file"),  # default: directory
                         Optional("volume_name"): str,
+                        Optional("host_system"): Or("Linux", "Darwin", "Windows"),
                     }
                 },
                 Optional("allow_full_memlock"): bool,

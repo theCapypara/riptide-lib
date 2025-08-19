@@ -1,11 +1,8 @@
-from collections import OrderedDict
-
 import os
 import unittest
-
-from unittest import mock
-
+from collections import OrderedDict
 from pathlib import PurePosixPath
+from unittest import mock
 from unittest.mock import Mock, call
 
 from riptide.config.files import CONTAINER_SRC_PATH
@@ -65,3 +62,33 @@ class VolumesTestCase(unittest.TestCase):
 
         # First volume had ~ in it:
         expanduser_mock.assert_called_once_with("~")
+
+    @mock.patch("platform.system", return_value="Darwin")
+    @mock.patch("os.makedirs")
+    def test_process_additional_volumes_host_system(self, makedirs_mock: Mock, system_mock: Mock):
+        input = [
+            {"host": "/source1", "container": "/vol1", "mode": "rw", "host_system": "Darwin"},
+            {"host": "/source2", "container": "/vol2", "mode": "rw", "host_system": "Linux"},
+            {"host": "/source3", "container": "/vol3", "mode": "rw"},
+        ]
+        expected = OrderedDict(
+            {
+                "/source1": {"bind": "/vol1", "mode": "rw"},
+                "/source3": {"bind": "/vol3", "mode": "rw"},
+            }
+        )
+
+        actual = process_additional_volumes(input, ProjectStub.FOLDER)
+        self.assertEqual(expected, actual)
+        self.assertIsInstance(actual, OrderedDict)
+
+        makedirs_mock.assert_has_calls(
+            [
+                # ADDITIONAL VOLUMES
+                call("/source1", exist_ok=True),
+                call("/source3", exist_ok=True),
+            ],
+            any_order=True,
+        )
+
+        system_mock.assert_called()

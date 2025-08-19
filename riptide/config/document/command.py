@@ -83,6 +83,10 @@ class Command(ContainerDefinitionYamlConfigDocument):
                     volume_name have the same content, even across projects. As a constraint, the name of
                     two volumes should only be the same, if the host path specified is also the same, to ensure
                     the same behaviour regardless of if the performance setting is enabled.
+                [host_system]: Or['Linux', 'Darwin', 'Windows']
+                    Only mount this volume if the host
+                    `system name <https://docs.python.org/3/library/platform.html#platform.system>` matches
+                    this value.
 
         [environment]
             Additional environment variables
@@ -130,6 +134,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
                         Optional("mode"): str,  # default: rw - can be rw/ro.
                         Optional("type"): Or("directory", "file"),  # default: directory
                         Optional("volume_name"): str,
+                        Optional("host_system"): Or("Linux", "Darwin", "Windows"),
                     }
                 },
                 Optional("environment"): {str: str},
