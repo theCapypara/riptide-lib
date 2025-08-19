@@ -1,5 +1,6 @@
 """Logic to process additional volumes data and other volume related functions"""
 
+import platform
 from collections import OrderedDict
 
 import os
@@ -20,6 +21,10 @@ def process_additional_volumes(volumes: list[dict], project_folder: str):
     """
     out = OrderedDict()
     for vol in volumes:
+        # Skip volumes that are not marked for this platform (if host_system is defined as a filter)
+        if "host_system" in vol:
+            if vol["host_system"] != platform.system():
+                continue
         # ~ paths
         if vol["host"][0] == "~":
             vol["host"] = os.path.expanduser("~") + vol["host"][1:]
