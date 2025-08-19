@@ -145,12 +145,12 @@ else:
 
             handler = signal.signal(signal.SIGINT, _handle_int)
             stack.callback(signal.signal, signal.SIGINT, handler)
-            handler = signal.signal(signal.SIGCHLD, _handle_chld)
-            stack.callback(signal.signal, signal.SIGCHLD, handler)
 
             if is_tty:
                 stack.callback(os.close, master_fd)
 
+                handler = signal.signal(signal.SIGCHLD, _handle_chld)
+                stack.callback(signal.signal, signal.SIGCHLD, handler)
                 handler = signal.signal(signal.SIGWINCH, _handle_winch)
                 stack.callback(signal.signal, signal.SIGWINCH, handler)
                 _handle_winch(0, None)
