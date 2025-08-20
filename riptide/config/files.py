@@ -4,30 +4,33 @@ Riptide uses.
 
 Also provides some utility file-related functions.
 """
-import os
-import atexit
-import re
-import sys
 
-if sys.version_info < (3, 11):
-    import pkg_resources
-else:
-    import importlib.resources
+from __future__ import annotations
+
+import atexit
+import importlib.resources
+import os
+import re
+from contextlib import ExitStack
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from appdirs import user_config_dir
-from contextlib import ExitStack
+
+if TYPE_CHECKING:
+    from riptide.config.document.project import Project
+
+ENV_RIPTIDE_CONFIG_DIR = "RIPTIDE_CONFIG_DIR"
 
 # Expected name of the project files during auto-discovery
-from typing import Optional
-
-RIPTIDE_PROJECT_CONFIG_NAME = 'riptide.yml'
+RIPTIDE_PROJECT_CONFIG_NAME = "riptide.yml"
 # Name of the meta-directory
-RIPTIDE_PROJECT_META_FOLDER_NAME = '_riptide'
+RIPTIDE_PROJECT_META_FOLDER_NAME = "_riptide"
 # Flag for the CLI to look at to see if setup was completed
-RIPTIDE_PROJECT_SETUP_FLAG_FILENAME = '.setup_flag'
+RIPTIDE_PROJECT_SETUP_FLAG_FILENAME = ".setup_flag"
 
 # The path of the source code to be mounted INSIDE the containers
-CONTAINER_SRC_PATH = '/src'
+CONTAINER_SRC_PATH = "/src"
 
 # The ~ path inside the running command container
 CONTAINER_HOME_PATH = "/home/riptide"
@@ -36,7 +39,7 @@ CONTAINER_HOME_PATH = "/home/riptide"
 def is_path_root(path: str) -> bool:
     """Returns whether or not the given (host) path is the root of the filesystem."""
     real_path = os.path.realpath(path)
-    parent_real_path = os.path.realpath(os.path.join(real_path, '..'))
+    parent_real_path = os.path.realpath(os.path.join(real_path, ".."))
     return real_path == parent_real_path
 
 
@@ -46,10 +49,10 @@ def _discover_project_file__step(path):
         return potential_path
     if is_path_root(path):
         return None
-    return _discover_project_file__step(os.path.join(path, '..'))
+    return _discover_project_file__step(os.path.join(path, ".."))
 
 
-def discover_project_file() -> Optional[str]:
+def discover_project_file() -> str | None:
     """
     Starting in the current working directory upwards, try to find a project file.
 
@@ -58,41 +61,40 @@ def discover_project_file() -> Optional[str]:
     return _discover_project_file__step(os.getcwd())
 
 
-def riptide_assets_dir() -> str:
-    """ Path to the assets directory of riptide_lib. """
-    if sys.version_info < (3, 11):
-        return pkg_resources.resource_filename('riptide', 'assets')
-    else:
-        file_manager = ExitStack()
-        atexit.register(file_manager.close)
-        ref = importlib.resources.files('riptide') / 'assets'
-        path = file_manager.enter_context(importlib.resources.as_file(ref))
-        return path
+def riptide_assets_dir() -> Path:
+    """Path to the assets directory of riptide_lib."""
+    file_manager = ExitStack()
+    atexit.register(file_manager.close)
+    ref = importlib.resources.files("riptide") / "assets"
+    path = file_manager.enter_context(importlib.resources.as_file(ref))
+    return path
 
 
 def riptide_main_config_file() -> str:
-    """ Path to the main configuration file. """
-    return os.path.join(riptide_config_dir(), 'config.yml')
+    """Path to the main configuration file."""
+    return os.path.join(riptide_config_dir(), "config.yml")
 
 
 def riptide_projects_file() -> str:
-    """ Path to the projects.json file. """
-    return os.path.join(riptide_config_dir(), 'projects.json')
+    """Path to the projects.json file."""
+    return os.path.join(riptide_config_dir(), "projects.json")
 
 
 def riptide_ports_config_file() -> str:
-    """ Path to the ports.json file. """
-    return os.path.join(riptide_config_dir(), 'ports.json')
+    """Path to the ports.json file."""
+    return os.path.join(riptide_config_dir(), "ports.json")
 
 
 def riptide_local_repositories_path() -> str:
-    """ Path to the directory where repositories are stored. """
-    return os.path.join(riptide_config_dir(), 'repos')
+    """Path to the directory where repositories are stored."""
+    return os.path.join(riptide_config_dir(), "repos")
 
 
 def riptide_config_dir() -> str:
-    """ Path to the system configuration directory. """
-    return user_config_dir('riptide', False)
+    """Path to the system configuration directory."""
+    if ENV_RIPTIDE_CONFIG_DIR in os.environ:
+        return os.path.abspath(os.environ[ENV_RIPTIDE_CONFIG_DIR])
+    return user_config_dir("riptide", False)
 
 
 def get_project_meta_folder(project_folder_path: str) -> str:
@@ -115,10 +117,7 @@ def get_project_setup_flag_path(project_folder_path: str) -> str:
 
     :param project_folder_path: Folder that the config file of the project is in.
     """
-    return os.path.join(
-        get_project_meta_folder(project_folder_path),
-        RIPTIDE_PROJECT_SETUP_FLAG_FILENAME
-    )
+    return os.path.join(get_project_meta_folder(project_folder_path), RIPTIDE_PROJECT_SETUP_FLAG_FILENAME)
 
 
 def get_current_relative_project_path(project_folder_path: str) -> str:
@@ -130,7 +129,7 @@ def get_current_relative_project_path(project_folder_path: str) -> str:
     return os.path.relpath(os.getcwd(), start=project_folder_path)
 
 
-def get_current_relative_src_path(project: 'Project') -> str:
+def get_current_relative_src_path(project: Project) -> str:
     """
     For project:
     Returns the current (host) working directory path relative to the specified src path. If outside of src, returns .
@@ -145,10 +144,10 @@ def get_current_relative_src_path(project: 'Project') -> str:
 
 
 def remove_all_special_chars(string: str) -> str:
-    """ Removes all characters except letters and numbers and replaces them with ``-``."""
+    """Removes all characters except letters and numbers and replaces them with ``-``."""
     return re.sub(r"[^a-zA-Z0-9]", "-", string)
 
 
-def path_in_project(path: str, project: 'Project') -> bool:
+def path_in_project(path: str, project: Project) -> bool:
     """Check if a path is within a project's directory or a subdirectory of it (symlinks are ignored)."""
     return path.startswith(os.path.abspath(project.folder()) + os.sep)

@@ -1,16 +1,13 @@
 import os
-
 from unittest import mock
-
 from unittest.mock import Mock
 
-from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 from riptide.db.driver.abstract import AbstractDbDriver
 
 
 class _WithYcdMock:
     def __init__(self, ycd):
-        self.mock = mock.patch.object(ycd, '__init__', side_effect=_ycd_set_doc)
+        self.mock = mock.patch.object(ycd, "__init__", side_effect=_ycd_set_doc)
 
     def __enter__(self):
         self.mock.__enter__()
@@ -44,16 +41,6 @@ def patch_ycd_mock(ycd):
     return _WithYcdMock(ycd)
 
 
-def side_effect_for_load_subdocument():
-    """
-    Returns a side effect function creating a stub instance of YCDD.
-    Used for testing calls to load_subdocument.
-    """
-    def func(value, *args, **kwargs):
-        return YamlConfigDocumentStub.make(value)
-    return func
-
-
 def patch_mock_db_driver(db_driver_get_path):
     """
     Patches a mock object for db_driver_for_service and returns a mock db driver
@@ -64,12 +51,7 @@ def patch_mock_db_driver(db_driver_get_path):
 
 
 def get_fixture_paths():
-    return os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            'fixtures'
-        )
-    )
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "fixtures"))
 
 
 def get_fixture_path(name):

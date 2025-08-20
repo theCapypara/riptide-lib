@@ -1,9 +1,9 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 #
 ## RUN TESTS (Linux only)
 #
 # This will run all tests in this project, including the engine integration tests with the Docker engine backend.
-# The tests are run on Python versions 3.6 - 3.x.
+# The tests are run on Python versions 3.11 - 3.x.
 # See tox.ini for details :)
 #
 # For these tests to run, you need to have Docker installed. The tests will use a Docker image found in
@@ -16,8 +16,7 @@
 #
 # If you have problems, try to delete the .tox directory.
 #
-# This script is not used in CI, see Jenkinsfile instead.
-#
+set -e
 
 # 0. Build the integration test image...
 docker buildx build -t riptide_integration_test riptide/tests/docker_image

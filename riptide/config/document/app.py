@@ -1,15 +1,16 @@
-from schema import Optional, Schema, Or
-from typing import List, Union, TYPE_CHECKING, Tuple, Type
+from __future__ import annotations
 
-from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, REMOVE
-from configcrunch import variable_helper
+from typing import TYPE_CHECKING
+
+from configcrunch import DocReference, YamlConfigDocument, variable_helper
 from riptide.config.document.command import Command
 from riptide.config.document.service import Service
+from schema import Optional, Schema
 
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
 
-HEADER = 'app'
+HEADER = "app"
 
 
 class App(YamlConfigDocument):
@@ -20,6 +21,9 @@ class App(YamlConfigDocument):
     and (multiple) :class:`riptide.config.document.command.Command`
     and is usually included in a :class:`riptide.config.document.project.Project`.
     """
+
+    parent_doc: Project | None
+
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -97,30 +101,18 @@ class App(YamlConfigDocument):
         """
         return Schema(
             {
-                Optional('$ref'): str,  # reference to other App documents
-                'name': str,
-                Optional('notices'): {
-                    Optional('usage'): str,
-                    Optional('installation'): str
-                },
-                Optional('import'): {
-                    str: {
-                        'target': str,
-                        'name': str
-                    }
-                },
-                Optional('services'): {
-                    str: DocReference(Service)
-                },
-                Optional('commands'): {
-                    str: DocReference(Command)
-                },
-                Optional('unimportant_paths'): [str]
+                Optional("$ref"): str,  # reference to other App documents
+                "name": str,
+                Optional("notices"): {Optional("usage"): str, Optional("installation"): str},
+                Optional("import"): {str: {"target": str, "name": str}},
+                Optional("services"): {str: DocReference(Service)},
+                Optional("commands"): {str: DocReference(Command)},
+                Optional("unimportant_paths"): [str],
             }
         )
 
     @classmethod
-    def subdocuments(cls) -> List[Tuple[str, Type[YamlConfigDocument]]]:
+    def subdocuments(cls) -> list[tuple[str, type[YamlConfigDocument]]]:
         return [
             ("services[]", Service),
             ("commands[]", Command),
@@ -143,7 +135,7 @@ class App(YamlConfigDocument):
         return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
-    def parent(self) -> 'Project':
+    def parent(self) -> Project:
         """
         Returns the project that this app belongs to.
 
@@ -155,11 +147,13 @@ class App(YamlConfigDocument):
 
             something: '.'
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, Project)
+        return parent
 
     @variable_helper
-    def get_service_by_role(self, role_name: str) -> Union[Service, None]:
+    def get_service_by_role(self, role_name: str) -> Service | None:
         """
         Returns any service with the given role name (first found) or None.
 
@@ -179,7 +173,7 @@ class App(YamlConfigDocument):
         raise ValueError(f"No service with role {role_name} found in the app.")
 
     @variable_helper
-    def get_services_by_role(self, role_name: str) -> List[Service]:
+    def get_services_by_role(self, role_name: str) -> list[Service]:
         """
         Returns all services with the given role name.
 

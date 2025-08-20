@@ -1,4 +1,5 @@
 """Normalization functions for (potentially) mixed directory seperator paths"""
+
 import os
 
 

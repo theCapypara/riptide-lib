@@ -1,4 +1,5 @@
 """Common base class for simple static variable helpers for commands and services"""
+
 import tempfile
 from abc import ABC
 from typing import TYPE_CHECKING
@@ -18,7 +19,7 @@ class ContainerDefinitionYamlConfigDocument(YamlConfigDocument, ABC):
         return []
 
     @variable_helper
-    def system_config(self) -> 'Config':
+    def system_config(self) -> "Config":
         """
         Returns the system configuration.
 

@@ -22,13 +22,12 @@ Format of ports.json::
 .. TODO:: Command to remove port bindings again
 
 """
-import asyncio
-import errno
+
 import json
 import os
 import psutil
 import socket
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from riptide.config.files import riptide_ports_config_file
 from riptide.lib.dict_merge import dict_merge
@@ -46,13 +45,13 @@ def _is_open(current_port: int, list_reserved_ports: dict):
     if str(current_port) in list_reserved_ports.keys():
         return False
     try:
-        ports = [con.laddr.port for con in psutil.net_connections()]
+        ports = [con.laddr.port for con in psutil.net_connections()]  # type: ignore
         return current_port not in ports
     except psutil.AccessDenied:
         # This might fail on some OSes. In this case, try to connect to it.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
-        return sock.connect_ex(('127.0.0.1', current_port)) != 0
+        return sock.connect_ex(("127.0.0.1", current_port)) != 0
 
 
 def find_open_port_starting_at(start_port: int):
@@ -71,7 +70,7 @@ def find_open_port_starting_at(start_port: int):
         current_port += 1
 
 
-def get_additional_port(project: 'Project', service: 'Service', start_port: int) -> int:
+def get_additional_port(project: "Project", service: "Service", start_port: int) -> int:
     """
     Finds the first free port starting at start_port for the service
     and returns a unique port binding, not used by any other riptide service
@@ -94,18 +93,12 @@ def get_additional_port(project: 'Project', service: 'Service', start_port: int)
     port = find_open_port_starting_at(start_port)
 
     # Port is open, reserve it!
-    dict_merge(port_cfg["requests"], {
-        project["name"]: {
-            service["$name"]: {
-                str(start_port): port
-            }
-        }
-    })
+    dict_merge(port_cfg["requests"], {project["name"]: {service["$name"]: {str(start_port): port}}})
     port_cfg["ports"][str(port)] = True
     return port
 
 
-def get_existing_port_mapping(project: 'Project', service: 'Service', start_port: int, load=True) -> Union[int, None]:
+def get_existing_port_mapping(project: "Project", service: "Service", start_port: int, load=True) -> int | None:
     """
     Return an existing port mapping for the given port. If no saved mapping exists already, returns None.
 
@@ -117,9 +110,11 @@ def get_existing_port_mapping(project: 'Project', service: 'Service', start_port
     if load:
         PortsConfig.load()
     port_cfg = PortsConfig.get()
-    if project["name"] in port_cfg["requests"] and \
-       service["$name"] in port_cfg["requests"][project["name"]] and \
-       str(start_port) in port_cfg["requests"][project["name"]][service["$name"]]:
+    if (
+        project["name"] in port_cfg["requests"]
+        and service["$name"] in port_cfg["requests"][project["name"]]
+        and str(start_port) in port_cfg["requests"][project["name"]][service["$name"]]
+    ):
         # A mapping already exists
         return port_cfg["requests"][project["name"]][service["$name"]][str(start_port)]
     return None
@@ -132,23 +127,24 @@ class PortsConfig:
     Used to load and write the ports.json file.
     """
 
-    _ports_config = None
+    _ports_config: dict | None = None
 
     @classmethod
     def load(cls):
         """(Re)-loads the ports.json file."""
         cls._ports_config = {"ports": {}, "requests": {}}
         if os.path.exists(riptide_ports_config_file()):
-            with open(riptide_ports_config_file(), mode='r') as file:
+            with open(riptide_ports_config_file()) as file:
                 cls._ports_config = json.load(file)
 
     @classmethod
     def get(cls) -> dict:
         """Gets the contents of the loaded ports.json file (as dict)"""
+        assert cls._ports_config is not None
         return cls._ports_config
 
     @classmethod
     def write(cls):
         """Writes the current port configuration to ports.json"""
-        with open(riptide_ports_config_file(), mode='w') as file:
+        with open(riptide_ports_config_file(), mode="w") as file:
             json.dump(cls._ports_config, file)

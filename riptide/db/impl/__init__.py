@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 class AbstractDbEnvImpl(ABC):
-    def __init__(self, db_env: 'DbEnvironments'):
+    def __init__(self, db_env: "DbEnvironments"):
         self.env = db_env
 
     @abstractmethod
