@@ -58,8 +58,15 @@ def process_config(
         read_file_partial = partial(read_file, config["$source"])
         read_file_partial.__name__ = read_file.__name__  # type: ignore
 
-        with open(config["$source"]) as stream:
-            processed_file = service.process_vars_for(stream.read(), [read_file_partial])
+        with open(config["$source"], encoding="utf-8") as stream:
+            try:
+                processed_file = service.process_vars_for(stream.read(), [read_file_partial])
+            except UnicodeDecodeError as ex:
+                raise ValueError(
+                    f"Configuration file {config['$source']}, specified by {config['from']} in service {service['$name']} "
+                    f"is not a valid UTF-8 encoded text files. `config' files must be valid UTF-8 encoded text files. "
+                    f"For other files consider using `additional_volumes`."
+                ) from ex
 
         if is_in_source_path:
             notice_file = target_file + ".riptide_info.txt"
