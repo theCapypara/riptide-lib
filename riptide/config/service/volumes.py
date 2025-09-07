@@ -1,13 +1,12 @@
 """Logic to process additional volumes data and other volume related functions"""
 
+import os
 import platform
 from collections import OrderedDict
-
-import os
 from pathlib import PurePosixPath
+from stat import S_ISDIR
 
 from riptide.config.files import CONTAINER_SRC_PATH
-
 
 VOLUME_TYPE_DIRECTORY = "directory"
 VOLUME_TYPE_FILE = "file"
@@ -38,9 +37,23 @@ def process_additional_volumes(volumes: list[dict], project_folder: str):
 
         mode = vol["mode"] if "mode" in vol else "rw"
         out[vol["host"]] = {"bind": vol["container"], "mode": mode}
+
         # Create additional volumes as defined type, if not exist
+        has_type_defined = "type" in vol
+        vol_type = vol["type"] if has_type_defined else VOLUME_TYPE_DIRECTORY
         try:
-            vol_type = vol["type"] if "type" in vol else VOLUME_TYPE_DIRECTORY
+            stat = os.lstat(vol["host"])
+            if S_ISDIR(stat.st_mode):
+                if vol_type == VOLUME_TYPE_FILE:
+                    raise IsADirectoryError(
+                        f"The file at `{vol['host']}` is a directory, but the volume is defined as a regular file."
+                    )
+            elif has_type_defined and vol_type == VOLUME_TYPE_DIRECTORY:
+                raise NotADirectoryError(
+                    f"The file at `{vol['host']}` is a regular file, but the volume is defined as a directory."
+                )
+
+        except FileNotFoundError:
             if vol_type == VOLUME_TYPE_FILE:
                 # Create as file
                 os.makedirs(os.path.dirname(vol["host"]), exist_ok=True)
@@ -48,8 +61,7 @@ def process_additional_volumes(volumes: list[dict], project_folder: str):
             else:
                 # Create as dir
                 os.makedirs(vol["host"], exist_ok=True)
-        except FileExistsError:
-            pass
+
         # If volume_name is specified, add it to the volume definition
         if "volume_name" in vol:
             out[vol["host"]]["name"] = vol["volume_name"]

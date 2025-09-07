@@ -4,11 +4,10 @@ from collections import OrderedDict
 from pathlib import PurePosixPath
 from tempfile import TemporaryDirectory
 from unittest import mock
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.config.service.volumes import process_additional_volumes
-from riptide.tests.stubs import ProjectStub
 
 # For convenience use in other unit tests
 STUB_PAV__KEY = "__process_additional_volumes_called"
@@ -16,85 +15,6 @@ STUB_PAV__VAL = "i_was_called!"
 
 
 class VolumesTestCase(unittest.TestCase):
-    # TODO: Real fs
-    @mock.patch("os.path.expanduser", return_value=os.sep + "HOME")
-    @mock.patch("os.makedirs")
-    def test_process_additional_volumes_OLD(self, makedirs_mock: Mock, expanduser_mock: Mock):
-        input = [
-            {"host": "~/hometest", "container": "/vol1", "mode": "rw"},
-            {"host": "./reltest1", "container": "/vol2", "mode": "rw"},
-            {"host": "reltest2", "container": "/vol3", "mode": "rw"},
-            {"host": "reltestc", "container": "reltest_container", "mode": "rw"},
-            {"host": "/absolute_with_ro", "container": "/vol4", "mode": "ro"},
-            {"host": "/absolute_no_mode", "container": "/vol5"},
-            {"host": "/absolute_named", "container": "/vol6", "volume_name": "I have a name"},
-        ]
-        expected = OrderedDict(
-            {
-                os.path.join(os.sep + "HOME", "hometest"): {"bind": "/vol1", "mode": "rw"},
-                os.path.join(ProjectStub.FOLDER, "./reltest1"): {"bind": "/vol2", "mode": "rw"},
-                os.path.join(ProjectStub.FOLDER, "reltest2"): {"bind": "/vol3", "mode": "rw"},
-                os.path.join(ProjectStub.FOLDER, "reltestc"): {
-                    "bind": str(PurePosixPath(CONTAINER_SRC_PATH).joinpath("reltest_container")),
-                    "mode": "rw",
-                },
-                "/absolute_with_ro": {"bind": "/vol4", "mode": "ro"},
-                "/absolute_no_mode": {"bind": "/vol5", "mode": "rw"},
-                "/absolute_named": {"bind": "/vol6", "mode": "rw", "name": "I have a name"},
-            }
-        )
-
-        actual = process_additional_volumes(input, ProjectStub.FOLDER)
-        self.assertEqual(expected, actual)
-        self.assertIsInstance(actual, OrderedDict)
-
-        makedirs_mock.assert_has_calls(
-            [
-                # ADDITIONAL VOLUMES
-                call(os.path.join(os.sep + "HOME", "hometest"), exist_ok=True),
-                call(os.path.join(ProjectStub.FOLDER, "./reltest1"), exist_ok=True),
-                call(os.path.join(ProjectStub.FOLDER, "reltest2"), exist_ok=True),
-                call(os.path.join(ProjectStub.FOLDER, "reltestc"), exist_ok=True),
-                call(os.path.join("/absolute_with_ro"), exist_ok=True),
-                call(os.path.join("/absolute_no_mode"), exist_ok=True),
-                call(os.path.join("/absolute_named"), exist_ok=True),
-            ],
-            any_order=True,
-        )
-
-        # First volume had ~ in it:
-        expanduser_mock.assert_called_once_with("~")
-
-    @mock.patch("platform.system", return_value="Darwin")
-    @mock.patch("os.makedirs")
-    def test_process_additional_volumes_host_system_OLD(self, makedirs_mock: Mock, system_mock: Mock):
-        input = [
-            {"host": "/source1", "container": "/vol1", "mode": "rw", "host_system": "Darwin"},
-            {"host": "/source2", "container": "/vol2", "mode": "rw", "host_system": "Linux"},
-            {"host": "/source3", "container": "/vol3", "mode": "rw"},
-        ]
-        expected = OrderedDict(
-            {
-                "/source1": {"bind": "/vol1", "mode": "rw"},
-                "/source3": {"bind": "/vol3", "mode": "rw"},
-            }
-        )
-
-        actual = process_additional_volumes(input, ProjectStub.FOLDER)
-        self.assertEqual(expected, actual)
-        self.assertIsInstance(actual, OrderedDict)
-
-        makedirs_mock.assert_has_calls(
-            [
-                # ADDITIONAL VOLUMES
-                call("/source1", exist_ok=True),
-                call("/source3", exist_ok=True),
-            ],
-            any_order=True,
-        )
-
-        system_mock.assert_called()
-
     def test_process_additional_volumes_simple(self):
         with TemporaryDirectory() as test_dir:
             home_dir = os.path.join(test_dir, "HOME")
@@ -160,6 +80,41 @@ class VolumesTestCase(unittest.TestCase):
             self.assertTrue(os.path.isdir(os.path.join(test_dir, "dir")))
             self.assertTrue(os.path.isdir(os.path.join(test_dir, "also_dir")))
 
+    def test_process_additional_volumes_with_type_mismatch_should_dir_is_file(self):
+        with TemporaryDirectory() as test_dir:
+            test_file = os.path.join(test_dir, "test_file")
+            open(test_file, "a").close()
+
+            input = [
+                {"host": test_file, "container": "/vol1", "type": "directory"},
+            ]
+
+            with self.assertRaises(NotADirectoryError):
+                process_additional_volumes(input, test_dir)
+
+    def test_process_additional_volumes_with_no_type_exists_and_is_not_directory(self):
+        with TemporaryDirectory() as test_dir:
+            test_file = os.path.join(test_dir, "test_file")
+            open(test_file, "a").close()
+
+            input = [
+                {"host": test_file, "container": "/vol1"},
+            ]
+
+            process_additional_volumes(input, test_dir)
+
+    def test_process_additional_volumes_with_type_mismatch_should_file_is_dir(self):
+        with TemporaryDirectory() as test_dir:
+            test_inner_dir = os.path.join(test_dir, "test_inner_dir")
+            os.makedirs(test_inner_dir)
+
+            input = [
+                {"host": test_inner_dir, "container": "/vol1", "type": "file"},
+            ]
+
+            with self.assertRaises(IsADirectoryError):
+                process_additional_volumes(input, test_dir)
+
     @mock.patch("platform.system", return_value="Darwin")
     def test_process_additional_volumes_host_system(self, system_mock: Mock):
         with TemporaryDirectory() as test_dir:
@@ -185,18 +140,48 @@ class VolumesTestCase(unittest.TestCase):
 
             system_mock.assert_called()
 
+    def test_process_additional_volumes_volume_name_with_type_directory(self):
+        with TemporaryDirectory() as test_dir:
+            exists_path = os.path.join(test_dir, "no3")
+            os.makedirs(exists_path)
+
+            input = [
+                {"host": "no1", "container": "/vol1", "volume_name": "vol1", "type": "directory"},
+                {"host": "no2", "container": "/vol2", "volume_name": "volTwo"},
+                {"host": exists_path, "container": "/vol3", "volume_name": "volThree"},
+            ]
+            expected = OrderedDict(
+                {
+                    os.path.join(test_dir, "no1"): {"bind": "/vol1", "mode": "rw", "name": "vol1"},
+                    os.path.join(test_dir, "no2"): {"bind": "/vol2", "mode": "rw", "name": "volTwo"},
+                    exists_path: {"bind": "/vol3", "mode": "rw", "name": "volThree"},
+                }
+            )
+
+            actual = process_additional_volumes(input, test_dir)
+            self.assertEqual(expected, actual)
+
+            self.assertTrue(os.path.isdir(os.path.join(test_dir, "no1")))
+            self.assertTrue(os.path.isdir(os.path.join(test_dir, "no2")))
+            self.assertTrue(os.path.isdir(os.path.join(test_dir, "no3")))
+
     @unittest.skip("todo")
     def test_process_additional_volumes_volume_name_with_type_file_defined(self):
-        raise NotImplementedError
+        with TemporaryDirectory() as test_dir:
+            input = [
+                {"host": "no1", "container": "/vol1", "volume_name": "vol1", "type": "file"},
+            ]
+
+            with self.assertRaises(NotADirectoryError):
+                process_additional_volumes(input, test_dir)
 
     @unittest.skip("todo")
     def test_process_additional_volumes_volume_name_with_type_file_detected(self):
-        raise NotImplementedError
+        with TemporaryDirectory() as test_dir:
+            open(os.path.join(test_dir, "no1"), "a").close()
+            input = [
+                {"host": "no1", "container": "/vol1", "volume_name": "vol1"},
+            ]
 
-    @unittest.skip("todo")
-    def test_process_additional_volumes_volume_name_with_type_directory_defined(self):
-        raise NotImplementedError
-
-    @unittest.skip("todo")
-    def test_process_additional_volumes_volume_name_with_type_directory_detected(self):
-        raise NotImplementedError
+            with self.assertRaises(NotADirectoryError):
+                process_additional_volumes(input, test_dir)

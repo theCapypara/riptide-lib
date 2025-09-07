@@ -76,8 +76,11 @@ class Command(ContainerDefinitionYamlConfigDocument):
                 [mode]: str
                     Whether to mount the volume read-write ("rw", default) or read-only ("ro").
                 [type]: str
-                    Whether this volume is a "directory" (default) or a "file". Only checked if the file/dir does
-                    not exist yet on the host system. Riptide will then create it with the appropriate type.
+                    Whether this volume is a "directory" or a "file". If the file does not exist on the host,
+                    Riptide will create as specified. If not defined, Riptide will create a directory if it does
+                    not exist on the host. Only if it is defined Riptide will also check that an existing file
+                    also matches this definition (i.e. Riptide will error if this is set to "file" but "host" points
+                    to a directory and vice versa).
                 [volume_name]: str
                     Name of a named volume for this additional volume. Used instead of "host" if present and
                     the dont_sync_named_volumes_with_host performance setting is enabled. Volumes with the same
