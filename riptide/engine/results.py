@@ -1,8 +1,8 @@
 import asyncio
 import traceback
 from asyncio import Future
-from typing import Generic, NamedTuple, Self, TypeVar
 from collections.abc import AsyncIterator
+from typing import Generic, NamedTuple, Self, TypeVar
 
 import janus
 
@@ -42,7 +42,7 @@ class ResultError(EndResultQueue):
 
     def __str__(self):
         if self.cause:
-            stri = f"{self.message} : {self.cause.__class__.__name__}({str(self.cause)})"
+            stri = f"{self.message} : {self.cause.__class__.__name__}: {str(self.cause)}"
         else:
             stri = self.message
         if self.details:
