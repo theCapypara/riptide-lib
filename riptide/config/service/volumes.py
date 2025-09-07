@@ -40,10 +40,12 @@ def process_additional_volumes(volumes: list[dict], project_folder: str):
 
         # Create additional volumes as defined type, if not exist
         has_type_defined = "type" in vol
+        stat_is_dir = True
         vol_type = vol["type"] if has_type_defined else VOLUME_TYPE_DIRECTORY
         try:
             stat = os.lstat(vol["host"])
-            if S_ISDIR(stat.st_mode):
+            stat_is_dir = S_ISDIR(stat.st_mode)
+            if stat_is_dir:
                 if vol_type == VOLUME_TYPE_FILE:
                     raise IsADirectoryError(
                         f"The file at `{vol['host']}` is a directory, but the volume is defined as a regular file."
@@ -64,5 +66,11 @@ def process_additional_volumes(volumes: list[dict], project_folder: str):
 
         # If volume_name is specified, add it to the volume definition
         if "volume_name" in vol:
+            # Prevent the user from accidentally defining a named volume for something where the host path is a file,
+            # because named volumes can not be files.
+            if vol_type == VOLUME_TYPE_FILE or not stat_is_dir:
+                raise NotADirectoryError(
+                    f"The `volume_name` option can only be used for directory paths. `{vol['host']}` is not a directory."
+                )
             out[vol["host"]]["name"] = vol["volume_name"]
     return out

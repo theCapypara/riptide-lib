@@ -165,7 +165,6 @@ class VolumesTestCase(unittest.TestCase):
             self.assertTrue(os.path.isdir(os.path.join(test_dir, "no2")))
             self.assertTrue(os.path.isdir(os.path.join(test_dir, "no3")))
 
-    @unittest.skip("todo")
     def test_process_additional_volumes_volume_name_with_type_file_defined(self):
         with TemporaryDirectory() as test_dir:
             input = [
@@ -175,7 +174,6 @@ class VolumesTestCase(unittest.TestCase):
             with self.assertRaises(NotADirectoryError):
                 process_additional_volumes(input, test_dir)
 
-    @unittest.skip("todo")
     def test_process_additional_volumes_volume_name_with_type_file_detected(self):
         with TemporaryDirectory() as test_dir:
             open(os.path.join(test_dir, "no1"), "a").close()
