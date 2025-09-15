@@ -108,10 +108,9 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, project: Project, command_name: str, arguments: list[str]) -> int:
+    def cmd(self, command: Command, arguments: list[str], *, working_directory: str|None = None) -> int:
         """
-        Execute the command identified by command_name in the project environment and
-        attach command to stdout/stdin/stderr.
+        Execute the command in the project environment and attach command to stdout/stdin/stderr.
         Returns when the command is finished. Returns the command exit code.
 
         All containers started for a project must be in the same isolated container network and service
@@ -126,8 +125,10 @@ class AbstractEngine(ABC):
 
         The engine must regard the performance settings in the system configuration (project.parent().performance).
 
-        :param project: 'Project'
-        :param command_name: str
+        :param command: The command must have a parent app (or hook with parent app) and that parent app must have a project
+        :param working_directory: Run the command inside the given (container) working directory.
+                                  If not given, command is run in the container working directory corresponding to the
+                                  current host working directory.
         :param arguments: List of arguments
 
         :return: exit code
@@ -193,7 +194,6 @@ class AbstractEngine(ABC):
         routable to the host system.
 
         :param run_as_root: Force execution of the command container with the highest possible permissions
-        :param project: Project
         :param command: Command to run. May not be part of the passed project object but must be treated as such.
         :return:
         """

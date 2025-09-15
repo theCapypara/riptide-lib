@@ -258,9 +258,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
         :raises: IndexError: If not assigned to a project
         """
         try:
-            app = self.parent_doc
+            app = self.parent()
             assert app is not None
-            project = app.parent_doc
+            project = app.parent()
             assert project is not None
             return project
         except AssertionError as ex:

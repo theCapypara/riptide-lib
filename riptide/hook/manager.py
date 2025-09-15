@@ -4,9 +4,11 @@ import itertools
 import json
 import os
 import stat
+import sys
+from time import sleep
 from typing import (
+    IO,
     Any,
-    Callable,
     Generic,
     Literal,
     Mapping,
@@ -22,6 +24,7 @@ from riptide.config.files import (
     get_project_hooks_config_file_path,
     riptide_hooks_config_file,
 )
+from riptide.engine.abstract import AbstractEngine
 from riptide.hook.event import AnyHookEvent, HookEvent
 
 GITHOOK_NEEDLE_RIPTIDE_HOOKS = "### RIPTIDE HOOK CONFIG BEGIN"
@@ -68,6 +71,20 @@ class HookConfiguration(TypedDict):
     events: dict[str, SingleEventConfiguration]
 
 
+class ClickEchoFunction(Protocol):
+    """A function to echo to CLI. The definition is from Click."""
+
+    def __call__(
+        self,
+        message: Any | None = None,
+        file: IO[Any] | None = None,
+        nl: bool = True,
+        err: bool = False,
+        color: bool | None = None,
+    ) -> None:
+        pass
+
+
 class ClickStyleFunction(Protocol):
     """A function to style CLI output. The definition is from Click."""
 
@@ -93,7 +110,8 @@ class HookManager:
     """Manages the state of loaded hooks & event configuration (are events enabled, etc.)"""
 
     config: Config
-    cli_echo: Callable[[str], None]  # Command to print to the CLI
+    engine: AbstractEngine
+    cli_echo: ClickEchoFunction  # Command to print to the CLI
     cli_style: ClickStyleFunction  # Command to style a CLI output
     _global_hookconfig: HookConfiguration | None
     _project_hookconfig: HookConfiguration | None
@@ -101,15 +119,17 @@ class HookManager:
     def __init__(
         self,
         config: Config,
+        engine: AbstractEngine,
         *,
         # To not have a dependency on Click in riptide-lib, these functions are injected.
         # If not given, normal print without styling is used.
-        cli_echo: Callable[[str], None] | None = None,
+        cli_echo: ClickEchoFunction | None = None,
         cli_style: ClickStyleFunction | None = None,
     ) -> None:
         self.config = config
+        self.engine = engine
         if cli_echo is None:
-            cli_echo = print
+            cli_echo = basic_echo
         if cli_style is None:
             cli_style = lambda text, *args, **kwargs: text  # noqa: E731
         self.cli_echo = cli_echo
@@ -194,23 +214,70 @@ class HookManager:
                 self._init_hookconfig_file(path)
             self._setup_githooks()
 
-    def trigger_event_on_cli(self, event: AnyHookEvent):
-        """Trigger an event, run hooks and output current status"""
-        raise NotImplementedError()
+    def trigger_event_on_cli(self, event: AnyHookEvent) -> int:
+        """Trigger an event, run hooks and output current status. Returns exit code."""
+        hooks = self.get_applicable_hooks_for(event, print_warning_if_not_defined=True)
+        if len(hooks) > 0:
+            wait_time = self._get_event_wait_time(event)
+            if wait_time > 0:
+                info_msg = (
+                    self.cli_style("Riptide", fg="cyan", bold=True)
+                    + ": Will run hooks in "
+                    + self.cli_style(wait_time, bold=True)
+                    + " seconds. Hit "
+                    + self.cli_style("CTRL-C", bold=True)
+                    + " to skip running hooks"
+                )
+                self.cli_echo(info_msg, nl=False)
+                try:
+                    still_waiting_for = wait_time
+                    while still_waiting_for > 0:
+                        self.cli_echo(".", nl=False)
+                        sleep(1)
+                        still_waiting_for -= 1
+                    self.cli_echo("\r" + (" " * (wait_time + len(info_msg))) + "\r", nl=False)
+                except KeyboardInterrupt:
+                    self.cli_echo("\r" + (" " * (wait_time + len(info_msg))) + "\r", nl=False)
+                    self.cli_echo("Riptide: Hooks skipped.")
+                    return 0
 
-    def get_applicable_hooks_for(self, event: AnyHookEvent) -> Sequence[tuple[bool, str, Hook]]:
+            self.cli_echo(self.cli_style("Riptide", fg="cyan", bold=True) + ": Running hooks...")
+
+            for (from_project, key, hook) in hooks:
+                hook_desc = key
+                if not from_project:
+                    hook_desc += " (from global)"
+                self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Running Hook: " + hook_desc + "...")
+                ret = self.run_hook_on_cli(hook)
+                if ret != 0:
+                    if hook.continue_on_error():
+                        self.cli_echo(self.cli_style(self.cli_style("Riptide Warning", bold=True) + ": Hook failed. Continuing...", fg="yellow"))
+                    else:
+                        self.cli_echo(self.cli_style(self.cli_style("Riptide Error", bold=True) + ": Hook failed.", bg="red", fg="white"))
+                        return ret
+                else:
+                    self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Hook " + hook_desc + " finished.")
+
+        return 0
+
+    def run_hook_on_cli(self, hook: Hook) -> int:
+        return self.engine.cmd(hook.command(), hook.args(), working_directory=hook.get_working_directory())
+
+    def get_applicable_hooks_for(self, event: AnyHookEvent, *, print_warning_if_not_defined: bool = False) -> Sequence[tuple[bool, str, Hook]]:
         """
         Returns list of applicable hooks (enabled and defined hooks for the given event).
 
         The boolean flag in the returned tuples is False for global-defined hooks and True for project hooks.
         """
-        if not self._is_event_enabled(event):
+        if not self._is_event_enabled(event, print_warning_if_not_defined):
             return []
         events = []
         for key, hook in self.global_hooks().items():
-            events.append((False, key, hook))
+            if event in hook.events:
+                events.append((False, key, hook))
         for key, hook in self.project_hooks().items():
-            events.append((True, key, hook))
+            if event in hook.events:
+                events.append((True, key, hook))
         return events
 
     def configure_event(
@@ -380,3 +447,15 @@ def merge_config(a: SingleEventConfiguration, b: SingleEventConfiguration) -> Si
     if a["wait_time"] is None:
         a["wait_time"] = b["wait_time"]
     return b
+
+def basic_echo(
+    message: Any | None = None,
+    file: IO[Any] | None = None,
+    nl: bool = True,
+    err: bool = False,
+    color: bool | None = None
+):
+    sep = '\n' if nl else ""
+    if file is None and err:
+        file = sys.stderr
+    print(message, file=file, sep=sep)

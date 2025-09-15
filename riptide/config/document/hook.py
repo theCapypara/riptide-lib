@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import shlex
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping
 
 from configcrunch import DocReference, YamlConfigDocument
 from riptide.config.document.command import Command
@@ -11,6 +12,7 @@ from schema import Optional, Or, Schema
 
 if TYPE_CHECKING:
     from riptide.config.document.app import App
+    from riptide.config.document.config import Config
 
 HEADER = "hook"
 
@@ -35,7 +37,7 @@ class Hook(YamlConfigDocument):
     may not rely on other hooks being executed.
     """
 
-    parent_doc: App | None
+    parent_doc: App | Config | None
     events: set[AnyHookEvent]
 
     @classmethod
@@ -162,4 +164,23 @@ class Hook(YamlConfigDocument):
         return event in self.events
 
     def command(self) -> Command:
-        raise NotImplementedError()  # todo
+        cmd_info = self.internal_get("command")
+        if "run" in cmd_info:
+            return cmd_info["run"]
+
+        from riptide.config.document.app import App
+
+        parent = self.parent_doc
+        if isinstance(parent, App):
+            app_commands: Mapping[str, Command] = parent["commands"]
+            if cmd_info["from_app"] not in app_commands:
+                raise ValueError(f"The command `{cmd_info['from_app']}` does not exist in the app but was requested in a hook.")
+            return app_commands[cmd_info["from_app"]]
+        else:
+            raise ValueError("`from_app` can not be used with hooks that are defined globally in the user configuration")
+
+    def args(self) -> list[str]:
+        cmd_info = self.internal_get("command")
+        if "args" in cmd_info:
+            return shlex.split(cmd_info["args"])
+        return []
