@@ -19,6 +19,7 @@ class AbstractPlugin(ABC):
     - Set flags, which can be retrieved from the configuration using a variable helper
     - Directly read and modify all parts of the configuration entities loaded.
     - Communicate with the loaded engine.
+    - Respond to events.
     """
 
     @abstractmethod
@@ -35,6 +36,19 @@ class AbstractPlugin(ABC):
     @abstractmethod
     def after_reload_config(self, config: Config):
         """Called whenever a project is loaded or if the initial configuration is loaded without a project."""
+
+    # noinspection PyMethodMayBeStatic
+    def event_triggered(self, config: Config, name: str, arguments: list[str]) -> int:
+        """
+        Called when an event is triggered, unless the user has disabled hooks for the given event
+
+        The plugin may output to stdout or stderr to indicate what it is doing, if it is processing a hook.
+
+        The function must return an exit code. 0 means success, Riptide will continue. On a non-zero exit code,
+        Riptide will abort the current process and exit with that error code. Note that for Git Hooks, git may
+        ignore this exit code.
+        """
+        return 0
 
     @abstractmethod
     def get_flag_value(self, config: Config, flag_name: str) -> Any:

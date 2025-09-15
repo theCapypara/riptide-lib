@@ -428,8 +428,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
     @variable_helper
     def parent(self) -> App:
+        # TODO: Change docs reference!!!!!
         """
-        Returns the app that this command belongs to.
+        Returns the app that this belongs to.
 
         Example usage::
 
@@ -439,9 +440,14 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
             something: 'This is easy to use.'
         """
+        from riptide.config.document.app import App
+
         parent = super().parent()
-        if TYPE_CHECKING:
-            assert isinstance(parent, App)
+        if not isinstance(parent, App):
+            # In this case we are a hook command!
+            parent = parent.parent()
+            if TYPE_CHECKING:
+                assert isinstance(parent, App)
         return parent
 
     @variable_helper

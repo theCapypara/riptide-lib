@@ -29,5 +29,9 @@ riptide:
   # Values can be true/false/auto.
   # auto enables them, if beneficial on your platform.
   performance:
-    dont_sync_named_volumes_with_host:  auto # auto = true on Mac/Windows with Docker
-    dont_sync_unimportant_src:    auto # auto = true on Mac/Windows with Docker
+    dont_sync_named_volumes_with_host: auto # auto = true on Mac/Windows with Docker
+    dont_sync_unimportant_src: auto # auto = true on Mac/Windows with Docker
+
+  # Hooks can be used to run commands when certain events occur (git checkout, project start, etc.)
+  # You can define hooks globally (below) and/or add hooks on the project level. See documentation.
+  hooks: [ ]

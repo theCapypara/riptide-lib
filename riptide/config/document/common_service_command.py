@@ -1,13 +1,15 @@
 """Common base class for simple static variable helpers for commands and services"""
 
+from __future__ import annotations
+
 import tempfile
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from configcrunch import variable_helper, YamlConfigDocument
+from configcrunch import YamlConfigDocument, variable_helper
 from riptide.config.files import CONTAINER_HOME_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
-from riptide.lib.cross_platform.cpuser import getuid, getgid
+from riptide.lib.cross_platform.cpuser import getgid, getuid
 
 if TYPE_CHECKING:
     from riptide.config.document.config import Config
