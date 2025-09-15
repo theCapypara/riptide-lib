@@ -243,7 +243,7 @@ class HookManager:
 
             self.cli_echo(self.cli_style("Riptide", fg="cyan", bold=True) + ": Running hooks...")
 
-            for (from_project, key, hook) in hooks:
+            for from_project, key, hook in hooks:
                 hook_desc = key
                 if not from_project:
                     hook_desc += " (from global)"
@@ -251,9 +251,18 @@ class HookManager:
                 ret = self.run_hook_on_cli(hook)
                 if ret != 0:
                     if hook.continue_on_error():
-                        self.cli_echo(self.cli_style(self.cli_style("Riptide Warning", bold=True) + ": Hook failed. Continuing...", fg="yellow"))
+                        self.cli_echo(
+                            self.cli_style(
+                                self.cli_style("Riptide Warning", bold=True) + ": Hook failed. Continuing...",
+                                fg="yellow",
+                            )
+                        )
                     else:
-                        self.cli_echo(self.cli_style(self.cli_style("Riptide Error", bold=True) + ": Hook failed.", bg="red", fg="white"))
+                        self.cli_echo(
+                            self.cli_style(
+                                self.cli_style("Riptide Error", bold=True) + ": Hook failed.", bg="red", fg="white"
+                            )
+                        )
                         return ret
                 else:
                     self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Hook " + hook_desc + " finished.")
@@ -263,7 +272,9 @@ class HookManager:
     def run_hook_on_cli(self, hook: Hook) -> int:
         return self.engine.cmd(hook.command(), hook.args(), working_directory=hook.get_working_directory())
 
-    def get_applicable_hooks_for(self, event: AnyHookEvent, *, print_warning_if_not_defined: bool = False) -> Sequence[tuple[bool, str, Hook]]:
+    def get_applicable_hooks_for(
+        self, event: AnyHookEvent, *, print_warning_if_not_defined: bool = False
+    ) -> Sequence[tuple[bool, str, Hook]]:
         """
         Returns list of applicable hooks (enabled and defined hooks for the given event).
 
@@ -448,14 +459,15 @@ def merge_config(a: SingleEventConfiguration, b: SingleEventConfiguration) -> Si
         a["wait_time"] = b["wait_time"]
     return b
 
+
 def basic_echo(
     message: Any | None = None,
     file: IO[Any] | None = None,
     nl: bool = True,
     err: bool = False,
-    color: bool | None = None
+    color: bool | None = None,
 ):
-    sep = '\n' if nl else ""
+    sep = "\n" if nl else ""
     if file is None and err:
         file = sys.stderr
     print(message, file=file, sep=sep)

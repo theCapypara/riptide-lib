@@ -174,10 +174,14 @@ class Hook(YamlConfigDocument):
         if isinstance(parent, App):
             app_commands: Mapping[str, Command] = parent["commands"]
             if cmd_info["from_app"] not in app_commands:
-                raise ValueError(f"The command `{cmd_info['from_app']}` does not exist in the app but was requested in a hook.")
+                raise ValueError(
+                    f"The command `{cmd_info['from_app']}` does not exist in the app but was requested in a hook."
+                )
             return app_commands[cmd_info["from_app"]]
         else:
-            raise ValueError("`from_app` can not be used with hooks that are defined globally in the user configuration")
+            raise ValueError(
+                "`from_app` can not be used with hooks that are defined globally in the user configuration"
+            )
 
     def args(self) -> list[str]:
         cmd_info = self.internal_get("command")

@@ -108,7 +108,7 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, command: Command, arguments: list[str], *, working_directory: str|None = None) -> int:
+    def cmd(self, command: Command, arguments: list[str], *, working_directory: str | None = None) -> int:
         """
         Execute the command in the project environment and attach command to stdout/stdin/stderr.
         Returns when the command is finished. Returns the command exit code.
