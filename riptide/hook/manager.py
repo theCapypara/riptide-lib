@@ -214,7 +214,7 @@ class HookManager:
                 self._init_hookconfig_file(path)
             self._setup_githooks()
 
-    def trigger_event_on_cli(self, event: AnyHookEvent) -> int:
+    def trigger_event_on_cli(self, event: AnyHookEvent, args: Sequence[str]) -> int:
         """Trigger an event, run hooks and output current status. Returns exit code."""
         hooks = self.get_applicable_hooks_for(event, print_warning_if_not_defined=True)
         if len(hooks) > 0:
@@ -248,7 +248,7 @@ class HookManager:
                 if not from_project:
                     hook_desc += " (from global)"
                 self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Running Hook: " + hook_desc + "...")
-                ret = self.run_hook_on_cli(hook)
+                ret = self.run_hook_on_cli(hook, args)
                 if ret != 0:
                     if hook.continue_on_error():
                         self.cli_echo(
@@ -269,8 +269,8 @@ class HookManager:
 
         return 0
 
-    def run_hook_on_cli(self, hook: Hook) -> int:
-        return self.engine.cmd(hook.command(), hook.args(), working_directory=hook.get_working_directory())
+    def run_hook_on_cli(self, hook: Hook, args: Sequence[str]) -> int:
+        return self.engine.cmd(hook.command(), [*hook.args(), *args], working_directory=hook.get_working_directory())
 
     def get_applicable_hooks_for(
         self, event: AnyHookEvent, *, print_warning_if_not_defined: bool = False
@@ -327,7 +327,7 @@ class HookManager:
         riptide_config_lines = self._git_hook_trigger_lines(event)
         if not os.path.exists(git_hook_file):
             with open(git_hook_file, "w") as f:
-                f.writelines(["#!/bin/sh\n"] + riptide_config_lines)
+                f.writelines(["#!/bin/sh\n", "set -e\n"] + riptide_config_lines)
             st = os.stat(git_hook_file)
             os.chmod(git_hook_file, st.st_mode | stat.S_IEXEC)
         else:
@@ -427,7 +427,7 @@ class HookManager:
                 + " - Do not modify or remove this line or the next lines. You can move them around.\n"
             ),
             "### If you want to disable Riptide hooks, run `riptide hook-configure`.\n",
-            "riptide hook-trigger " + event.key + "\n",
+            "riptide hook-trigger " + event.key + ' "$@"\n',
             "### RIPTIDE HOOK CONFIG END\n",
         ]
 

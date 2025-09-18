@@ -24,10 +24,6 @@ class HookEvent(Enum):
                  
     Parameters:
     - Comma-seperated list of names that are about to be started
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostStart = "post-start"
@@ -40,10 +36,6 @@ class HookEvent(Enum):
                  
     Parameters:
     - Comma-seperated list of names that were started
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreStop = "pre-stop"
@@ -54,10 +46,6 @@ class HookEvent(Enum):
                  
     Parameters:
     - Comma-seperated list of names that are about to be stopped
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostStop = "post-stop"
@@ -69,10 +57,6 @@ class HookEvent(Enum):
                  
     Parameters:
     - Comma-seperated list of names that are now stopped (including services that were already stopped)
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreDbSwitch = "pre-db-switch"
@@ -83,10 +67,6 @@ class HookEvent(Enum):
     Parameters:
     - Currently active database environment name
     - Database environment name requested to switch to
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostDbSwitch = "post-db-switch"
@@ -95,10 +75,6 @@ class HookEvent(Enum):
                  
     Parameters:
     - Name of database environment that was switched to
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreDbNew = "pre-db-new"
@@ -107,10 +83,6 @@ class HookEvent(Enum):
                  
     Parameters:
     - Name of database environment that is about to be created
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostDbNew = "post-db-new"
@@ -120,10 +92,6 @@ class HookEvent(Enum):
                  
     Parameters:
     - Name of database environment that was created
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreDbImport = "pre-db-import"
@@ -134,10 +102,6 @@ class HookEvent(Enum):
     Parameters:
     - Currently active database environment name
     - Path to the file to import
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostDbImport = "post-db-import"
@@ -147,10 +111,6 @@ class HookEvent(Enum):
     Parameters:
     - Currently active database environment name
     - Path to the imported file
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreDbExport = "pre-db-export"
@@ -160,10 +120,6 @@ class HookEvent(Enum):
     Parameters:
     - Currently active database environment name
     - Path to the file to export to
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostDbExport = "post-db-export"
@@ -173,10 +129,6 @@ class HookEvent(Enum):
     Parameters:
     - Currently active database environment name
     - Path to the file that contains the exported data
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreDbCopy = "pre-db-copy"
@@ -186,10 +138,6 @@ class HookEvent(Enum):
     Parameters:
     - Name of database environment that is being copied from
     - Name of database environment that is being copied to
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostDbCopy = "post-db-copy"
@@ -200,10 +148,6 @@ class HookEvent(Enum):
     Parameters:
     - Name of database environment that was being copied from
     - Name of database environment that was being copied to
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreFileImport = "pre-file-import"
@@ -213,10 +157,6 @@ class HookEvent(Enum):
     Parameters:
     - Key of the import definition
     - Path to the file to import
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PostFileImport = "post-file-import"
@@ -227,10 +167,6 @@ class HookEvent(Enum):
     Parameters:
     - Key of the import definition
     - Path to the imported file
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     PreUpdate = "pre-update"
@@ -238,10 +174,6 @@ class HookEvent(Enum):
     Hook is run before Riptide processes image and repo updates when using ``riptide update``.
                  
     Parameters: none
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``, not set if no project is active
     """
 
     PostUpdate = "post-update"
@@ -249,10 +181,6 @@ class HookEvent(Enum):
     Hook is run after Riptide processed image and repo updates when using ``riptide update``.
                  
     Parameters: none
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``, not set if no project is active
     """
 
     PostSetup = "post-setup"
@@ -261,21 +189,13 @@ class HookEvent(Enum):
                  
     Parameters:
     - ``new_project`` if the wizard was run in "new project" mode, ``existing_project`` otherwise
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     GitApplypatchMsg = "git-applypatch-msg"
     """
-    Hook is run when Git triggers a ``applypatch-msg`` Git Hook. Riptide forwards all arguments to the hook.
+    Hook is run when Git triggers a ``applypatch-msg`` Git Hook. Riptide forwards all arguments and environment
+    variables to the hook.
     See `documentation <https://git-scm.com/docs/githooks>`_.
-    
-    Environment:
-    - The hook command has access to all environment variables of the current shell
-    - Git exports environment variables such as `GIT_DIR` and `GIT_WORK_TREE`
-    - ``RIPTIDE_YML``: Path to the current project's ``riptide.yml``
     """
 
     GitPreApplypatch = "git-pre-applypatch"

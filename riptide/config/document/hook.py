@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import shlex
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING, Mapping, Sequence
 
 from configcrunch import DocReference, YamlConfigDocument
 from riptide.config.document.command import Command
@@ -183,8 +183,8 @@ class Hook(YamlConfigDocument):
                 "`from_app` can not be used with hooks that are defined globally in the user configuration"
             )
 
-    def args(self) -> list[str]:
+    def args(self) -> Sequence[str]:
         cmd_info = self.internal_get("command")
         if "args" in cmd_info:
             return shlex.split(cmd_info["args"])
-        return []
+        return ()
