@@ -26,6 +26,8 @@ from riptide.config.files import (
 )
 from riptide.engine.abstract import AbstractEngine
 from riptide.hook.event import AnyHookEvent, HookEvent
+from riptide.plugin.abstract import AbstractPlugin
+from riptide.plugin.loader import load_plugins
 
 GITHOOK_NEEDLE_RIPTIDE_HOOKS = "### RIPTIDE HOOK CONFIG BEGIN"
 
@@ -244,28 +246,33 @@ class HookManager:
             self.cli_echo(self.cli_style("Riptide", fg="cyan", bold=True) + ": Running hooks...")
 
             for from_project, key, hook in hooks:
-                hook_desc = key
-                if not from_project:
-                    hook_desc += " (from global)"
-                self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Running Hook: " + hook_desc + "...")
-                ret = self.run_hook_on_cli(hook, args)
-                if ret != 0:
-                    if hook.continue_on_error():
-                        self.cli_echo(
-                            self.cli_style(
-                                self.cli_style("Riptide Warning", bold=True) + ": Hook failed. Continuing...",
-                                fg="yellow",
-                            )
-                        )
-                    else:
-                        self.cli_echo(
-                            self.cli_style(
-                                self.cli_style("Riptide Error", bold=True) + ": Hook failed.", bg="red", fg="white"
-                            )
-                        )
+                if isinstance(hook, AbstractPlugin):
+                    ret = hook.event_triggered(self.config, event, args)
+                    if ret != 0:
                         return ret
                 else:
-                    self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Hook " + hook_desc + " finished.")
+                    hook_desc = key
+                    if not from_project:
+                        hook_desc += " (from global)"
+                    self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Running Hook: " + hook_desc + "...")
+                    ret = self.run_hook_on_cli(hook, args)
+                    if ret != 0:
+                        if hook.continue_on_error():
+                            self.cli_echo(
+                                self.cli_style(
+                                    self.cli_style("Riptide Warning", bold=True) + ": Hook failed. Continuing...",
+                                    fg="yellow",
+                                )
+                            )
+                        else:
+                            self.cli_echo(
+                                self.cli_style(
+                                    self.cli_style("Riptide Error", bold=True) + ": Hook failed.", bg="red", fg="white"
+                                )
+                            )
+                            return ret
+                    else:
+                        self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Hook " + hook_desc + " finished.")
 
         return 0
 
@@ -280,9 +287,10 @@ class HookManager:
         if_not_defined_set_enabled_to: bool = False,
         # Print a warning for the user if no enabled state is defined
         print_warning_if_not_defined: bool = False,
-    ) -> Sequence[tuple[bool, str, Hook]]:
+    ) -> Sequence[tuple[bool, str, Hook | AbstractPlugin]]:
         """
-        Returns list of applicable hooks (enabled and defined hooks for the given event).
+        Returns list of applicable hooks (enabled and defined hooks for the given event) or plugins that respond
+        to the given event.
 
         The boolean flag in the returned tuples is False for global-defined hooks and True for project hooks.
         """
@@ -292,13 +300,17 @@ class HookManager:
             print_warning_if_not_defined=print_warning_if_not_defined,
         ):
             return []
-        events = []
+        events: list[tuple[bool, str, Hook | AbstractPlugin]] = []
         for key, hook in self.global_hooks().items():
             if event in hook.events:
                 events.append((False, key, hook))
         for key, hook in self.project_hooks().items():
             if event in hook.events:
                 events.append((True, key, hook))
+        # Add plugins
+        for plugin in load_plugins().values():
+            if plugin.responds_to_event(event):
+                events.append((False, "", plugin))
         return events
 
     def configure_event(

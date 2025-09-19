@@ -345,6 +345,12 @@ class HookEvent(Enum):
         return None
 
     @classmethod
+    def try_any_from_key(cls, key: str) -> AnyHookEvent | None:
+        if key.startswith(CUSTOM_HOOK_EVENT_PREFIX):
+            return key
+        return cls.try_from_key(key)
+
+    @classmethod
     def git_events(cls) -> Sequence[HookEvent]:
         return [
             cls.GitPreCommit,
