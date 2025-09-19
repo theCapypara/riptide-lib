@@ -354,7 +354,7 @@ class HookManager:
         riptide_config_lines = self._git_hook_trigger_lines(event)
         if not os.path.exists(git_hook_file):
             with open(git_hook_file, "w") as f:
-                f.writelines(["#!/bin/sh\n", "set -e\n"] + riptide_config_lines)
+                f.writelines(["#!/bin/sh\n", "set -em\n"] + riptide_config_lines)
             st = os.stat(git_hook_file)
             os.chmod(git_hook_file, st.st_mode | stat.S_IEXEC)
         else:
