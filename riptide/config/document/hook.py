@@ -29,12 +29,17 @@ class Hook(YamlConfigDocument):
     any configured repository) or execute a command defined in the Project's App.
 
     Hooks are usually defined as part of an :class:`riptide.config.document.app.App` but can also be globally
-    defined.
+    defined. Globally defined hooks are only triggered if a project is loaded, Riptide never executes hooks
+    if no project is loaded.
 
     Hooks can be managed and executed using the ``hook`` command group of ``riptide-cli``.
 
     If multiple hooks are defined for one event, they are executed in an arbitrary order. This means that hooks
     may not rely on other hooks being executed.
+
+    For all command hooks run, the entire current project is mounted under ``/project`` and the hooks
+    have access to all environment variables of the shell (normal command rules apply).
+    ``/src`` is still mounted as normal, the working directory is also defined relative to ``/src``.
     """
 
     parent_doc: App | Config | None

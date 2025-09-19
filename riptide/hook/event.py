@@ -20,7 +20,8 @@ class HookEvent(Enum):
     
     .. warning:: Hooks are NOT executed if the Proxy Server starts a project. 
                  Please consider the ``pre_start`` attribute of services 
-                 for important pre-start commands.
+                 for important pre-start commands. ``riptide start-fg`` does not trigger this event
+                 for interactive services.
                  
     Parameters:
     - Comma-seperated list of names that are about to be started
@@ -32,10 +33,11 @@ class HookEvent(Enum):
     
     .. warning:: Hooks are NOT executed if the Proxy Server starts a project. 
                  Please consider the ``post_start`` attribute of services 
-                 for important post-start commands.
+                 for important post-start commands. ``riptide start-fg`` does not trigger this event
+                 for interactive services.
                  
     Parameters:
-    - Comma-seperated list of names that were started
+    - Comma-seperated list of names that were requested to be started and are now started
     """
 
     PreStop = "pre-stop"
@@ -101,7 +103,7 @@ class HookEvent(Enum):
                  
     Parameters:
     - Currently active database environment name
-    - Path to the file to import
+    - Path to the file to import (for hook commands this file is mounted)
     """
 
     PostDbImport = "post-db-import"
@@ -110,7 +112,7 @@ class HookEvent(Enum):
                  
     Parameters:
     - Currently active database environment name
-    - Path to the imported file
+    - Path to the imported file (for hook commands this file is mounted)
     """
 
     PreDbExport = "pre-db-export"
@@ -119,7 +121,7 @@ class HookEvent(Enum):
                  
     Parameters:
     - Currently active database environment name
-    - Path to the file to export to
+    - Path to the file to export to (for hook commands this file is mounted)
     """
 
     PostDbExport = "post-db-export"
@@ -128,7 +130,7 @@ class HookEvent(Enum):
                  
     Parameters:
     - Currently active database environment name
-    - Path to the file that contains the exported data
+    - Path to the file that contains the exported data (for hook commands this file is mounted)
     """
 
     PreDbCopy = "pre-db-copy"
@@ -156,7 +158,7 @@ class HookEvent(Enum):
                  
     Parameters:
     - Key of the import definition
-    - Path to the file to import
+    - Path to the file to import (for hook commands this file is mounted)
     """
 
     PostFileImport = "post-file-import"
@@ -166,14 +168,7 @@ class HookEvent(Enum):
                  
     Parameters:
     - Key of the import definition
-    - Path to the imported file
-    """
-
-    PreUpdate = "pre-update"
-    """
-    Hook is run before Riptide processes image and repo updates when using ``riptide update``.
-                 
-    Parameters: none
+    - Path to the imported file (for hook commands this file is mounted)
     """
 
     PostUpdate = "post-update"
@@ -188,7 +183,7 @@ class HookEvent(Enum):
     Hook is run at the end of the interactive setup wizard when using ``riptide setup``.
                  
     Parameters:
-    - ``new_project`` if the wizard was run in "new project" mode, ``existing_project`` otherwise
+    - ``new-project`` if the wizard was run in "new project" mode, ``existing-project`` otherwise
     """
 
     GitApplypatchMsg = "git-applypatch-msg"
@@ -310,8 +305,6 @@ class HookEvent(Enum):
                 return cls.PreFileImport
             case "post-file-import":
                 return cls.PostFileImport
-            case "pre-update":
-                return cls.PreUpdate
             case "post-update":
                 return cls.PostUpdate
             case "post-setup":

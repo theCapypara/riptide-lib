@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Required, TypedDict
 
 from riptide.config.files import path_in_project
 from riptide.engine.results import MultiResultQueue, StartStopResultStep
@@ -23,6 +23,11 @@ class ExecError(BaseException):
 
 class ServiceStoppedException(BaseException):
     pass
+
+
+class SimpleBindVolume(TypedDict, total=False):
+    bind: Required[str]
+    mode: str
 
 
 class AbstractEngine(ABC):
@@ -108,7 +113,14 @@ class AbstractEngine(ABC):
         pass
 
     @abstractmethod
-    def cmd(self, command: Command, arguments: list[str], *, working_directory: str | None = None) -> int:
+    def cmd(
+        self,
+        command: Command,
+        arguments: list[str],
+        *,
+        working_directory: str | None = None,
+        extra_volumes: dict[str, SimpleBindVolume] | None = None,
+    ) -> int:
         """
         Execute the command in the project environment and attach command to stdout/stdin/stderr.
         Returns when the command is finished. Returns the command exit code.
@@ -130,6 +142,7 @@ class AbstractEngine(ABC):
                                   If not given, command is run in the container working directory corresponding to the
                                   current host working directory.
         :param arguments: List of arguments
+        :param extra_mounts: Extra bind volume mounts.
 
         :return: exit code
         """

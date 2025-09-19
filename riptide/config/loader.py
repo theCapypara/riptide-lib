@@ -75,9 +75,11 @@ def load_config(project_file=None, skip_project_load=False, enable_local_project
         system_config.internal_delete("project")
 
     system_config.upgrade()
-    system_config.validate()
 
     repos = repositories.collect(system_config)
+
+    system_config.resolve_and_merge_references(repos)
+    system_config.validate()
 
     try:
         if project_path is not None and not skip_project_load:

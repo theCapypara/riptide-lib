@@ -257,12 +257,25 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         :raises: IndexError: If not assigned to a project
         """
+        from riptide.config.document.config import Config
+        from riptide.config.document.hook import Hook
+
         try:
-            app = self.parent()
-            assert app is not None
-            project = app.parent()
-            assert project is not None
-            return project
+            app_or_hook = self.parent()
+            assert app_or_hook is not None
+            if isinstance(app_or_hook, Hook):
+                app_or_system_config = app_or_hook.parent()
+                assert app_or_system_config is not None
+            else:
+                app_or_system_config = app_or_hook
+            if isinstance(app_or_system_config, Config):
+                assert "project" in app_or_system_config
+                assert app_or_system_config is not None
+                return app_or_system_config["project"]
+            else:
+                project_or_project = app_or_system_config.parent()
+                assert project_or_project is not None
+                return project_or_project
         except AssertionError as ex:
             raise IndexError("Expected command to have a project assigned") from ex
 

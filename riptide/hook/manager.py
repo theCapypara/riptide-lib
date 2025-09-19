@@ -14,6 +14,7 @@ from typing import (
     Mapping,
     Protocol,
     Sequence,
+    TypeAlias,
     TypedDict,
     TypeVar,
 )
@@ -24,10 +25,13 @@ from riptide.config.files import (
     get_project_hooks_config_file_path,
     riptide_hooks_config_file,
 )
-from riptide.engine.abstract import AbstractEngine
+from riptide.engine.abstract import AbstractEngine, SimpleBindVolume
+from riptide.hook.additional_volumes import HookHostPathArgument, apply_hook_mounts
 from riptide.hook.event import AnyHookEvent, HookEvent
 from riptide.plugin.abstract import AbstractPlugin
 from riptide.plugin.loader import load_plugins
+
+HookArgument: TypeAlias = str | HookHostPathArgument
 
 GITHOOK_NEEDLE_RIPTIDE_HOOKS = "### RIPTIDE HOOK CONFIG BEGIN"
 
@@ -216,14 +220,23 @@ class HookManager:
                 self._init_hookconfig_file(path)
             self._setup_githooks()
 
-    def trigger_event_on_cli(self, event: AnyHookEvent, args: Sequence[str]) -> int:
+    def trigger_event_on_cli(
+        self,
+        event: AnyHookEvent,
+        args: Sequence[HookArgument],
+        additional_host_mounts: dict[str, HookHostPathArgument],  # container path -> host path + ro flag
+        *,
+        cli_hook_prefix: str = "Hook",
+    ) -> int:
         """Trigger an event, run hooks and output current status. Returns exit code."""
+        args_for_containers, extra_mounts = apply_hook_mounts(self.config, args, additional_host_mounts)
+        args_for_plugins = [str(a) for a in args]
         hooks = self.get_applicable_hooks_for(event, print_warning_if_not_defined=True)
         if len(hooks) > 0:
             wait_time = self._get_event_wait_time(event)
             if wait_time > 0:
                 info_msg = (
-                    self.cli_style("Riptide", fg="cyan", bold=True)
+                    self.cli_style(cli_hook_prefix, fg="cyan", bold=True)
                     + ": Will run hooks in "
                     + self.cli_style(wait_time, bold=True)
                     + " seconds. Hit "
@@ -240,44 +253,62 @@ class HookManager:
                     self.cli_echo("\r" + (" " * (wait_time + len(info_msg))) + "\r", nl=False)
                 except KeyboardInterrupt:
                     self.cli_echo("\r" + (" " * (wait_time + len(info_msg))) + "\r", nl=False)
-                    self.cli_echo("Riptide: Hooks skipped.")
+                    self.cli_echo(f"{cli_hook_prefix}: Hooks skipped.")
                     return 0
 
-            self.cli_echo(self.cli_style("Riptide", fg="cyan", bold=True) + ": Running hooks...")
+                self.cli_echo(self.cli_style(cli_hook_prefix, fg="cyan", bold=True) + ": Running hooks...")
 
             for from_project, key, hook in hooks:
                 if isinstance(hook, AbstractPlugin):
-                    ret = hook.event_triggered(self.config, event, args)
+                    ret = hook.event_triggered(self.config, event, args_for_plugins)
                     if ret != 0:
                         return ret
                 else:
                     hook_desc = key
                     if not from_project:
                         hook_desc += " (from global)"
-                    self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Running Hook: " + hook_desc + "...")
-                    ret = self.run_hook_on_cli(hook, args)
-                    if ret != 0:
-                        if hook.continue_on_error():
-                            self.cli_echo(
-                                self.cli_style(
-                                    self.cli_style("Riptide Warning", bold=True) + ": Hook failed. Continuing...",
-                                    fg="yellow",
+
+                    if "project" not in self.config:
+                        self.cli_echo(
+                            self.cli_style(f"{cli_hook_prefix} Warning: ", bold=True, fg="yellow")
+                            + "Skipped running hook "
+                            + hook_desc
+                            + ", since no project is loaded."
+                        )
+                    else:
+                        self.cli_echo(
+                            self.cli_style(cli_hook_prefix, fg="cyan") + ": Running Hook: " + hook_desc + "..."
+                        )
+                        ret = self.run_hook_on_cli(hook, args_for_containers, extra_mounts)
+                        if ret != 0:
+                            if hook.continue_on_error():
+                                self.cli_echo(
+                                    self.cli_style(
+                                        self.cli_style(f"{cli_hook_prefix} Warning", bold=True)
+                                        + ": Hook failed. Continuing...",
+                                        fg="yellow",
+                                    )
                                 )
-                            )
+                            else:
+                                self.cli_echo(
+                                    self.cli_style(
+                                        self.cli_style(f"{cli_hook_prefix} Error", bold=True) + ": Hook failed.",
+                                        bg="red",
+                                        fg="white",
+                                    )
+                                )
+                                return ret
                         else:
                             self.cli_echo(
-                                self.cli_style(
-                                    self.cli_style("Riptide Error", bold=True) + ": Hook failed.", bg="red", fg="white"
-                                )
+                                self.cli_style(cli_hook_prefix, fg="cyan") + ": Hook " + hook_desc + " finished."
                             )
-                            return ret
-                    else:
-                        self.cli_echo(self.cli_style("Riptide", fg="cyan") + ": Hook " + hook_desc + " finished.")
 
         return 0
 
-    def run_hook_on_cli(self, hook: Hook, args: Sequence[str]) -> int:
-        return self.engine.cmd(hook.command(), hook.args(args), working_directory=hook.get_working_directory())
+    def run_hook_on_cli(self, hook: Hook, args: Sequence[str], extra_volumes: dict[str, SimpleBindVolume]) -> int:
+        return self.engine.cmd(
+            hook.command(), hook.args(args), working_directory=hook.get_working_directory(), extra_volumes=extra_volumes
+        )
 
     def get_applicable_hooks_for(
         self,
@@ -464,7 +495,7 @@ class HookManager:
                 + " - Do not modify or remove this line or the next lines. You can move them around.\n"
             ),
             "### If you want to disable Riptide hooks, run `riptide hook-configure`.\n",
-            "riptide hook-trigger " + event.key + ' "$@"\n',
+            "riptide hook-trigger --mount-host-paths " + event.key + ' "$@"\n',
             "### RIPTIDE HOOK CONFIG END\n",
         ]
 
