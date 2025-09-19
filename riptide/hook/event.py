@@ -194,7 +194,7 @@ class HookEvent(Enum):
     GitApplypatchMsg = "git-applypatch-msg"
     """
     Hook is run when Git triggers a ``applypatch-msg`` Git Hook. Riptide forwards all arguments and environment
-    variables to the hook.
+    variables that Git provides to the hook.
     See `documentation <https://git-scm.com/docs/githooks>`_.
     """
 

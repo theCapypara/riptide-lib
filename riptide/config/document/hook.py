@@ -61,6 +61,10 @@ class Hook(YamlConfigDocument):
             This will cause ``riptide hook-trigger`` to exit with a non-zero exit code. If this is False,
             any error is ignored.
 
+        [pass_event_arguments]: bool
+            Defaults to true. If True, arguments related to the event are passed to the command, if False,
+            they are not. If and what arguments would be passed depends on the event, see documentation.
+
         [working_directory]: str
             Working directory for the hook command, relative to the ``src`` specified in the project
 
@@ -82,7 +86,8 @@ class Hook(YamlConfigDocument):
                         Key of a command defined in the app, must exist.
 
                     [args]: str
-                        Additional arguments to pass to the command.
+                        Additional arguments to pass to the command. These are passed before event arguments
+                        (see ``pass_event_arguments``).
 
                     When using the "command from app" form, Riptide will execute the command defined in the app like normal
                     and optionally pass the list of arguments to it. They will be passed as-is as if they were typed on the
@@ -114,6 +119,7 @@ class Hook(YamlConfigDocument):
                 Optional("$name"): str,  # Added by system during processing parent app.
                 "events": [str],  # Must be valid `AnyHookEvent`.
                 Optional("continue_on_error"): bool,
+                Optional("pass_event_arguments"): bool,
                 Optional("working_directory"): str,
                 "command": Or(Schema({"run": DocReference(Command)}), Schema({"from_app": str, Optional("args"): str})),
             }
@@ -140,6 +146,11 @@ class Hook(YamlConfigDocument):
         if self.internal_contains("continue_on_error"):
             return self.internal_get("continue_on_error")
         return False
+
+    def pass_event_arguments(self) -> bool:
+        if self.internal_contains("pass_event_arguments"):
+            return self.internal_get("pass_event_arguments")
+        return True
 
     def get_working_directory(self) -> str | None:
         """
@@ -183,8 +194,19 @@ class Hook(YamlConfigDocument):
                 "`from_app` can not be used with hooks that are defined globally in the user configuration"
             )
 
-    def args(self) -> Sequence[str]:
+    def args(self, event_args: Sequence[str]) -> list[str]:
+        """
+        Returns the arguments that should be passed to the command (in addition to arguments defined in the
+        command object returned by ``command``. The arguments ``event_args`` passed into this function are added, if
+        ``pass_event_arguments`` is True.
+        """
+
         cmd_info = self.internal_get("command")
         if "args" in cmd_info:
-            return shlex.split(cmd_info["args"])
-        return ()
+            args = shlex.split(cmd_info["args"])
+        else:
+            args = []
+
+        if self.pass_event_arguments():
+            return [*args, *event_args]
+        return args

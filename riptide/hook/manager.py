@@ -270,17 +270,27 @@ class HookManager:
         return 0
 
     def run_hook_on_cli(self, hook: Hook, args: Sequence[str]) -> int:
-        return self.engine.cmd(hook.command(), [*hook.args(), *args], working_directory=hook.get_working_directory())
+        return self.engine.cmd(hook.command(), hook.args(args), working_directory=hook.get_working_directory())
 
     def get_applicable_hooks_for(
-        self, event: AnyHookEvent, *, print_warning_if_not_defined: bool = False
+        self,
+        event: AnyHookEvent,
+        *,
+        # Default value if neither globally nor in the project any enabled state is defined
+        if_not_defined_set_enabled_to: bool = False,
+        # Print a warning for the user if no enabled state is defined
+        print_warning_if_not_defined: bool = False,
     ) -> Sequence[tuple[bool, str, Hook]]:
         """
         Returns list of applicable hooks (enabled and defined hooks for the given event).
 
         The boolean flag in the returned tuples is False for global-defined hooks and True for project hooks.
         """
-        if not self._is_event_enabled(event, print_warning_if_not_defined):
+        if not self._is_event_enabled(
+            event,
+            if_not_defined_set_enabled_to=if_not_defined_set_enabled_to,
+            print_warning_if_not_defined=print_warning_if_not_defined,
+        ):
             return []
         events = []
         for key, hook in self.global_hooks().items():
@@ -318,7 +328,12 @@ class HookManager:
 
     def _setup_githooks(self):
         for event in HookEvent.git_events():
-            if len(self.get_applicable_hooks_for(event)) > 0:
+            # if_not_defined_set_enabled_to:
+            # If global hook state is not defined, pretend the global hook state defaults to enabled
+            # so that we still generate the git hook files, even if hooks would not run. This will cause
+            # Riptide to then echo a warning when users trigger the git hook prompting the user to
+            # please configure their enabled setting.
+            if len(self.get_applicable_hooks_for(event, if_not_defined_set_enabled_to=True)) > 0:
                 self._setup_githook(event)
 
     def _setup_githook(self, event: HookEvent):
@@ -362,7 +377,15 @@ class HookManager:
             "hooks": event_hooks,
         }
 
-    def _is_event_enabled(self, event: AnyHookEvent, print_warning_if_not_defined: bool = False) -> bool:
+    def _is_event_enabled(
+        self,
+        event: AnyHookEvent,
+        *,
+        # Default value if neither globally nor in the project any enabled state is defined
+        if_not_defined_set_enabled_to: bool = False,
+        # Print a warning for the user if no enabled state is defined
+        print_warning_if_not_defined: bool = False,
+    ) -> bool:
         global_value = self._event_config_default(event, True)["enabled"]
         global_value_was_none = False
         if global_value is None:
@@ -371,11 +394,13 @@ class HookManager:
         project_value = self._event_config_project(event, True)["enabled"]
         if project_value is None:
             project_value = True
-            if global_value_was_none and print_warning_if_not_defined:
-                self.cli_echo(
-                    self.cli_style("Riptide Warning: ", fg="yellow", bold=True)
-                    + self.cli_style(hook_not_configured_warning(HookEvent.key_for(event)), fg="yellow")
-                )
+            if global_value_was_none:
+                if print_warning_if_not_defined:
+                    self.cli_echo(
+                        self.cli_style("Riptide Warning: ", fg="yellow", bold=True)
+                        + self.cli_style(hook_not_configured_warning(HookEvent.key_for(event)), fg="yellow")
+                    )
+                return if_not_defined_set_enabled_to
 
         return global_value and project_value
 
