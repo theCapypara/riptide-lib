@@ -4,7 +4,8 @@ import platform
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from configcrunch import DocReference, YamlConfigDocument, variable_helper
+from configcrunch import DocReference, variable_helper
+from riptide.config.document import DocumentClass, RiptideDocument
 from riptide.config.document.hook import Hook
 from riptide.config.document.project import Project
 from riptide.config.files import riptide_config_dir, riptide_main_config_file
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 HEADER = "riptide"
 
 
-class Config(YamlConfigDocument):
+class Config(RiptideDocument):
     """
     System configuration. Contains basic settings
     for Riptide.
@@ -26,6 +27,8 @@ class Config(YamlConfigDocument):
     the project must be inserted into the ``project`` key.
 
     """
+
+    identity = DocumentClass.Config
 
     @classmethod
     def header(cls) -> str:

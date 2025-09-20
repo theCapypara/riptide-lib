@@ -5,6 +5,7 @@ from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, Mapping, Sequence
 
 from configcrunch import DocReference, YamlConfigDocument
+from riptide.config.document import DocumentClass, RiptideDocument
 from riptide.config.document.command import Command
 from riptide.config.files import CONTAINER_SRC_PATH
 from riptide.hook.event import AnyHookEvent, HookEvent
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 HEADER = "hook"
 
 
-class Hook(YamlConfigDocument):
+class Hook(RiptideDocument):
     """
     A hook. Hooks are executed when certain events occur and behave the same as
     :class:`riptide.config.document.command.Command`.
@@ -41,6 +42,8 @@ class Hook(YamlConfigDocument):
     have access to all environment variables of the shell (normal command rules apply).
     ``/src`` is still mounted as normal, the working directory is also defined relative to ``/src``.
     """
+
+    identity = DocumentClass.Hook
 
     parent_doc: App | Config | None
     events: set[AnyHookEvent]
@@ -184,10 +187,8 @@ class Hook(YamlConfigDocument):
         if "run" in cmd_info:
             return cmd_info["run"]
 
-        from riptide.config.document.app import App
-
         parent = self.parent_doc
-        if isinstance(parent, App):
+        if parent is not None and parent.identity == DocumentClass.App:
             app_commands: Mapping[str, Command] = parent["commands"]
             if cmd_info["from_app"] not in app_commands:
                 raise ValueError(

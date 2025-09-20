@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "configcrunch >= 1.2.0",
+    "configcrunch >= 1.4.0",
     "schema >= 0.7",
     "pyyaml >= 6.0",
     "appdirs >= 1.4",

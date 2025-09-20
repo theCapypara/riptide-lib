@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from configcrunch import DocReference, YamlConfigDocument, variable_helper
+from riptide.config.document import DocumentClass, RiptideDocument
 from riptide.config.document.command import Command
 from riptide.config.document.hook import Hook
 from riptide.config.document.service import Service
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 HEADER = "app"
 
 
-class App(YamlConfigDocument):
+class App(RiptideDocument):
     """
     An application.
 
@@ -22,6 +23,8 @@ class App(YamlConfigDocument):
     and (multiple) :class:`riptide.config.document.command.Command`
     and is usually included in a :class:`riptide.config.document.project.Project`.
     """
+
+    identity = DocumentClass.App
 
     parent_doc: Project | None
 

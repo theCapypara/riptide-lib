@@ -5,7 +5,6 @@ riptide:
       http: 8558
       https: 8448
     autostart: true
-    autoexit: 15
   engine: dummy
   update_hosts_file: false
   performance:

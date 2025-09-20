@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 
 from configcrunch import variable_helper
 from dotenv import dotenv_values
+from riptide.config.document import DocumentClass
 from riptide.config.document.common_service_command import (
     ContainerDefinitionYamlConfigDocument,
 )
@@ -32,6 +33,8 @@ class Command(ContainerDefinitionYamlConfigDocument):
     Placed inside an :class:`riptide.config.document.app.App`.
 
     """
+
+    identity = DocumentClass.Command
 
     parent_doc: App | None
 
@@ -257,18 +260,16 @@ class Command(ContainerDefinitionYamlConfigDocument):
 
         :raises: IndexError: If not assigned to a project
         """
-        from riptide.config.document.config import Config
-        from riptide.config.document.hook import Hook
 
         try:
             app_or_hook = self.parent()
             assert app_or_hook is not None
-            if isinstance(app_or_hook, Hook):
+            if app_or_hook.identity == DocumentClass.Hook:
                 app_or_system_config = app_or_hook.parent()
                 assert app_or_system_config is not None
             else:
                 app_or_system_config = app_or_hook
-            if isinstance(app_or_system_config, Config):
+            if app_or_system_config.identity == DocumentClass.Config:
                 assert "project" in app_or_system_config
                 assert app_or_system_config is not None
                 return app_or_system_config["project"]
@@ -440,8 +441,7 @@ class Command(ContainerDefinitionYamlConfigDocument):
         )
 
     @variable_helper
-    def parent(self) -> App:
-        # TODO: Change docs reference!!!!!
+    def parent(self) -> App | None:
         """
         Returns the app that this belongs to.
 
@@ -456,7 +456,9 @@ class Command(ContainerDefinitionYamlConfigDocument):
         from riptide.config.document.app import App
 
         parent = super().parent()
-        if not isinstance(parent, App):
+        if parent is None:
+            return None
+        if parent.identity != DocumentClass.App:
             # In this case we are a hook command!
             parent = parent.parent()
             if TYPE_CHECKING:
