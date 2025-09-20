@@ -120,8 +120,7 @@ class HookEvent(Enum):
     Hook is run before Riptide exports a file from a database environment when using ``riptide db-export``.
                  
     Parameters:
-    - Currently active database environment name
-    - Path to the file to export to (for hook commands this file is mounted)
+    - Database environment name
     """
 
     PostDbExport = "post-db-export"
@@ -129,7 +128,7 @@ class HookEvent(Enum):
     Hook is run after Riptide exported a file from a database environment when using ``riptide db-export``.
                  
     Parameters:
-    - Currently active database environment name
+    - Database environment name
     - Path to the file that contains the exported data (for hook commands this file is mounted)
     """
 

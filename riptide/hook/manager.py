@@ -228,7 +228,8 @@ class HookManager:
         *,
         cli_hook_prefix: str = "Hook",
     ) -> int:
-        """Trigger an event, run hooks and output current status. Returns exit code."""
+        """Trigger an event, run hooks and output current status. Returns exit code. Returns -1 if no hook was run."""
+        event_key = HookEvent.key_for(event)
         args_for_containers, extra_mounts = apply_hook_mounts(self.config, args, additional_host_mounts)
         args_for_plugins = [str(a) for a in args]
         hooks = self.get_applicable_hooks_for(event, print_warning_if_not_defined=True)
@@ -237,7 +238,9 @@ class HookManager:
             if wait_time > 0:
                 info_msg = (
                     self.cli_style(cli_hook_prefix, fg="cyan", bold=True)
-                    + ": Will run hooks in "
+                    + ": Will run "
+                    + event_key
+                    + " hooks in "
                     + self.cli_style(wait_time, bold=True)
                     + " seconds. Hit "
                     + self.cli_style("CTRL-C", bold=True)
@@ -256,7 +259,9 @@ class HookManager:
                     self.cli_echo(f"{cli_hook_prefix}: Hooks skipped.")
                     return 0
 
-                self.cli_echo(self.cli_style(cli_hook_prefix, fg="cyan", bold=True) + ": Running hooks...")
+                self.cli_echo(
+                    self.cli_style(cli_hook_prefix, fg="cyan", bold=True) + ": Running " + event_key + " hooks..."
+                )
 
             for from_project, key, hook in hooks:
                 if isinstance(hook, AbstractPlugin):
@@ -277,7 +282,12 @@ class HookManager:
                         )
                     else:
                         self.cli_echo(
-                            self.cli_style(cli_hook_prefix, fg="cyan") + ": Running Hook: " + hook_desc + "..."
+                            self.cli_style(cli_hook_prefix, fg="cyan")
+                            + ": Running "
+                            + event_key
+                            + " Hook: "
+                            + hook_desc
+                            + "..."
                         )
                         ret = self.run_hook_on_cli(hook, args_for_containers, extra_mounts)
                         if ret != 0:
@@ -302,8 +312,9 @@ class HookManager:
                             self.cli_echo(
                                 self.cli_style(cli_hook_prefix, fg="cyan") + ": Hook " + hook_desc + " finished."
                             )
+            return 0
 
-        return 0
+        return -1
 
     def run_hook_on_cli(self, hook: Hook, args: Sequence[str], extra_volumes: dict[str, SimpleBindVolume]) -> int:
         return self.engine.cmd(
