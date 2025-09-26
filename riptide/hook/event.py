@@ -368,10 +368,8 @@ class HookEvent(Enum):
         """
         if isinstance(event, HookEvent):
             return event
-        if event.startswith(CUSTOM_HOOK_EVENT_PREFIX):
-            return event
         if isinstance(event, str):
-            candidate = HookEvent.try_from_key(event)
+            candidate = HookEvent.try_any_from_key(event)
             if candidate:
                 return candidate
         return None

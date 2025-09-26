@@ -1,0 +1,152 @@
+# System configuration used for hook manager tests.
+riptide:
+  engine: docker
+  performance:
+    dont_sync_named_volumes_with_host: false
+    dont_sync_unimportant_src: false
+  proxy:
+    autostart: true
+    ports:
+      http: 80
+      https: 443
+    url: foobar
+  update_hosts_file: true
+  repos: [ ]
+  hooks:
+    global-glob_en-proj_en:
+      events:
+        - custom-glob-en-proj-en
+        - git-pre-commit
+      command:
+        run:
+          image: fooG
+          command: fooG1
+    global-glob_di-proj_en:
+      events:
+        - custom-glob-di-proj-en
+      command:
+        run:
+          image: foo
+          command: foo
+    global-glob_en-proj_di:
+      events:
+        - custom-glob-en-proj-di
+      command:
+        run:
+          image: foo
+          command: foo
+    global-glob_di-proj_di:
+      events:
+        - custom-glob-di-proj-di
+      command:
+        run:
+          image: foo
+          command: foo
+    global-glob_un-proj_en:
+      events:
+        - custom-glob-un-proj-en
+      command:
+        run:
+          image: foo
+          command: foo
+    global-glob_un-proj_di:
+      events:
+        - custom-glob-un-proj-di
+      command:
+        run:
+          image: foo
+          command: foo
+    global-glob_un-proj_un:
+      events:
+        - custom-glob-un-proj-un
+      command:
+        run:
+          image: foo
+          command: foo
+    global-glob_en-proj_un:
+      events:
+        - custom-glob-en-proj-un
+      command:
+        run:
+          image: foo
+          command: foo
+    global-glob_di-proj_un:
+      events:
+        - custom-glob-di-proj-un
+      command:
+        run:
+          image: foo
+          command: foo
+  project:
+    name: test-project
+    src: .
+    app:
+      name: foo
+      services: { }
+      commands: { }
+      hooks:
+        proj-glob_en-proj_en:
+          events:
+            - custom-glob-en-proj-en
+            - pre-start
+          command:
+            run:
+              image: foo1
+              command: foo11
+        proj-glob_di-proj_en:
+          events:
+            - custom-glob-di-proj-en
+          command:
+            run:
+              image: foo2
+              command: foo22
+        proj-glob_en-proj_di:
+          events:
+            - custom-glob-en-proj-di
+          command:
+            run:
+              image: foo3
+              command: foo33
+        proj-glob_di-proj_di:
+          events:
+            - custom-glob-di-proj-di
+            - pre-db-import
+          command:
+            run:
+              image: foo4
+              command: foo44
+        proj-glob_un-proj_en:
+          events:
+            - custom-glob-un-proj-en
+          command:
+            run:
+              image: foo
+              command: foo
+        proj-glob_un-proj_di:
+          events:
+            - custom-glob-un-proj-di
+          command:
+            run:
+              image: foo
+              command: foo
+        proj-glob_un-proj_un:
+          events:
+            - custom-glob-un-proj-un
+          command:
+            run:
+              image: foo
+              command: foo
+        proj-glob_en-proj_un:
+          events:
+            - custom-glob-en-proj-un
+          command:
+            run:
+              image: foo
+              command: foo
+        proj-glob_di-proj_un:
+          events:
+            - custom-glob-di-proj-un
+          command:
+            run:
+              image: foo
+              command: foo

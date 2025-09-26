@@ -173,22 +173,27 @@ class HookManager:
             events.append(self._get_event_config(global_hooks, project_hooks, event))
 
         # Also collect custom events
+        already_collected = set()
         for hook in itertools.chain(global_hooks.values(), project_hooks.values()):
             for any_event in hook.events:
                 if HookEvent.is_custom(any_event):
-                    if any_event not in events:
+                    if any_event not in events and any_event not in already_collected:
                         events.append(self._get_event_config(global_hooks, project_hooks, any_event))
+                        already_collected.add(any_event)
 
         global_enabled = self.global_hookconfig["all"]["enabled"]
-        global_enabled_effective = global_enabled if global_enabled is not None else False
         project_enabled = self.project_hookconfig["all"]["enabled"]
-        project_enabled_effective = project_enabled if project_enabled is not None else True
+        effective_enabled = False
+        if project_enabled is not None:
+            effective_enabled = project_enabled
+        elif global_enabled is not None:
+            effective_enabled = global_enabled
         global_wait_time = self.global_hookconfig["all"]["wait_time"]
         project_wait_time = self.project_hookconfig["all"]["wait_time"]
         defaults: ApplicableEventConfiguration = {
             "event": "_default",
             "enabled": {
-                "effective": global_enabled_effective and project_enabled_effective,
+                "effective": effective_enabled,
                 "default": global_enabled,
                 "project": project_enabled,
             },
@@ -441,22 +446,17 @@ class HookManager:
         print_warning_if_not_defined: bool = False,
     ) -> bool:
         global_value = self._event_config_default(event, True)["enabled"]
-        global_value_was_none = False
-        if global_value is None:
-            global_value_was_none = True
-            global_value = False
         project_value = self._event_config_project(event, True)["enabled"]
         if project_value is None:
-            project_value = True
-            if global_value_was_none:
+            if global_value is None:
                 if print_warning_if_not_defined:
                     self.cli_echo(
                         self.cli_style("Riptide Warning: ", fg="yellow", bold=True)
                         + self.cli_style(hook_not_configured_warning(HookEvent.key_for(event)), fg="yellow")
                     )
                 return if_not_defined_set_enabled_to
-
-        return global_value and project_value
+            return global_value
+        return project_value
 
     def _get_event_wait_time(self, event: AnyHookEvent) -> int:
         project_value = self._event_config_project(event, True)["wait_time"]
@@ -532,11 +532,12 @@ def hook_not_configured_warning(event_key: str):
 
 def merge_config(a: SingleEventConfiguration, b: SingleEventConfiguration) -> SingleEventConfiguration:
     """Merge two configurations. If for `b` a value is `None`, the value from `a` is used."""
-    if a["enabled"] is None:
+    a = dict(a)  # type: ignore
+    if b["enabled"] is not None:
         a["enabled"] = b["enabled"]
-    if a["wait_time"] is None:
+    if b["wait_time"] is not None:
         a["wait_time"] = b["wait_time"]
-    return b
+    return a
 
 
 def basic_echo(
