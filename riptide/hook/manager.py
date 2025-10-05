@@ -259,12 +259,14 @@ class HookManager:
 
         The boolean flag in the returned tuples is False for global-defined hooks and True for project hooks.
         """
+        event_enabled = True
         if not self._is_event_enabled(
             event,
             if_not_defined_set_enabled_to=if_not_defined_set_enabled_to,
-            print_warning_if_not_defined=print_warning_if_not_defined,
         ):
-            return []
+            if not print_warning_if_not_defined:
+                return []
+            event_enabled = False
         events: list[tuple[bool, str, Hook | AbstractPlugin]] = []
         for key, hook in self.global_hooks().items():
             if event in hook.events:
@@ -276,7 +278,15 @@ class HookManager:
         for plugin in load_plugins().values():
             if plugin.responds_to_event(event):
                 events.append((False, "", plugin))
-        return events
+        if event_enabled:
+            return events
+        else:
+            if len(events) > 0:
+                global_value = self._event_config_default(event, True)["enabled"]
+                project_value = self._event_config_project(event, True)["enabled"]
+                if global_value is None and project_value is None:
+                    self.cli.system_warn(hook_not_configured_warning(HookEvent.key_for(event)))
+            return []
 
     def configure_event(
         self, event: AnyHookEvent | None, use_default: bool, enable_value: bool | None, wait_timeout_value: int | None
@@ -360,15 +370,11 @@ class HookManager:
         *,
         # Default value if neither globally nor in the project any enabled state is defined
         if_not_defined_set_enabled_to: bool = False,
-        # Print a warning for the user if no enabled state is defined
-        print_warning_if_not_defined: bool = False,
     ) -> bool:
         global_value = self._event_config_default(event, True)["enabled"]
         project_value = self._event_config_project(event, True)["enabled"]
         if project_value is None:
             if global_value is None:
-                if print_warning_if_not_defined:
-                    self.cli.system_warn(hook_not_configured_warning(HookEvent.key_for(event)))
                 return if_not_defined_set_enabled_to
             return global_value
         return project_value
