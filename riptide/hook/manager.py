@@ -12,7 +12,6 @@ from typing import (
     Generic,
     Literal,
     Mapping,
-    Protocol,
     Sequence,
     TypeAlias,
     TypedDict,
@@ -27,6 +26,7 @@ from riptide.config.files import (
 )
 from riptide.engine.abstract import AbstractEngine, SimpleBindVolume
 from riptide.hook.additional_volumes import HookHostPathArgument, apply_hook_mounts
+from riptide.hook.cli import DefaultHookCliDisplay, HookCliDisplay
 from riptide.hook.event import AnyHookEvent, HookEvent
 from riptide.plugin.abstract import AbstractPlugin
 from riptide.plugin.loader import load_plugins
@@ -77,48 +77,12 @@ class HookConfiguration(TypedDict):
     events: dict[str, SingleEventConfiguration]
 
 
-class ClickEchoFunction(Protocol):
-    """A function to echo to CLI. The definition is from Click."""
-
-    def __call__(
-        self,
-        message: Any | None = None,
-        file: IO[Any] | None = None,
-        nl: bool = True,
-        err: bool = False,
-        color: bool | None = None,
-    ) -> None:
-        pass
-
-
-class ClickStyleFunction(Protocol):
-    """A function to style CLI output. The definition is from Click."""
-
-    def __call__(
-        self,
-        text: Any,
-        fg: int | tuple[int, int, int] | str | None = None,
-        bg: int | tuple[int, int, int] | str | None = None,
-        bold: bool | None = None,
-        dim: bool | None = None,
-        underline: bool | None = None,
-        overline: bool | None = None,
-        italic: bool | None = None,
-        blink: bool | None = None,
-        reverse: bool | None = None,
-        strikethrough: bool | None = None,
-        reset: bool = True,
-    ) -> str:
-        pass
-
-
 class HookManager:
     """Manages the state of loaded hooks & event configuration (are events enabled, etc.)"""
 
     config: Config
     engine: AbstractEngine
-    cli_echo: ClickEchoFunction  # Command to print to the CLI
-    cli_style: ClickStyleFunction  # Command to style a CLI output
+    cli: HookCliDisplay  # Adapter to print to the CLI
     _global_hookconfig: HookConfiguration | None
     _project_hookconfig: HookConfiguration | None
 
@@ -127,19 +91,15 @@ class HookManager:
         config: Config,
         engine: AbstractEngine,
         *,
-        # To not have a dependency on Click in riptide-lib, these functions are injected.
-        # If not given, normal print without styling is used.
-        cli_echo: ClickEchoFunction | None = None,
-        cli_style: ClickStyleFunction | None = None,
+        # To not have a dependency on rich in riptide-lib, the CLI printing functionality is injected
+        # If not given, a fallback print-based implementation is loaded.
+        cli: HookCliDisplay | None = None,
     ) -> None:
         self.config = config
         self.engine = engine
-        if cli_echo is None:
-            cli_echo = basic_echo
-        if cli_style is None:
-            cli_style = lambda text, *args, **kwargs: text  # noqa: E731
-        self.cli_echo = cli_echo
-        self.cli_style = cli_style
+        if cli is None:
+            cli = DefaultHookCliDisplay()
+        self.cli = cli
         self._global_hookconfig = None
         self._project_hookconfig = None
 
@@ -230,8 +190,6 @@ class HookManager:
         event: AnyHookEvent,
         args: Sequence[HookArgument],
         additional_host_mounts: dict[str, HookHostPathArgument],  # container path -> host path + ro flag
-        *,
-        cli_hook_prefix: str = "Hook",
     ) -> int:
         """Trigger an event, run hooks and output current status. Returns exit code. Returns -1 if no hook was run."""
         event_key = HookEvent.key_for(event)
@@ -241,32 +199,18 @@ class HookManager:
         if len(hooks) > 0:
             wait_time = self._get_event_wait_time(event)
             if wait_time > 0:
-                info_msg = (
-                    self.cli_style(cli_hook_prefix, fg="cyan", bold=True)
-                    + ": Will run "
-                    + event_key
-                    + " hooks in "
-                    + self.cli_style(wait_time, bold=True)
-                    + " seconds. Hit "
-                    + self.cli_style("CTRL-C", bold=True)
-                    + " to skip running hooks"
-                )
-                self.cli_echo(info_msg, nl=False)
+                self.cli.will_run_hook(event_key, wait_time)
                 try:
                     still_waiting_for = wait_time
                     while still_waiting_for > 0:
-                        self.cli_echo(".", nl=False)
+                        self.cli.will_run_hook_tick()
                         sleep(1)
                         still_waiting_for -= 1
-                    self.cli_echo("\r" + (" " * (wait_time + len(info_msg))) + "\r", nl=False)
+                    self.cli.after_will_run_hook()
                 except KeyboardInterrupt:
-                    self.cli_echo("\r" + (" " * (wait_time + len(info_msg))) + "\r", nl=False)
-                    self.cli_echo(f"{cli_hook_prefix}: Hooks skipped.")
+                    self.cli.after_will_run_hook()
+                    self.cli.system_info("Hooks skipped.")
                     return 0
-
-                self.cli_echo(
-                    self.cli_style(cli_hook_prefix, fg="cyan", bold=True) + ": Running " + event_key + " hooks..."
-                )
 
             for from_project, key, hook in hooks:
                 if isinstance(hook, AbstractPlugin):
@@ -279,44 +223,18 @@ class HookManager:
                         hook_desc += " (from global)"
 
                     if "project" not in self.config:
-                        self.cli_echo(
-                            self.cli_style(f"{cli_hook_prefix} Warning: ", bold=True, fg="yellow")
-                            + "Skipped running hook "
-                            + hook_desc
-                            + ", since no project is loaded."
-                        )
+                        self.cli.system_warn(f"Skipped running hook {hook_desc} since no project is loaded.")
                     else:
-                        self.cli_echo(
-                            self.cli_style(cli_hook_prefix, fg="cyan")
-                            + ": Running "
-                            + event_key
-                            + " Hook: "
-                            + hook_desc
-                            + "..."
-                        )
+                        self.cli.hook_execution_begin(event_key, hook_desc)
                         ret = self.run_hook_on_cli(hook, args_for_containers, extra_mounts)
                         if ret != 0:
                             if hook.continue_on_error():
-                                self.cli_echo(
-                                    self.cli_style(
-                                        self.cli_style(f"{cli_hook_prefix} Warning", bold=True)
-                                        + ": Hook failed. Continuing...",
-                                        fg="yellow",
-                                    )
-                                )
+                                self.cli.hook_execution_end(event_key, hook_desc, "warn")
                             else:
-                                self.cli_echo(
-                                    self.cli_style(
-                                        self.cli_style(f"{cli_hook_prefix} Error", bold=True) + ": Hook failed.",
-                                        bg="red",
-                                        fg="white",
-                                    )
-                                )
+                                self.cli.hook_execution_end(event_key, hook_desc, False)
                                 return ret
                         else:
-                            self.cli_echo(
-                                self.cli_style(cli_hook_prefix, fg="cyan") + ": Hook " + hook_desc + " finished."
-                            )
+                            self.cli.hook_execution_end(event_key, hook_desc, True)
             return 0
 
         return -1
@@ -341,12 +259,14 @@ class HookManager:
 
         The boolean flag in the returned tuples is False for global-defined hooks and True for project hooks.
         """
+        event_enabled = True
         if not self._is_event_enabled(
             event,
             if_not_defined_set_enabled_to=if_not_defined_set_enabled_to,
-            print_warning_if_not_defined=print_warning_if_not_defined,
         ):
-            return []
+            if not print_warning_if_not_defined:
+                return []
+            event_enabled = False
         events: list[tuple[bool, str, Hook | AbstractPlugin]] = []
         for key, hook in self.global_hooks().items():
             if event in hook.events:
@@ -358,7 +278,15 @@ class HookManager:
         for plugin in load_plugins().values():
             if plugin.responds_to_event(event):
                 events.append((False, "", plugin))
-        return events
+        if event_enabled:
+            return events
+        else:
+            if len(events) > 0:
+                global_value = self._event_config_default(event, True)["enabled"]
+                project_value = self._event_config_project(event, True)["enabled"]
+                if global_value is None and project_value is None:
+                    self.cli.system_warn(hook_not_configured_warning(HookEvent.key_for(event)))
+            return []
 
     def configure_event(
         self, event: AnyHookEvent | None, use_default: bool, enable_value: bool | None, wait_timeout_value: int | None
@@ -442,18 +370,11 @@ class HookManager:
         *,
         # Default value if neither globally nor in the project any enabled state is defined
         if_not_defined_set_enabled_to: bool = False,
-        # Print a warning for the user if no enabled state is defined
-        print_warning_if_not_defined: bool = False,
     ) -> bool:
         global_value = self._event_config_default(event, True)["enabled"]
         project_value = self._event_config_project(event, True)["enabled"]
         if project_value is None:
             if global_value is None:
-                if print_warning_if_not_defined:
-                    self.cli_echo(
-                        self.cli_style("Riptide Warning: ", fg="yellow", bold=True)
-                        + self.cli_style(hook_not_configured_warning(HookEvent.key_for(event)), fg="yellow")
-                    )
                 return if_not_defined_set_enabled_to
             return global_value
         return project_value
