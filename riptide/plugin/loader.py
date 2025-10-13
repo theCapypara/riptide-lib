@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING
-
 from importlib.metadata import entry_points
+from typing import TYPE_CHECKING
 
 from riptide.plugin.abstract import AbstractPlugin
 
@@ -13,7 +12,7 @@ loaded_plugins: None | dict[str, AbstractPlugin] = None
 
 def load_plugins() -> dict[str, AbstractPlugin]:
     """
-    Load the engine by the given name.
+    Load the plugin by the given name.
     Returns a Dict containing plugin names and interface implementations.
 
     If they are already loaded, the loaded list is returned.

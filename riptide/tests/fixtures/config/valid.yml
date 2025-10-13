@@ -5,10 +5,9 @@ riptide:
       http: 8558
       https: 8448
     autostart: true
-    autoexit: 15
   engine: dummy
   update_hosts_file: false
-  repos: []
+  repos: [ ]
   performance:
     dont_sync_named_volumes_with_host: false
     dont_sync_unimportant_src: false

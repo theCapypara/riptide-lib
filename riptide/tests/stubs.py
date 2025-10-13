@@ -1,3 +1,4 @@
+from riptide.config.document import DocumentClass, RiptideDocument
 from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
 
 
@@ -8,6 +9,17 @@ class ProjectStub(YamlConfigDocumentStub):
 
     FOLDER = "FOLDER"
     SRC_FOLDER = "SRC_FOLDER"
+
+    @classmethod
+    def make_project(
+        cls,
+        document: dict,
+        path: str | None = None,
+        parent: RiptideDocument | None = None,
+        set_parent_to_self=False,
+        absolute_paths=None,
+    ):  # type: ignore
+        return super().make(DocumentClass.Project, document, path, parent, set_parent_to_self, absolute_paths)
 
     def folder(self):
         return self.__class__.FOLDER

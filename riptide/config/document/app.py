@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from configcrunch import DocReference, YamlConfigDocument, variable_helper
+from riptide.config.document import DocumentClass, RiptideDocument
 from riptide.config.document.command import Command
+from riptide.config.document.hook import Hook
 from riptide.config.document.service import Service
 from schema import Optional, Schema
 
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 HEADER = "app"
 
 
-class App(YamlConfigDocument):
+class App(RiptideDocument):
     """
     An application.
 
@@ -21,6 +23,8 @@ class App(YamlConfigDocument):
     and (multiple) :class:`riptide.config.document.command.Command`
     and is usually included in a :class:`riptide.config.document.project.Project`.
     """
+
+    identity = DocumentClass.App
 
     parent_doc: Project | None
 
@@ -66,6 +70,10 @@ class App(YamlConfigDocument):
             {key}: :class:`~riptide.config.document.command.Command`
                 Commands for this app.
 
+        [hooks]
+            {key}: :class:`~riptide.config.document.hook.Hook`
+                Hooks for this app.
+
         [unimportant_paths]: List[str]
             Normally all files inside containers are shared with the host (for commands and services with role 'src').
             This list specifies files that don't need to be synced with the host. This means, that these files
@@ -105,8 +113,9 @@ class App(YamlConfigDocument):
                 "name": str,
                 Optional("notices"): {Optional("usage"): str, Optional("installation"): str},
                 Optional("import"): {str: {"target": str, "name": str}},
-                Optional("services"): {str: DocReference(Service)},
-                Optional("commands"): {str: DocReference(Command)},
+                Optional("services"): {Optional(str): DocReference(Service)},
+                Optional("commands"): {Optional(str): DocReference(Command)},
+                Optional("hooks"): {Optional(str): DocReference(Hook)},
                 Optional("unimportant_paths"): [str],
             }
         )
@@ -116,11 +125,12 @@ class App(YamlConfigDocument):
         return [
             ("services[]", Service),
             ("commands[]", Command),
+            ("hooks[]", Hook),
         ]
 
     def validate(self):
         """
-        Initialise the optional services and command dicts.
+        Initialise the optional services, command and hook dicts.
         Has to be done after validate because of some issues with Schema validation error handling :(
         """
         ret_val = super().validate()
@@ -129,6 +139,8 @@ class App(YamlConfigDocument):
                 self.internal_set("services", {})
             if not self.internal_contains("commands"):
                 self.internal_set("commands", {})
+            if not self.internal_contains("hooks"):
+                self.internal_set("hooks", {})
         return ret_val
 
     def error_str(self) -> str:

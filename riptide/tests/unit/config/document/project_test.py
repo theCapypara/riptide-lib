@@ -38,7 +38,7 @@ class ProjectTestCase(unittest.TestCase):
         with self.assertRaisesRegex(SchemaError, "Missing key: 'src'"):
             project.validate()
 
-    @mock.patch("riptide.config.document.project.YamlConfigDocument.resolve_and_merge_references")
+    @mock.patch("riptide.config.document.project.Project.resolve_and_merge_references")
     def test_resolve_and_merge_references_no_subdocs(self, super_mock):
         doc = {"name": "test"}
         project = module.Project(doc)

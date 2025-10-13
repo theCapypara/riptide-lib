@@ -50,8 +50,5 @@ def run(engine: AbstractEngine, project: Project, command_name: str, arguments: 
         return engine.cmd_in_service(project, command_name, service, arguments)
     else:
         # Container is not running, start a new container
-        old_cmd = cmd
-        project["app"]["commands"][command_name] = convert_in_service_to_normal(project["app"], command_name)
-        ret_code = engine.cmd(project, command_name, arguments)
-        project["app"]["commands"][command_name] = old_cmd
+        ret_code = engine.cmd(convert_in_service_to_normal(project["app"], command_name), arguments)
         return ret_code

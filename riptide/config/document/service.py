@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from configcrunch import ConfigcrunchError, variable_helper
 from dotenv import dotenv_values
+from riptide.config.document import DocumentClass
 from riptide.config.document.common_service_command import (
     ContainerDefinitionYamlConfigDocument,
 )
@@ -48,6 +49,8 @@ class Service(ContainerDefinitionYamlConfigDocument):
     the service with the ``$name`` entry during runtime.
 
     """
+
+    identity = DocumentClass.Service
 
     parent_doc: App | None
 

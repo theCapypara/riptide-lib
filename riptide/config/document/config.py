@@ -4,12 +4,13 @@ import platform
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from schema import Schema, Optional, Or
-
-from configcrunch import YamlConfigDocument, DocReference, variable_helper
+from configcrunch import DocReference, variable_helper
+from riptide.config.document import DocumentClass, RiptideDocument
+from riptide.config.document.hook import Hook
 from riptide.config.document.project import Project
-from riptide.config.files import riptide_main_config_file, riptide_config_dir
+from riptide.config.files import riptide_config_dir, riptide_main_config_file
 from riptide.plugin.loader import load_plugins
+from schema import Optional, Or, Schema
 
 if TYPE_CHECKING:
     from riptide.engine.abstract import AbstractEngine
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 HEADER = "riptide"
 
 
-class Config(YamlConfigDocument):
+class Config(RiptideDocument):
     """
     System configuration. Contains basic settings
     for Riptide.
@@ -26,6 +27,8 @@ class Config(YamlConfigDocument):
     the project must be inserted into the ``project`` key.
 
     """
+
+    identity = DocumentClass.Config
 
     @classmethod
     def header(cls) -> str:
@@ -114,6 +117,10 @@ class Config(YamlConfigDocument):
                 This feature can be safely switched on or off. Projects need to be
                 restarted for this to take effect.
 
+        [hooks]
+            {key}: :class:`~riptide.config.document.hook.Hook`
+                Global hooks, these are available in all projects.
+
         **Example Document:**
 
         .. code-block:: yaml
@@ -134,6 +141,7 @@ class Config(YamlConfigDocument):
               performance:
                 dont_sync_named_volumes_with_host: auto
                 dont_sync_unimportant_src: auto
+              hooks: [ ]
 
         """
         return Schema(
@@ -147,25 +155,36 @@ class Config(YamlConfigDocument):
                     "autostart": bool,
                     Optional("autostart_restrict"): [str],
                     Optional("compression"): bool,
-                    Optional("autoexit"): int,  # TODO: Not used, deprecated.
                 },
                 "update_hosts_file": Or(bool, str),
                 "engine": str,
                 "repos": [str],
-                Optional("project"): DocReference(Project),  # Added and overwritten by system
-                # Performance entries should be added by the system to the YAML file before validation if missing:
                 "performance": {
                     "dont_sync_named_volumes_with_host": Or(bool, "auto"),
                     "dont_sync_unimportant_src": Or(bool, "auto"),
                 },
+                Optional("hooks"): {Optional(str): DocReference(Hook)},
+                Optional("project"): DocReference(Project),  # Added and overwritten by system
             }
         )
 
     @classmethod
     def subdocuments(cls):
         # Can not contain references to other documents other than
-        # the "project" reference which is added by the system.
-        return []
+        # global hooks and  the "project" reference which is added by the system
+        return [
+            ("hooks[]", Hook),
+        ]
+
+    def validate(self):
+        """
+        Initialise the optional hooks dict.
+        """
+        ret_val = super().validate()
+        if ret_val:
+            if not self.internal_contains("hooks"):
+                self.internal_set("hooks", {})
+        return ret_val
 
     def error_str(self) -> str:
         return "System Configuration"

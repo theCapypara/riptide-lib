@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, Mock, call
 import riptide.config.document.service as module
 from configcrunch import ConfigcrunchError
 from riptide.config import loader as LOADER_MODULE
+from riptide.config.document import DocumentClass
 from riptide.config.files import CONTAINER_HOME_PATH, CONTAINER_SRC_PATH
 from riptide.engine.abstract import RIPTIDE_HOST_HOSTNAME
 from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
@@ -193,7 +194,7 @@ class ServiceTestCase(unittest.TestCase):
                 }
             }
         )
-        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
         service.freeze()
         self.init_service(service, service.doc, with_project=True)
 
@@ -403,7 +404,7 @@ class ServiceTestCase(unittest.TestCase):
         "riptide.config.document.service.get_additional_port", side_effect=lambda p, s, host_start: host_start + 10
     )
     def test_before_start(self, get_additional_port_mock: Mock, makedirs_mock: Mock):
-        project_stub = ProjectStub.make({"src": "SRC"}, set_parent_to_self=True)
+        project_stub = ProjectStub.make_project({"src": "SRC"}, set_parent_to_self=True)
         service = module.Service.from_dict(
             {
                 "working_directory": "WORKDIR",
@@ -432,7 +433,7 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch("os.makedirs")
     def test_before_start_absolute_workdir(self, makedirs_mock: Mock):
-        project_stub = ProjectStub.make({"src": "SRC"}, set_parent_to_self=True)
+        project_stub = ProjectStub.make_project({"src": "SRC"}, set_parent_to_self=True)
         service = module.Service.from_dict({"working_directory": "/WORKDIR"})
         service.parent_doc = project_stub
 
@@ -446,7 +447,7 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch("os.makedirs")
     def test_before_start_absolute_workdir_no_workdir(self, makedirs_mock: Mock):
-        project_stub = ProjectStub.make({"src": "SRC"}, set_parent_to_self=True)
+        project_stub = ProjectStub.make_project({"src": "SRC"}, set_parent_to_self=True)
         service = module.Service.from_dict({})
         service.parent_doc = project_stub
 
@@ -460,7 +461,7 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_get_project(self):
         service = module.Service.from_dict({})
-        project = ProjectStub.make({}, set_parent_to_self=True)
+        project = ProjectStub.make_project({}, set_parent_to_self=True)
         service.parent_doc = project
         service.freeze()
         self.assertEqual(project, service.get_project())
@@ -536,7 +537,7 @@ class ServiceTestCase(unittest.TestCase):
             STUB_PAV__KEY: STUB_PAV__VAL,
         }
 
-        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
 
         ## DB DRIVER SETUP
         with patch_mock_db_driver("riptide.config.document.service.db_driver_for_service.get") as (_, driver):
@@ -587,7 +588,7 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service.from_dict({"roles": ["something"]})
         expected: dict[str, str] = {}
 
-        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
         self.init_service(service, service.to_dict())
         service.freeze()
 
@@ -602,7 +603,7 @@ class ServiceTestCase(unittest.TestCase):
         service = module.Service({"roles": ["something"], "logging": {"stderr": True}})
         expected = {"stderr~PROCESSED2": {"bind": module.LOGGING_CONTAINER_STDERR, "mode": "rw"}}
 
-        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
         self.init_service(service, service.to_dict())
         service.freeze()
 
@@ -620,7 +621,7 @@ class ServiceTestCase(unittest.TestCase):
             driver.collect_environment.return_value = {"FROM_DB_DRIVER": "VALUE"}
 
         # TODO: Test reading from env file
-        service.parent_doc = ProjectStub.make({"env_files": []}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make_project({"env_files": []}, set_parent_to_self=True)
         service.freeze()
         service.get_project().freeze()
 
@@ -636,7 +637,7 @@ class ServiceTestCase(unittest.TestCase):
     @mock.patch("riptide.config.document.service.get_project_meta_folder", side_effect=lambda name: name + "~PROCESSED")
     def test_volume_path(self, get_project_meta_folder_mock: Mock):
         service = module.Service.from_dict({"$name": "TEST"})
-        service.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        service.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
 
         self.assertEqual(os.path.join(ProjectStub.FOLDER + "~PROCESSED", "data", "TEST"), service.volume_path())
 
@@ -671,18 +672,18 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual("/path/in/test", service.get_working_directory())
 
     def test_domain_not_main(self):
-        system = YamlConfigDocumentStub.make({"proxy": {"url": "TEST-URL"}})
-        project = ProjectStub.make({"name": "TEST-PROJECT"}, parent=system)
-        app = YamlConfigDocumentStub.make({}, parent=project)
+        system = YamlConfigDocumentStub.make(DocumentClass.Config, {"proxy": {"url": "TEST-URL"}})
+        project = ProjectStub.make_project({"name": "TEST-PROJECT"}, parent=system)
+        app = YamlConfigDocumentStub.make(DocumentClass.App, {}, parent=project)
         service = module.Service.from_dict({"$name": "TEST-SERVICE", "roles": ["?"]})
         service.parent_doc = app
 
         self.assertEqual("TEST-PROJECT--TEST-SERVICE.TEST-URL", service.domain())
 
     def test_domain_main(self):
-        system = YamlConfigDocumentStub.make({"proxy": {"url": "TEST-URL"}})
-        project = ProjectStub.make({"name": "TEST-PROJECT"}, parent=system)
-        app = YamlConfigDocumentStub.make({}, parent=project)
+        system = YamlConfigDocumentStub.make(DocumentClass.Config, {"proxy": {"url": "TEST-URL"}})
+        project = ProjectStub.make_project({"name": "TEST-PROJECT"}, parent=system)
+        app = YamlConfigDocumentStub.make(DocumentClass.App, {}, parent=project)
         service = module.Service.from_dict({"$name": "TEST-SERVICE", "roles": ["main"]})
 
         service.parent_doc = app
@@ -695,9 +696,9 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual("TEST-PROJECT.TEST-URL", service.domain())
 
     def test_additional_domains_not_main(self):
-        system = YamlConfigDocumentStub.make({"proxy": {"url": "TEST-URL"}})
-        project = ProjectStub.make({"name": "TEST-PROJECT"}, parent=system)
-        app = YamlConfigDocumentStub.make({}, parent=project)
+        system = YamlConfigDocumentStub.make(DocumentClass.Config, {"proxy": {"url": "TEST-URL"}})
+        project = ProjectStub.make_project({"name": "TEST-PROJECT"}, parent=system)
+        app = YamlConfigDocumentStub.make(DocumentClass.App, {}, parent=project)
         service = module.Service.from_dict(
             {"$name": "TEST-SERVICE", "roles": ["?"], "additional_subdomains": ["first", "second"]}
         )
@@ -712,9 +713,9 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual("second.TEST-PROJECT--TEST-SERVICE.TEST-URL", result["second"])
 
     def test_additional_domains_main(self):
-        system = YamlConfigDocumentStub.make({"proxy": {"url": "TEST-URL"}})
-        project = ProjectStub.make({"name": "TEST-PROJECT"}, parent=system)
-        app = YamlConfigDocumentStub.make({}, parent=project)
+        system = YamlConfigDocumentStub.make(DocumentClass.Config, {"proxy": {"url": "TEST-URL"}})
+        project = ProjectStub.make_project({"name": "TEST-PROJECT"}, parent=system)
+        app = YamlConfigDocumentStub.make(DocumentClass.App, {}, parent=project)
         service = module.Service.from_dict(
             {"$name": "TEST-SERVICE", "roles": ["main"], "additional_subdomains": ["first", "second"]}
         )

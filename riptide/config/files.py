@@ -85,6 +85,11 @@ def riptide_ports_config_file() -> str:
     return os.path.join(riptide_config_dir(), "ports.json")
 
 
+def riptide_hooks_config_file() -> str:
+    """Path to the (global) hooks.json file."""
+    return os.path.join(riptide_config_dir(), "hooks.json")
+
+
 def riptide_local_repositories_path() -> str:
     """Path to the directory where repositories are stored."""
     return os.path.join(riptide_config_dir(), "repos")
@@ -118,6 +123,15 @@ def get_project_setup_flag_path(project_folder_path: str) -> str:
     :param project_folder_path: Folder that the config file of the project is in.
     """
     return os.path.join(get_project_meta_folder(project_folder_path), RIPTIDE_PROJECT_SETUP_FLAG_FILENAME)
+
+
+def get_project_hooks_config_file_path(project_folder_path: str) -> str:
+    """
+    Path to the project-specific "hooks.json".
+
+    :param project_folder_path: Folder that the config file of the project is in.
+    """
+    return os.path.join(get_project_meta_folder(project_folder_path), "hooks.json")
 
 
 def get_current_relative_project_path(project_folder_path: str) -> str:

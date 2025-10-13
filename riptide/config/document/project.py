@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import os
-
 from typing import TYPE_CHECKING
 
-from schema import Schema, Optional
-
-from configcrunch import YamlConfigDocument, DocReference, variable_helper
+from configcrunch import DocReference, variable_helper
+from riptide.config.document import DocumentClass, RiptideDocument
 from riptide.config.document.app import App
+from schema import Optional, Schema
 
 HEADER = "project"
 
@@ -15,12 +14,14 @@ if TYPE_CHECKING:
     from riptide.config.document.config import Config
 
 
-class Project(YamlConfigDocument):
+class Project(RiptideDocument):
     """
     A project file. Usually placed as ``riptide.yml`` inside the project directory.
     Has an :class:`riptide.config.document.app.App` in it's ``app`` entry.
 
     """
+
+    identity = DocumentClass.Project
 
     parent_doc: Config | None
 

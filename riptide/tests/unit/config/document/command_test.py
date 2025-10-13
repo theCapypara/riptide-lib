@@ -1,20 +1,17 @@
-from collections import OrderedDict
-
 import os
-
 import unittest
+from collections import OrderedDict
 from unittest import mock
-
-from unittest.mock import Mock, MagicMock
-
-from schema import SchemaError
+from unittest.mock import MagicMock, Mock
 
 import riptide.config.document.command as module
+from riptide.config.document import DocumentClass
+from riptide.config.files import CONTAINER_HOME_PATH, CONTAINER_SRC_PATH
 from riptide.tests.configcrunch_test_utils import YamlConfigDocumentStub
-from riptide.config.files import CONTAINER_SRC_PATH, CONTAINER_HOME_PATH
 from riptide.tests.helpers import get_fixture_path
 from riptide.tests.stubs import ProjectStub, process_config_stub
 from riptide.tests.unit.config.service.volumes_test import STUB_PAV__KEY, STUB_PAV__VAL
+from schema import SchemaError
 
 FIXTURE_BASE_PATH = "command" + os.sep
 
@@ -73,8 +70,8 @@ class CommandTestCase(unittest.TestCase):
             command.validate()
 
     def test_get_service_valid(self):
-        test_service = YamlConfigDocumentStub.make({"roles": ["rolename"]})
-        app = YamlConfigDocumentStub.make({"services": {"test": test_service}})
+        test_service = YamlConfigDocumentStub.make(DocumentClass.Service, {"roles": ["rolename"]})
+        app = YamlConfigDocumentStub.make(DocumentClass.App, {"services": {"test": test_service}})
 
         command = module.Command.from_yaml(get_fixture_path(FIXTURE_BASE_PATH + "valid_via_service.yml"))
         command.freeze()
@@ -82,8 +79,8 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual("test", command.get_service(app))
 
     def test_get_service_not_via_service(self):
-        test_service = YamlConfigDocumentStub.make({"roles": ["rolename"]})
-        app = YamlConfigDocumentStub.make({"services": {"test": test_service}})
+        test_service = YamlConfigDocumentStub.make(DocumentClass.Service, {"roles": ["rolename"]})
+        app = YamlConfigDocumentStub.make(DocumentClass.App, {"services": {"test": test_service}})
 
         command = module.Command.from_yaml(get_fixture_path(FIXTURE_BASE_PATH + "valid_regular.yml"))
         with self.assertRaisesRegex(TypeError, 'get_service can only be used on "in service" commands.'):
@@ -92,8 +89,8 @@ class CommandTestCase(unittest.TestCase):
             command.get_service(app)
 
     def test_get_service_no_service_with_role(self):
-        test_service = YamlConfigDocumentStub.make({"roles": []})
-        app = YamlConfigDocumentStub.make({"services": {"test": test_service}})
+        test_service = YamlConfigDocumentStub.make(DocumentClass.Service, {"roles": []})
+        app = YamlConfigDocumentStub.make(DocumentClass.App, {"services": {"test": test_service}})
 
         command = module.Command.from_yaml(get_fixture_path(FIXTURE_BASE_PATH + "valid_via_service.yml"))
         with self.assertRaisesRegex(
@@ -122,7 +119,7 @@ class CommandTestCase(unittest.TestCase):
 
     def test_get_project(self):
         cmd = module.Command.from_dict({})
-        project = cmd.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        project = cmd.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
         cmd.freeze()
         self.assertEqual(project, cmd.get_project())
 
@@ -189,6 +186,7 @@ class CommandTestCase(unittest.TestCase):
 
         # The project contains some services matching the defined roles
         cmd.parent_doc = YamlConfigDocumentStub.make(
+            DocumentClass.App,
             {
                 "services": {
                     "serviceRoleA1": serviceRoleA1,
@@ -239,7 +237,7 @@ class CommandTestCase(unittest.TestCase):
         )
 
         # The project contains NO services matching the defined roles
-        cmd.parent_doc = YamlConfigDocumentStub.make({"services": {}}, parent=ProjectStub({}))
+        cmd.parent_doc = YamlConfigDocumentStub.make(DocumentClass.App, {"services": {}}, parent=ProjectStub({}))
 
         def get_services_by_role_mock(role):
             return []
@@ -272,7 +270,7 @@ class CommandTestCase(unittest.TestCase):
         )
 
         # The project contains NO services matching the defined roles
-        cmd.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        cmd.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
         cmd.freeze()
         actual = cmd.collect_volumes()
         self.assertEqual(expected, actual)
@@ -285,7 +283,7 @@ class CommandTestCase(unittest.TestCase):
         expected = {"ENV": "VALUE1", "FROM_ENV": "FROM_ENV", "COLUMNS": "10", "LINES": "20"}
 
         # TODO: Test reading from env file
-        cmd.parent_doc = ProjectStub.make({"env_files": []}, set_parent_to_self=True)
+        cmd.parent_doc = ProjectStub.make_project({"env_files": []}, set_parent_to_self=True)
         cmd.freeze()
         cmd.get_project().freeze()
 
@@ -298,12 +296,12 @@ class CommandTestCase(unittest.TestCase):
 
     def test_resolve_alias_something_to_alias(self):
         # hello world command
-        hello_world_command = YamlConfigDocumentStub.make({"hello": "world"})
+        hello_world_command = YamlConfigDocumentStub.make(DocumentClass.Command, {"hello": "world"})
         # The command we want to test
         cmd = module.Command.from_dict({"aliases": "hello_world"})
         # The parent app of the command we want to test, that contains both commands
         cmd.parent_doc = YamlConfigDocumentStub.make(
-            {"commands": {"hello_world": hello_world_command, "our_test": cmd}}
+            DocumentClass.App, {"commands": {"hello_world": hello_world_command, "our_test": cmd}}
         )
         # Make the mocked command's resolve_alias return itself.
         setattr(hello_world_command, "resolve_alias", MagicMock(return_value=hello_world_command))
@@ -318,7 +316,7 @@ class CommandTestCase(unittest.TestCase):
     @mock.patch("riptide.config.document.command.get_project_meta_folder", return_value="META")
     def test_volume_path(self, meta_folder_mock: Mock, os_makedirs_mock: Mock):
         cmd = module.Command.from_dict({"$name": "hello_world"})
-        cmd.parent_doc = ProjectStub.make({}, set_parent_to_self=True)
+        cmd.parent_doc = ProjectStub.make_project({}, set_parent_to_self=True)
         cmd.freeze()
         expected_path = os.path.join("META", "cmd_data", "hello_world")
         self.assertEqual(expected_path, cmd.volume_path())
