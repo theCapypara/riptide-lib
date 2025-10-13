@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from configcrunch import YamlConfigDocument
 from riptide.config.document import DocumentClass, RiptideDocument
 from schema import Schema
 
@@ -44,5 +45,5 @@ class YamlConfigDocumentStub(RiptideDocument):
         raise NotImplementedError("not available for stub")
 
     @classmethod
-    def subdocuments(cls) -> Schema:
+    def subdocuments(cls) -> list[tuple[str, type[YamlConfigDocument]]]:
         raise NotImplementedError("not available for stub")
