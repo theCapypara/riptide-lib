@@ -41,7 +41,7 @@ jobs:
     name: Deploy wheels to PyPI
     steps:
       - name: Download wheels
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: wheels
       - name: Set up Python 3.12
