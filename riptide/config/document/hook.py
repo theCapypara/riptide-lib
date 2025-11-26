@@ -84,7 +84,7 @@ class Hook(RiptideDocument):
                 1. Command definition
 
                     run: Command
-                        A :class:`~riptide.config.document.service.Command` object, a ``$ref`` to a Command object
+                        A :class:`~riptide.config.document.service.Command` object.
 
                     Riptide will trigger this command like Riptide executes any Command under any other circumstance.
 

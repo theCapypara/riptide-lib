@@ -24,6 +24,7 @@ class HookEvent(Enum):
                  for interactive services.
                  
     Parameters:
+
     - Comma-seperated list of names that are about to be started
     """
 
@@ -37,6 +38,7 @@ class HookEvent(Enum):
                  for interactive services.
                  
     Parameters:
+
     - Comma-seperated list of names that were requested to be started and are now started
     """
 
@@ -47,6 +49,7 @@ class HookEvent(Enum):
     .. warning:: Hooks are NOT executed if the Proxy Server stops a project.
                  
     Parameters:
+
     - Comma-seperated list of names that are about to be stopped
     """
 
@@ -58,6 +61,7 @@ class HookEvent(Enum):
     .. warning:: Hooks are NOT executed if the Proxy Server stops a project.
                  
     Parameters:
+    
     - Comma-seperated list of names that are now stopped (including services that were already stopped)
     """
 
@@ -67,6 +71,7 @@ class HookEvent(Enum):
     command that switched the environment).
                  
     Parameters:
+
     - Currently active database environment name
     - Database environment name requested to switch to
     """
@@ -76,6 +81,7 @@ class HookEvent(Enum):
     Hook is run before Riptide switches database environments when using ``riptide db-switch``.
                  
     Parameters:
+
     - Name of database environment that was switched to
     """
 
@@ -84,6 +90,7 @@ class HookEvent(Enum):
     Hook is run before Riptide created a new blank database environment when using ``riptide db-new``.
                  
     Parameters:
+
     - Name of database environment that is about to be created
     """
 
@@ -93,6 +100,7 @@ class HookEvent(Enum):
     Riptide has switched to this new environment.
                  
     Parameters:
+
     - Name of database environment that was created
     """
 
@@ -102,6 +110,7 @@ class HookEvent(Enum):
     or ``riptide setup``.
                  
     Parameters:
+    
     - Currently active database environment name
     - Path to the file to import (for hook commands this file is mounted)
     """
@@ -111,6 +120,7 @@ class HookEvent(Enum):
     Hook is run after Riptide imported a file into a database environment when using ``riptide db-import``.
                  
     Parameters:
+
     - Currently active database environment name
     - Path to the imported file (for hook commands this file is mounted)
     """
@@ -120,6 +130,7 @@ class HookEvent(Enum):
     Hook is run before Riptide exports a file from a database environment when using ``riptide db-export``.
                  
     Parameters:
+
     - Database environment name
     """
 
@@ -128,6 +139,7 @@ class HookEvent(Enum):
     Hook is run after Riptide exported a file from a database environment when using ``riptide db-export``.
                  
     Parameters:
+
     - Database environment name
     - Path to the file that contains the exported data (for hook commands this file is mounted)
     """
@@ -137,6 +149,7 @@ class HookEvent(Enum):
     Hook is run before Riptide copied a database environment when using ``riptide db-copy``.
                  
     Parameters:
+
     - Name of database environment that is being copied from
     - Name of database environment that is being copied to
     """
@@ -147,6 +160,7 @@ class HookEvent(Enum):
     Riptide has switched to this new environment.
                  
     Parameters:
+
     - Name of database environment that was being copied from
     - Name of database environment that was being copied to
     """
@@ -156,6 +170,7 @@ class HookEvent(Enum):
     Hook is run before Riptide imports a file into the project when using ``riptide import-files``.
                  
     Parameters:
+
     - Key of the import definition
     - Path to the file to import (for hook commands this file is mounted)
     """
@@ -166,6 +181,7 @@ class HookEvent(Enum):
     or ``riptide setup``.
                  
     Parameters:
+
     - Key of the import definition
     - Path to the imported file (for hook commands this file is mounted)
     """
@@ -182,6 +198,7 @@ class HookEvent(Enum):
     Hook is run at the end of the interactive setup wizard when using ``riptide setup``.
                  
     Parameters:
+    
     - ``new-project`` if the wizard was run in "new project" mode, ``existing-project`` otherwise
     """
 
