@@ -444,7 +444,7 @@ def hook_not_configured_warning(event_key: str):
         f"\n"
         f"You can also configure your choice specifically for this project:\n"
         f"    riptide hook-configure --enable=true/false\n"
-        f"Additionally you can configure what should happen for this event specifically\n"
+        f"Additionally you can configure what should happen for this event specifically:\n"
         f"    riptide hook-configure [-g] --enable=true/false {event_key}\n"
         f"\n"
         f"Please see the Riptide documentation for more information."
