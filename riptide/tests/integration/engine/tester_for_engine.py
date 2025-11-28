@@ -10,8 +10,8 @@ Example:
         [riptide.engine.tests]
         docker=riptide_engine_docker.tests.integration.tester:DockerEngineTester
 """
+
 import abc
-from typing import Tuple, Union
 
 
 class AbstractEngineTester(abc.ABC):
@@ -36,7 +36,9 @@ class AbstractEngineTester(abc.ABC):
         """Check that the services are actually non present"""
 
     @abc.abstractmethod
-    def get_permissions_at(self, path, engine_obj, project, service, write_check=True, is_directory=True, as_user=0) -> Tuple[int, int, int, bool]:
+    def get_permissions_at(
+        self, path, engine_obj, project, service, write_check=True, is_directory=True, as_user=0
+    ) -> tuple[int, int, int, bool]:
         """
         Returns for path the owner, group and octal mode as tuple.
         if write_check and is_directory=True:
@@ -49,20 +51,20 @@ class AbstractEngineTester(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_env(self, env, engine_obj, project, service) -> Union[str, None]:
+    def get_env(self, env, engine_obj, project, service) -> str | None:
         """
         Returns the value of the environment variable env. MUST read directly via shell from container.
         If the env variable is not set, must return None
         """
 
     @abc.abstractmethod
-    def get_file(self, file, engine, project, service) -> Union[str, None]:
+    def get_file(self, file, engine, project, service) -> str | None:
         """
         Return the content of the file inside the container or None if file does not exist
         """
 
     @abc.abstractmethod
-    def assert_file_exists(self, file, engine, project, service, type='both'):
+    def assert_file_exists(self, file, engine, project, service, type="both"):
         """
         Assert that a file or directory at the given path exists
         :type type: str file, dirctory or both

@@ -1,0 +1,36 @@
+{
+  "all": {
+    "enabled": null,
+    "wait_time": null
+  },
+  "events": {
+    "custom-glob-en-proj-en": {
+      "enabled": true,
+      "wait_time": 20
+    },
+    "custom-glob-di-proj-en": {
+      "enabled": true,
+      "wait_time": null
+    },
+    "custom-glob-en-proj-di": {
+      "enabled": false,
+      "wait_time": 80
+    },
+    "custom-glob-di-proj-di": {
+      "enabled": false,
+      "wait_time": null
+    },
+    "custom-glob-un-proj-en": {
+      "enabled": true,
+      "wait_time": null
+    },
+    "custom-glob-un-proj-di": {
+      "enabled": false,
+      "wait_time": null
+    },
+    "custom-glob-un-proj-un": {
+      "enabled": null,
+      "wait_time": null
+    }
+  }
+}

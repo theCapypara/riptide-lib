@@ -1,30 +1,39 @@
 """
 Functions to load the system configuration and/or projects.
 """
+
 import json
 import os
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
 from configcrunch import load_multiple_yml
 from riptide.config import repositories
 from riptide.config.document.config import Config
 from riptide.config.document.project import Project
-from riptide.config.files import discover_project_file, riptide_main_config_file, riptide_projects_file
+from riptide.config.files import (
+    discover_project_file,
+    riptide_main_config_file,
+    riptide_projects_file,
+)
 from riptide.plugin.loader import load_plugins
-
-if TYPE_CHECKING:
-    from riptide.config.document.config import Config
-    from riptide.config.document.project import Project
-
 
 RESERVED_NAMES = [
     "control"  # Riptide Mission Control endpoint on Proxy Server
 ]
-LOCAL_PROJECT_FILENAME = 'riptide.local.yml'
+LOCAL_PROJECT_FILENAME = "riptide.local.yml"
+
+# Global variables:
+
+# This is a hack to allow services to access the project path while they are loaded.
+# This is needed because during _initialize_data_after_merge accessing any property on
+# the parent App object is forbidden, but the service needs to know the project path in
+# some circumstances.
+#
+# This must not be used or relied upon outside riptide-lib.
+CURRENTLY_LOADING_PROJECT_PATH: str | None = None
 
 
-def load_config(project_file=None, skip_project_load=False, enable_local_project_config=True) -> 'Config':
+def load_config(project_file=None, skip_project_load=False, enable_local_project_config=True) -> "Config":
     """
     Loads the specified project file and the system user configuration.
     If no project file is specified, it is auto-detected. Project loading can be
@@ -45,10 +54,12 @@ def load_config(project_file=None, skip_project_load=False, enable_local_project
 
     :param project_file: Project file to load or None for auto-discovery
     :param skip_project_load: Skip project loading. If True, the project_file setting will be ignored
+    :param enable_local_project_config: If true, load the `riptide.local.yml` as well.
     :return: :class:`riptide.config.document.config.Config` object.
     :raises: :class:`FileNotFoundError`: If the system config was not found
     :raises: :class:`schema.SchemaError`: On validation errors
     """
+    global CURRENTLY_LOADING_PROJECT_PATH
 
     config_path = riptide_main_config_file()
 
@@ -64,36 +75,41 @@ def load_config(project_file=None, skip_project_load=False, enable_local_project
         system_config.internal_delete("project")
 
     system_config.upgrade()
-    system_config.validate()
 
     repos = repositories.collect(system_config)
 
-    if project_path is not None and not skip_project_load:
-        project_path = os.path.abspath(project_path)
-        local_project_path = os.path.join(os.path.dirname(project_path), LOCAL_PROJECT_FILENAME)
-        try:
-            if enable_local_project_config and os.path.exists(local_project_path):
-                project_config = load_multiple_yml(Project, project_path, local_project_path)
-            else:
-                project_config = load_multiple_yml(Project, project_path)
-            project_config.internal_set("$path", project_path)
-
-            project_config.resolve_and_merge_references(repos)
-
-            system_config.internal_set("project", project_config)
-            project_config.parent_doc = system_config
-        except FileNotFoundError:
-            pass
-
-    system_config.process_vars()
-
+    system_config.resolve_and_merge_references(repos)
     system_config.validate()
-    system_config.freeze()
 
-    for plugin in load_plugins().values():
-        plugin.after_reload_config(system_config)
+    try:
+        if project_path is not None and not skip_project_load:
+            CURRENTLY_LOADING_PROJECT_PATH = project_path = os.path.abspath(project_path)
+            local_project_path = os.path.join(os.path.dirname(project_path), LOCAL_PROJECT_FILENAME)
+            try:
+                if enable_local_project_config and os.path.exists(local_project_path):
+                    project_config = load_multiple_yml(Project, project_path, local_project_path)
+                else:
+                    project_config = load_multiple_yml(Project, project_path)
+                project_config.internal_set("$path", project_path)
 
-    return system_config
+                project_config.resolve_and_merge_references(repos)
+
+                system_config.internal_set("project", project_config)
+                project_config.parent_doc = system_config
+            except FileNotFoundError:
+                pass
+
+        system_config.process_vars()
+
+        system_config.validate()
+        system_config.freeze()
+
+        for plugin in load_plugins().values():
+            plugin.after_reload_config(system_config)
+
+        return system_config
+    finally:
+        CURRENTLY_LOADING_PROJECT_PATH = None
 
 
 def load_projects(sort=False) -> dict:
@@ -103,14 +119,14 @@ def load_projects(sort=False) -> dict:
     """
     projects = {}
     if os.path.exists(riptide_projects_file()):
-        with open(riptide_projects_file(), mode='r') as file:
+        with open(riptide_projects_file()) as file:
             projects = json.load(file)
     if not sort:
         return projects
     return OrderedDict(sorted(projects.items()))
 
 
-def load_config_by_project_name(name: str) -> 'Config':
+def load_config_by_project_name(name: str) -> "Config":
     """
     Load project by entry in projects.json.
 
@@ -125,7 +141,7 @@ def load_config_by_project_name(name: str) -> 'Config':
     return system_config
 
 
-def write_project(project: 'Project', rename=False):
+def write_project(project: "Project", rename=False):
     """
     Write project to projects.json if not already written.
 
@@ -140,10 +156,10 @@ def write_project(project: 'Project', rename=False):
     """
 
     # Check reserved names
-    if project.internal_get('name') in RESERVED_NAMES:
+    if project.internal_get("name") in RESERVED_NAMES:
         raise FileExistsError(
-            f'The project name {project.internal_get("name")} is reserved by Riptide. '
-            f'Please use a different name for your project.'
+            f"The project name {project.internal_get('name')} is reserved by Riptide. "
+            f"Please use a different name for your project."
         )
 
     projects = load_projects()
@@ -153,21 +169,21 @@ def write_project(project: 'Project', rename=False):
     #      need to do anything. If not and rename is not passed, thrown an error, if
     #      rename is passed or if the path for the project didn't exist yet: Write it to the file.
     changed = True
-    if project.internal_get('name') in projects:
+    if project.internal_get("name") in projects:
         changed = False
-        if projects[project.internal_get('name')] != project.internal_get('$path'):
+        if projects[project.internal_get("name")] != project.internal_get("$path"):
             changed = True
             if not rename:
                 raise FileExistsError(
-                    f'The Riptide project named {project.internal_get("name")} is already located at '
-                    f'{projects[project.internal_get("name")]} but your current project file is at {project.internal_get("$path")}.\n'
+                    f"The Riptide project named {project.internal_get('name')} is already located at "
+                    f"{projects[project.internal_get('name')]} but your current project file is at {project.internal_get('$path')}.\n"
                     f'Each project name can only be mapped to one path. If you want to "rename" {project.internal_get("name")} to use '
-                    f'this new path, pass the --rename flag, otherwise rename the project in the riptide.yml file.\n'
-                    f'If you want to edit these mappings manually, have a look at the file {riptide_projects_file()}.'
+                    f"this new path, pass the --rename flag, otherwise rename the project in the riptide.yml file.\n"
+                    f"If you want to edit these mappings manually, have a look at the file {riptide_projects_file()}."
                 )
     if changed:
         projects[project.internal_get("name")] = project.internal_get("$path")
-        with open(riptide_projects_file(), mode='w') as file:
+        with open(riptide_projects_file(), mode="w") as file:
             json.dump(projects, file)
     if rename:
         print("Project reference renamed.")
@@ -183,5 +199,5 @@ def remove_project(project_name: str):
     """
     projects = load_projects()
     del projects[project_name]
-    with open(riptide_projects_file(), mode='w') as file:
+    with open(riptide_projects_file(), mode="w") as file:
         json.dump(projects, file)

@@ -1,10 +1,16 @@
-schema==0.7.7
-pyyaml==6.0.2
-configcrunch==1.1.0.post1
+schema==0.7.8
+pyyaml==6.0.3
+configcrunch==2.1.1
 appdirs==1.4.4
-janus==1.0.0
-psutil==7.0.0
-GitPython==3.1.44
-pywinpty==2.0.15; sys_platform == 'win32'
-python-hosts==1.0.7
-python-dotenv==1.1.0
+janus==2.0.0
+psutil==7.1.2
+GitPython==3.1.45
+pywinpty==3.0.2; sys_platform == 'win32'
+python-hosts==1.1.2
+python-dotenv==1.2.1
+
+ruff
+mypy
+types-requests
+types-psutil
+types-PyYAML

@@ -7,6 +7,7 @@ class StartCtx:
     run before starting or stopping projects
     Must be used by engines in their start_project method.
     """
+
     def __init__(self, project):
         self.project = project
 

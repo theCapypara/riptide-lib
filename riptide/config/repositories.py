@@ -1,4 +1,5 @@
 """Manages the synchronization of Riptide repositories."""
+
 import os
 import shutil
 
@@ -11,10 +12,10 @@ from riptide.util import get_riptide_version
 if TYPE_CHECKING:
     from riptide.config.document.config import Config
 
-TAB = '    '
+TAB = "    "
 
 
-def update(system_config: 'Config', update_text_func):
+def update(system_config: "Config", update_text_func):
     """
     Update repostiories by checking remote Git state and downloading all changes.
 
@@ -39,15 +40,16 @@ def update(system_config: 'Config', update_text_func):
         # Update existing repositories
         try:
             repo.git.fetch()
-            remote = repo.remotes.origin if hasattr(repo.remotes, 'origin') else repo.remotes[0]
+            remote = repo.remotes.origin if hasattr(repo.remotes, "origin") else repo.remotes[0]
             # Checkout either current Riptide version or master
             _checkout(repo, remote)
         except CommandError as err:
             # Git error, we can't update
-            update_text_func(TAB + "Warning: Could not update: " + err.stderr.replace('\n', ' '))
+            update_text_func(TAB + "Warning: Could not update: " + err.stderr.replace("\n", " "))
 
         update_text_func("Done!")
         update_text_func("")
+
 
 def _update_text(repo, update_text_func):
     """
@@ -80,19 +82,19 @@ def collect(system_config):
 
 
 def _checkout(repo, remote):
-    prefix = remote.name + '/'
+    prefix = remote.name + "/"
     ref_list = [ref.name for ref in remote.refs]
     major, minor, patch = get_riptide_version()
     if major is not None:
         if minor is not None:
             if patch is not None:
                 # X.X.X
-                candidate = prefix + f'{major}.{minor}.{patch}'
+                candidate = prefix + f"{major}.{minor}.{patch}"
                 if candidate in ref_list:
                     repo.git.checkout(candidate)
                     return
             # X.X
-            candidate = prefix + f'{major}.{minor}'
+            candidate = prefix + f"{major}.{minor}"
             if candidate in ref_list:
                 repo.git.checkout(candidate)
                 return
@@ -102,9 +104,9 @@ def _checkout(repo, remote):
             repo.git.checkout(candidate)
             return
     # master
-    candidate = prefix + 'master'
+    candidate = prefix + "master"
     if candidate in ref_list:
         repo.git.checkout(candidate)
         return
     # HEAD
-    repo.git.checkout(prefix + 'HEAD')
+    repo.git.checkout(prefix + "HEAD")

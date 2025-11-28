@@ -1,18 +1,21 @@
-from schema import Optional, Schema, Or
-from typing import List, Union, TYPE_CHECKING, Tuple, Type
+from __future__ import annotations
 
-from configcrunch import YamlConfigDocument, DocReference, ConfigcrunchError, REMOVE
-from configcrunch import variable_helper
+from typing import TYPE_CHECKING
+
+from configcrunch import DocReference, YamlConfigDocument, variable_helper
+from riptide.config.document import DocumentClass, RiptideDocument
 from riptide.config.document.command import Command
+from riptide.config.document.hook import Hook
 from riptide.config.document.service import Service
+from schema import Optional, Schema
 
 if TYPE_CHECKING:
     from riptide.config.document.project import Project
 
-HEADER = 'app'
+HEADER = "app"
 
 
-class App(YamlConfigDocument):
+class App(RiptideDocument):
     """
     An application.
 
@@ -20,6 +23,11 @@ class App(YamlConfigDocument):
     and (multiple) :class:`riptide.config.document.command.Command`
     and is usually included in a :class:`riptide.config.document.project.Project`.
     """
+
+    identity = DocumentClass.App
+
+    parent_doc: Project | None
+
     @classmethod
     def header(cls) -> str:
         return HEADER
@@ -62,6 +70,10 @@ class App(YamlConfigDocument):
             {key}: :class:`~riptide.config.document.command.Command`
                 Commands for this app.
 
+        [hooks]
+            {key}: :class:`~riptide.config.document.hook.Hook`
+                Hooks for this app.
+
         [unimportant_paths]: List[str]
             Normally all files inside containers are shared with the host (for commands and services with role 'src').
             This list specifies files that don't need to be synced with the host. This means, that these files
@@ -97,38 +109,28 @@ class App(YamlConfigDocument):
         """
         return Schema(
             {
-                Optional('$ref'): str,  # reference to other App documents
-                'name': str,
-                Optional('notices'): {
-                    Optional('usage'): str,
-                    Optional('installation'): str
-                },
-                Optional('import'): {
-                    str: {
-                        'target': str,
-                        'name': str
-                    }
-                },
-                Optional('services'): {
-                    str: DocReference(Service)
-                },
-                Optional('commands'): {
-                    str: DocReference(Command)
-                },
-                Optional('unimportant_paths'): [str]
+                Optional("$ref"): str,  # reference to other App documents
+                "name": str,
+                Optional("notices"): {Optional("usage"): str, Optional("installation"): str},
+                Optional("import"): {str: {"target": str, "name": str}},
+                Optional("services"): {Optional(str): DocReference(Service)},
+                Optional("commands"): {Optional(str): DocReference(Command)},
+                Optional("hooks"): {Optional(str): DocReference(Hook)},
+                Optional("unimportant_paths"): [str],
             }
         )
 
     @classmethod
-    def subdocuments(cls) -> List[Tuple[str, Type[YamlConfigDocument]]]:
+    def subdocuments(cls) -> list[tuple[str, type[YamlConfigDocument]]]:
         return [
             ("services[]", Service),
             ("commands[]", Command),
+            ("hooks[]", Hook),
         ]
 
     def validate(self):
         """
-        Initialise the optional services and command dicts.
+        Initialise the optional services, command and hook dicts.
         Has to be done after validate because of some issues with Schema validation error handling :(
         """
         ret_val = super().validate()
@@ -137,13 +139,15 @@ class App(YamlConfigDocument):
                 self.internal_set("services", {})
             if not self.internal_contains("commands"):
                 self.internal_set("commands", {})
+            if not self.internal_contains("hooks"):
+                self.internal_set("hooks", {})
         return ret_val
 
     def error_str(self) -> str:
         return f"{self.__class__.__name__}<{(self.internal_get('name') if self.internal_contains('name') else '???')}>"
 
     @variable_helper
-    def parent(self) -> 'Project':
+    def parent(self) -> Project:
         """
         Returns the project that this app belongs to.
 
@@ -155,11 +159,13 @@ class App(YamlConfigDocument):
 
             something: '.'
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, Project)
+        return parent
 
     @variable_helper
-    def get_service_by_role(self, role_name: str) -> Union[Service, None]:
+    def get_service_by_role(self, role_name: str) -> Service | None:
         """
         Returns any service with the given role name (first found) or None.
 
@@ -179,7 +185,7 @@ class App(YamlConfigDocument):
         raise ValueError(f"No service with role {role_name} found in the app.")
 
     @variable_helper
-    def get_services_by_role(self, role_name: str) -> List[Service]:
+    def get_services_by_role(self, role_name: str) -> list[Service]:
         """
         Returns all services with the given role name.
 

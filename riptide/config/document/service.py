@@ -1,29 +1,42 @@
+from __future__ import annotations
+
+import os
 import warnings
 from collections import OrderedDict
+from pathlib import PurePosixPath
+from typing import TYPE_CHECKING
 
-from configcrunch import ConfigcrunchError
-from configcrunch import variable_helper
+from configcrunch import ConfigcrunchError, variable_helper
 from dotenv import dotenv_values
-from schema import Schema, Optional, Or
-
-from riptide.config.document.common_service_command import ContainerDefinitionYamlConfigDocument
+from riptide.config.document import DocumentClass
+from riptide.config.document.common_service_command import (
+    ContainerDefinitionYamlConfigDocument,
+)
 from riptide.config.errors import RiptideDeprecationWarning
-from riptide.config.files import CONTAINER_SRC_PATH
-from riptide.config.service.config_files import *
-from riptide.config.service.logging import *
+from riptide.config.files import CONTAINER_SRC_PATH, get_project_meta_folder
+from riptide.config.service.config_files import process_config
+from riptide.config.service.logging import (
+    LOGGING_CONTAINER_STDERR,
+    LOGGING_CONTAINER_STDOUT,
+    create_logging_path,
+    get_command_logging_container_path,
+    get_logging_path_for,
+)
+
 # todo: validate actual schema values -> better schema | ALL documents
 from riptide.config.service.ports import get_additional_port
 from riptide.config.service.volumes import process_additional_volumes
 from riptide.db.driver import db_driver_for_service
 from riptide.lib.cross_platform import cppath
+from schema import Optional, Or, Schema
 
 DOMAIN_PROJECT_SERVICE_SEP = "--"
 
 if TYPE_CHECKING:
-    from riptide.config.document.project import Project
     from riptide.config.document.app import App
+    from riptide.config.document.project import Project
 
-HEADER = 'service'
+HEADER = "service"
 
 
 class Service(ContainerDefinitionYamlConfigDocument):
@@ -36,6 +49,10 @@ class Service(ContainerDefinitionYamlConfigDocument):
     the service with the ``$name`` entry during runtime.
 
     """
+
+    identity = DocumentClass.Service
+
+    parent_doc: App | None
 
     @classmethod
     def header(cls) -> str:
@@ -217,14 +234,21 @@ class Service(ContainerDefinitionYamlConfigDocument):
                 [mode]: str
                     Whether to mount the volume read-write ("rw", default) or read-only ("ro").
                 [type]: str
-                    Whether this volume is a "directory" (default) or a "file". Only checked if the file/dir does
-                    not exist yet on the host system. Riptide will then create it with the appropriate type.
+                    Whether this volume is a "directory" or a "file". If the file does not exist on the host,
+                    Riptide will create as specified. If not defined, Riptide will create a directory if it does
+                    not exist on the host. Only if it is defined Riptide will also check that an existing file
+                    also matches this definition (i.e. Riptide will error if this is set to "file" but "host" points
+                    to a directory and vice versa).
                 [volume_name]: str
                     Name of a named volume for this additional volume. Used instead of "host" if present and
                     the dont_sync_named_volumes_with_host performance setting is enabled. Volumes with the same
                     volume_name have the same content, even across projects. As a constraint, the name of
                     two volumes should only be the same, if the host path specified is also the same, to ensure
                     the same behaviour regardless of if the performance setting is enabled.
+                [host_system]: Or['Linux', 'Darwin', 'Windows']
+                    Only mount this volume if the host
+                    `system name <https://docs.python.org/3/library/platform.html#platform.system>` matches
+                    this value.
 
         [driver]
             The database driver configuration, set this only if the role "db" is set.
@@ -324,71 +348,61 @@ class Service(ContainerDefinitionYamlConfigDocument):
         """
         return Schema(
             {
-                Optional('$ref'): str,  # reference to other Service documents
-                Optional('$name'): str,  # Added by system during processing parent app.
-                Optional('roles'): [str],
-                'image': str,
-                Optional('command'): Or(
-                    str, {
-                        "default": str,
-                        str: str
-                    }
-                ),
-                Optional('port'): int,
-                Optional('logging'): {
-                    Optional('stdout'): bool,
-                    Optional('stderr'): bool,
-                    Optional('paths'): {str: str},
-                    Optional('commands'): {str: str}
+                Optional("$ref"): str,  # reference to other Service documents
+                Optional("$name"): str,  # Added by system during processing parent app.
+                Optional("roles"): [str],
+                "image": str,
+                Optional("command"): Or(str, {"default": str, str: str}),
+                Optional("port"): int,
+                Optional("logging"): {
+                    Optional("stdout"): bool,
+                    Optional("stderr"): bool,
+                    Optional("paths"): {str: str},
+                    Optional("commands"): {str: str},
                 },
-                Optional('pre_start'): [str],
-                Optional('post_start'): [str],
-                Optional('environment'): {str: str},
-                Optional('config'): {
+                Optional("pre_start"): [str],
+                Optional("post_start"): [str],
+                Optional("environment"): {str: str},
+                Optional("config"): {
                     str: {
-                        'from': str,
-                        '$source': str,
+                        "from": str,
+                        "$source": str,
                         # Path to the document that "from" references. Is added durinng loading of service
-                        'to': str,
-                        Optional('force_recreate'): bool
+                        "to": str,
+                        Optional("force_recreate"): bool,
                     }
                 },
                 # Whether to run as the user using riptide (True) or image default (False). Default: True
                 # Limitation: If false and the image USER is not root,
                 #             then a user with the id of the image USER must exist in /etc/passwd of the image.
-                Optional('run_as_current_user'): bool,
-                Optional('run_pre_start_as_current_user'): Or('auto', bool),
-                Optional('run_post_start_as_current_user'): Or('auto', bool),
+                Optional("run_as_current_user"): bool,
+                Optional("run_pre_start_as_current_user"): Or("auto", bool),
+                Optional("run_post_start_as_current_user"): Or("auto", bool),
                 # DEPRECATED. Inverse of run_as_current_user if set
-                Optional('run_as_root'): bool,
+                Optional("run_as_root"): bool,
                 # Whether to create the riptide user and group, mapped to current user. Default: False
-                Optional('dont_create_user'): bool,
-                Optional('working_directory'): str,
-                Optional('additional_subdomains'): [str],
-                Optional('additional_ports'): {
+                Optional("dont_create_user"): bool,
+                Optional("working_directory"): str,
+                Optional("additional_subdomains"): [str],
+                Optional("additional_ports"): {str: {"title": str, "container": int, "host_start": int}},
+                Optional("additional_volumes"): {
                     str: {
-                        'title': str,
-                        'container': int,
-                        'host_start': int
+                        "host": str,
+                        "container": str,
+                        Optional("mode"): Or("rw", "ro"),  # default: rw - can be rw/ro.
+                        Optional("type"): Or("directory", "file"),  # default: directory
+                        Optional("volume_name"): str,
+                        Optional("host_system"): Or("Linux", "Darwin", "Windows"),
                     }
                 },
-                Optional('additional_volumes'): {
-                    str: {
-                        'host': str,
-                        'container': str,
-                        Optional('mode'): Or('rw', 'ro'),  # default: rw - can be rw/ro.
-                        Optional('type'): Or('directory', 'file'),  # default: directory
-                        Optional('volume_name'): str
-                    }
-                },
-                Optional('allow_full_memlock'): bool,
+                Optional("allow_full_memlock"): bool,
                 # db only
-                Optional('driver'): {
-                    'name': str,
-                    'config': any  # defined by driver
+                Optional("driver"): {
+                    "name": str,
+                    "config": any,  # defined by driver
                 },
-                Optional('read_env_file'): bool,
-                Optional('ignore_original_entrypoint'): bool
+                Optional("read_env_file"): bool,
+                Optional("ignore_original_entrypoint"): bool,
             }
         )
 
@@ -398,13 +412,13 @@ class Service(ContainerDefinitionYamlConfigDocument):
         driver and creates all files for ``config`` entries.
         """
         self._db_driver = None
-        self._loaded_port_mappings = None
+        self._loaded_port_mappings: dict[int, int] | None = None
 
         if "run_as_root" in data:
             warnings.warn(
-                "Deprecated key run_as_root = %r in a service found. Please replace with run_as_current_user = %r." %
-                (data["run_as_root"], not data["run_as_root"]),
-                RiptideDeprecationWarning
+                "Deprecated key run_as_root = %r in a service found. Please replace with run_as_current_user = %r."
+                % (data["run_as_root"], not data["run_as_root"]),
+                RiptideDeprecationWarning,
             )
             data["run_as_current_user"] = not data["run_as_root"]
         if "run_as_current_user" not in data:
@@ -451,11 +465,13 @@ class Service(ContainerDefinitionYamlConfigDocument):
         if self.absolute_paths:
             folders_to_search = [os.path.dirname(path) for path in self.absolute_paths]
         else:
-            try:
-                folders_to_search = [self.get_project().folder()]
-            except IndexError:
+            from riptide.config.loader import CURRENTLY_LOADING_PROJECT_PATH
+
+            if CURRENTLY_LOADING_PROJECT_PATH is None:
                 # Fallback: Assume cwd
                 folders_to_search = [os.getcwd()]
+            else:
+                folders_to_search = [os.path.dirname(CURRENTLY_LOADING_PROJECT_PATH)]
 
         if "config" in data and isinstance(data["config"], dict):
             for config in data["config"].values():
@@ -476,7 +492,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
                         break
                 if config["$source"] is None:
                     # Did not find the file at any of the possible places
-                    p = self.absolute_paths[0] if self.absolute_paths else '???'
+                    p = self.absolute_paths[0] if self.absolute_paths else "???"
                     raise ConfigcrunchError(
                         f"Configuration file '{config['from']}' in service at '{p}' does not exist or is not a file. "
                         f"This probably happens because one of your services has an invalid setting for the 'config' "
@@ -498,7 +514,7 @@ class Service(ContainerDefinitionYamlConfigDocument):
         return data
 
     def validate(self) -> bool:
-        """ Validates the Schema and if a database driver is defined, validates that the driver is installed. """
+        """Validates the Schema and if a database driver is defined, validates that the driver is installed."""
         if not super().validate():
             return False
 
@@ -515,23 +531,23 @@ class Service(ContainerDefinitionYamlConfigDocument):
         return True
 
     def before_start(self):
-        """Loads data required for service start, called by riptide_project_start_ctx()"""
+        """Loads data required for service start, called by riptide_start_project_ctx()"""
         # Collect ports
         project = self.get_project()
         self._loaded_port_mappings = {}
 
         if "additional_ports" in self:
             for port_request in self["additional_ports"].values():
-                self._loaded_port_mappings[port_request["container"]] = get_additional_port(project, self,
-                                                                                            port_request["host_start"])
+                self._loaded_port_mappings[port_request["container"]] = get_additional_port(
+                    project, self, port_request["host_start"]
+                )
 
         # Create working_directory if it doesn't exist and it is relative
         if "working_directory" in self and not PurePosixPath(self["working_directory"]).is_absolute():
-            os.makedirs(os.path.join(
-                self.get_project().folder(),
-                self.get_project()["src"],
-                self["working_directory"]
-            ), exist_ok=True)
+            os.makedirs(
+                os.path.join(self.get_project().folder(), self.get_project()["src"], self["working_directory"]),
+                exist_ok=True,
+            )
 
     def get_command(self, group: str = "default"):
         """Returns the command to use for the given group. 'command' must be set in self"""
@@ -544,15 +560,19 @@ class Service(ContainerDefinitionYamlConfigDocument):
         else:
             return self["command"]
 
-    def get_project(self) -> 'Project':
+    def get_project(self) -> Project:
         """
         Returns the project or raises an error if this is not assigned to a project
 
         :raises: IndexError: If not assigned to a project
         """
         try:
-            return self.parent_doc.parent_doc
-        except Exception as ex:
+            app = self.parent_doc
+            assert app is not None
+            project = app.parent_doc
+            assert project is not None
+            return project
+        except AssertionError as ex:
             raise IndexError("Expected service to have a project assigned") from ex
 
     def collect_volumes(self) -> OrderedDict:
@@ -580,30 +600,30 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         # role src
         if "src" in self["roles"]:
-            volumes[project.src_folder()] = {'bind': CONTAINER_SRC_PATH, 'mode': 'rw'}
+            volumes[project.src_folder()] = {"bind": CONTAINER_SRC_PATH, "mode": "rw"}
 
         # config
         if "config" in self:
             for config_name, config in self["config"].items():
-                bind_path = str(PurePosixPath('/src/').joinpath(PurePosixPath(config["to"])))
+                bind_path = str(PurePosixPath("/src/").joinpath(PurePosixPath(config["to"])))
                 process_config(volumes, config_name, config, self, bind_path)
 
         # logging
         if "logging" in self:
             create_logging_path(self)
             if "stdout" in self["logging"] and self["logging"]["stdout"]:
-                volumes[get_logging_path_for(self, 'stdout')] = {'bind': LOGGING_CONTAINER_STDOUT, 'mode': 'rw'}
+                volumes[get_logging_path_for(self, "stdout")] = {"bind": LOGGING_CONTAINER_STDOUT, "mode": "rw"}
             if "stderr" in self["logging"] and self["logging"]["stderr"]:
-                volumes[get_logging_path_for(self, 'stderr')] = {'bind': LOGGING_CONTAINER_STDERR, 'mode': 'rw'}
+                volumes[get_logging_path_for(self, "stderr")] = {"bind": LOGGING_CONTAINER_STDERR, "mode": "rw"}
             if "paths" in self["logging"]:
                 for name, path in self["logging"]["paths"].items():
                     logging_host_path = get_logging_path_for(self, name)
-                    volumes[logging_host_path] = {'bind': path, 'mode': 'rw'}
+                    volumes[logging_host_path] = {"bind": path, "mode": "rw"}
             if "commands" in self["logging"]:
                 for name in self["logging"]["commands"].keys():
                     logging_host_path = get_logging_path_for(self, name)
                     logging_command_stdout = get_command_logging_container_path(name)
-                    volumes[logging_host_path] = {'bind': logging_command_stdout, 'mode': 'rw'}
+                    volumes[logging_host_path] = {"bind": logging_command_stdout, "mode": "rw"}
 
         # db driver
         if self._db_driver:
@@ -615,11 +635,11 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         # additional_volumes
         if "additional_volumes" in self:
-            volumes.update(process_additional_volumes(list(self['additional_volumes'].values()), project.folder()))
+            volumes.update(process_additional_volumes(list(self["additional_volumes"].values()), project.folder()))
 
         return volumes
 
-    def collect_environment(self) -> dict:
+    def collect_environment(self) -> dict[str, str]:
         """
         Collect environment variables from the "environment" entry in the service
         configuration.
@@ -634,22 +654,23 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
         :return: dict. Returned format is ``{key1: value1, key2: value2}``.
         """
-        env = {}
+        env: dict[str, str | None] = {}
         if "environment" in self:
             for name, value in self["environment"].items():
                 env[name] = value
 
         if "read_env_file" not in self or self["read_env_file"]:
-            for env_file_path in self.get_project()['env_files']:
+            for env_file_path in self.get_project()["env_files"]:
                 env.update(dotenv_values(os.path.join(self.get_project().folder(), env_file_path)))
 
         # db driver
         if self._db_driver:
             env.update(self._db_driver.collect_environment())
 
-        return env
+        # Filter out any None value environment variables
+        return {k: v for k, v in env.items() if v is not None}
 
-    def collect_ports(self) -> dict:
+    def collect_ports(self) -> dict[int, int]:
         """
         Takes additional_ports and returns the actual host/container mappings for these
         ports.
@@ -663,13 +684,16 @@ class Service(ContainerDefinitionYamlConfigDocument):
         """
         # This is already loaded in before_start. Make sure to use riptide_start_project_ctx
         # when starting if this is None
+        assert self._loaded_port_mappings is not None
         return self._loaded_port_mappings
 
     def error_str(self) -> str:
-        return f"{self.__class__.__name__}<{(self.internal_get('$name') if self.internal_contains('$name') else '???')}>"
+        return (
+            f"{self.__class__.__name__}<{(self.internal_get('$name') if self.internal_contains('$name') else '???')}>"
+        )
 
     @variable_helper
-    def parent(self) -> 'App':
+    def parent(self) -> App:
         """
         Returns the app that this service belongs to.
 
@@ -681,8 +705,10 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
             something: 'This is easy to use.'
         """
-        # noinspection PyTypeChecker
-        return super().parent()
+        parent = super().parent()
+        if TYPE_CHECKING:
+            assert isinstance(parent, App)
+        return parent
 
     @variable_helper
     def volume_path(self) -> str:
@@ -703,11 +729,11 @@ class Service(ContainerDefinitionYamlConfigDocument):
                     host: '/home/peter/my_projects/project1/_riptide/data/service_name/cache'
                     container: '/foo/bar/cache'
         """
-        path = os.path.join(get_project_meta_folder(self.get_project().folder()), 'data', self.internal_get("$name"))
+        path = os.path.join(get_project_meta_folder(self.get_project().folder()), "data", self.internal_get("$name"))
         return path
 
     @variable_helper
-    def get_working_directory(self) -> str:
+    def get_working_directory(self) -> str | None:
         """
         Returns the path to the working directory of the service **inside** the container.
 
@@ -743,14 +769,21 @@ class Service(ContainerDefinitionYamlConfigDocument):
 
             something: 'https://project--service.riptide.local'
         """
+        project = self.get_project()
+        config = project.parent_doc
+        assert config is not None
         if "main" in self.internal_get("roles"):
-            return self.get_project().internal_get("name") + "." + \
-                self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
-        return self.get_project().internal_get("name") + DOMAIN_PROJECT_SERVICE_SEP + self.internal_get("$name") + "." + \
-            self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]
+            return project.internal_get("name") + "." + config.internal_get("proxy")["url"]
+        return (
+            project.internal_get("name")
+            + DOMAIN_PROJECT_SERVICE_SEP
+            + self.internal_get("$name")
+            + "."
+            + config.internal_get("proxy")["url"]
+        )
 
     @variable_helper
-    def additional_domains(self) -> Dict[str, str]:
+    def additional_domains(self) -> dict[str, str]:
         """
         Takes additional_subdomains and returns subdomain/full domain name mappings
         that this service should be available under in addition to the main domain.
@@ -769,10 +802,15 @@ class Service(ContainerDefinitionYamlConfigDocument):
               first: 'https://first.project--service.riptide.local'
               second: 'https://seccond.project--service.riptide.local'
         """
+        project = self.get_project()
+        config = project.parent_doc
+        assert config is not None
         if "main" in self.internal_get("roles"):
             return {
-                subdomain: f'{subdomain}.{self.get_project().internal_get("name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
-                for subdomain in self.internal_get("additional_subdomains")}
+                subdomain: f"{subdomain}.{self.get_project().internal_get('name')}.{config.internal_get('proxy')['url']}"
+                for subdomain in self.internal_get("additional_subdomains")
+            }
         return {
-            subdomain: f'{subdomain}.{self.get_project().internal_get("name")}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get("$name")}.{self.parent_doc.parent_doc.parent_doc.internal_get("proxy")["url"]}'
-            for subdomain in self.internal_get("additional_subdomains")}
+            subdomain: f"{subdomain}.{self.get_project().internal_get('name')}{DOMAIN_PROJECT_SERVICE_SEP}{self.internal_get('$name')}.{config.internal_get('proxy')['url']}"
+            for subdomain in self.internal_get("additional_subdomains")
+        }

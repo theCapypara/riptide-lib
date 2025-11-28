@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import TYPE_CHECKING
 
 from riptide.engine.abstract import AbstractEngine
+
+if TYPE_CHECKING:
+    from riptide.config.document.service import Service
 
 
 class DbValidationError(Exception):
@@ -13,8 +18,7 @@ class DbImportExport(Exception):
 
 
 class AbstractDbDriver(ABC):
-
-    def __init__(self, service: 'Service'):
+    def __init__(self, service: Service):
         self.service = service
 
     @abstractmethod
@@ -57,7 +61,7 @@ class AbstractDbDriver(ABC):
         pass
 
     @abstractmethod
-    def ask_for_import_file(self):
+    def ask_for_import_file(self) -> str:
         """
         Return a prompt to show the user in an CLI/GUI that prompts them to enter
         the path to the import file/directory.
@@ -65,7 +69,7 @@ class AbstractDbDriver(ABC):
         """
 
     @abstractmethod
-    def collect_info(self) -> Dict[str, str]:
+    def collect_info(self) -> dict[str, str]:
         """
         Collect information about accessing the database.
 

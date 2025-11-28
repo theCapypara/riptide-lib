@@ -1,6 +1,6 @@
 # Builds on all branches & PRs
 # Deploys to PyPi on new tags.
-name: Build, test and publish
+name: Build and publish
 
 on: [ push, pull_request ]
 
@@ -11,7 +11,7 @@ jobs:
     steps:
       # For tags we assume the version in setup.py is correct!
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Rewrite version for dev if not tag
@@ -22,7 +22,7 @@ jobs:
         run: |
           echo "PACKAGE_VERSION=$(tomlq '.project.version' pyproject.toml -r)" >> $GITHUB_ENV
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.12
       - name: Build wheels
@@ -30,7 +30,7 @@ jobs:
           python3 -m pip install --upgrade pip build
           python3 -m build
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: wheels
           path: dist/*.whl
@@ -41,11 +41,11 @@ jobs:
     name: Deploy wheels to PyPI
     steps:
       - name: Download wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: wheels
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.12
       - name: Upgrade pip
