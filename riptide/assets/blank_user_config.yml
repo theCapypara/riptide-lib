@@ -34,4 +34,4 @@ riptide:
 
   # Hooks can be used to run commands when certain events occur (git checkout, project start, etc.)
   # You can define hooks globally (below) and/or add hooks on the project level. See documentation.
-  hooks: [ ]
+  hooks: { }

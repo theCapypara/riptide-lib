@@ -30,7 +30,7 @@ jobs:
           python3 -m pip install --upgrade pip build
           python3 -m build
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels
           path: dist/*.whl
@@ -41,7 +41,7 @@ jobs:
     name: Deploy wheels to PyPI
     steps:
       - name: Download wheels
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: wheels
       - name: Set up Python 3.12
