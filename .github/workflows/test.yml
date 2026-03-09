@@ -32,7 +32,7 @@ jobs:
           python -m pip install --upgrade pip setuptools
           pip install tox tox-gh-actions
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build integration test image
