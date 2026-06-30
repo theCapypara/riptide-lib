@@ -21,10 +21,10 @@ jobs:
       - name: Note version
         run: |
           echo "PACKAGE_VERSION=$(tomlq '.project.version' pyproject.toml -r)" >> $GITHUB_ENV
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@v6
         with:
-          python-version: 3.12
+          python-version: 3.14
       - name: Build wheels
         run: |
           python3 -m pip install --upgrade pip build
@@ -44,10 +44,10 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: wheels
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@v6
         with:
-          python-version: 3.12
+          python-version: 3.14
       - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip
